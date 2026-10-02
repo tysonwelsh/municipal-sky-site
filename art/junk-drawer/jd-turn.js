@@ -36,7 +36,9 @@
   /* DATASET v2 (2026-10-01, PLAN-V2 Phase 4a): the card files through the
      jd2 endpoints — a turn is a RUN (run_id, prompt_id from jd2-generate),
      and the filing is one SESSION on it (jd2-rate: ratings by slot, the
-     podium's ranking, and the head-to-head pairs). The v1 endpoints stay
+     podium's ranking with the pedestal card's gaps — the server derives the
+     pairs — or, on the bench's ?pairs=1 audit, the six head-to-head pairs
+     asked directly). The v1 endpoints stay
      for the legacy exhibit at /art/junk-drawer/legacy/, which keeps its own
      copy of this file. */
   var API_GEN = '/api/jd2-generate.php';
@@ -228,6 +230,10 @@
     });
     /* the head-to-head's keys: 1–7 and the arrows pick, Enter advances */
     card.addEventListener('keydown', onPairKey);
+    /* the pedestal card's: ↑/↓ on a focused pedestal set its margin, and
+       focusing a pedestal makes its pair the question (see BY HOW MUCH) */
+    card.addEventListener('keydown', onPedKey);
+    card.addEventListener('focusin', onPedFocus);
     /* the trap: Tab cycles inside whichever layer is on top */
     card.addEventListener('keydown', function (e) {
       if (e.key !== 'Tab') return;
@@ -437,6 +443,9 @@
     else if (state === 'unveil') h = viewUnveil();
     else if (state === 'apology') h = viewApology();
     paint(h);
+    /* the pedestal card's heights are measured off the painted DOM (its
+       notch and print sizes are CSS tokens that change at the phone break) */
+    pedMount();
     bodyEl.scrollTop = 0;
     focusFirst();
     /* the assignment's fold is only honest if the words actually overflow
@@ -1635,12 +1644,15 @@
     '<path d="M18 6 L15.5 11.5 M18 6 L20.5 11.5"/>' +
     '<path d="M14.5 11.5 A3.5 3.5 0 0 0 21.5 11.5"/></svg>';
   /* the steps this turn walks, in order: a drawing per surviving slot, the
-     ranking when there is more than one, then one head-to-head card per
-     unordered pair of survivors (dataset v2, 2026-10-01 — see THE HEAD TO
-     HEAD below), and the size card that closes it (owner, 2026-08-30) */
+     ranking when there is more than one, then THE PEDESTAL CARD — "by how
+     much", one card asking each adjacent pair's margin (owner, 2026-10-02;
+     see BY HOW MUCH below) — or, on the bench's ?pairs=1 audit only, one
+     head-to-head card per unordered pair instead (dataset v2, 2026-10-01 —
+     see THE HEAD TO HEAD). Never both in one sitting. Then the size card
+     that closes it (owner, 2026-08-30). */
   function stepSeq() {
     var seq = okSlots();
-    if (seq.length > 1) seq = seq.concat(['call']).concat(pairSteps());
+    if (seq.length > 1) seq = seq.concat(['call']).concat(gapsOn() ? ['gaps'] : pairSteps());
     if (sizeTiers().length) seq = seq.concat(['size']);
     return seq;
   }
@@ -1660,6 +1672,15 @@
     '<rect x="14" y="6" width="7.5" height="12" rx="0.8"/>' +
     '<path d="M12 3.5v17" stroke-width="1.1" stroke-dasharray="1.6 1.9"/></svg>';
 
+  /* the pedestal card's ring mark: two pedestals on a floor, the left one
+     raised by a course — the margin itself */
+  var RAIL_GAPS =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" ' +
+    'aria-hidden="true"><path d="M2.5 20.5h19"/>' +
+    '<rect x="4" y="7" width="7" height="13.5"/><rect x="13" y="13" width="7" height="7.5"/>' +
+    '<path d="M4 13h7" stroke-width="1.1"/></svg>';
+
   function railHTML(ok, tiers) {
     var steps = ok.map(function (s) {
       return { id: s, n: ok.indexOf(s) + 1, label: 'drawing ' + s.toUpperCase(),
@@ -1671,6 +1692,13 @@
     if (ok.length > 1) {
       steps.push({ id: 'call', n: ok.length + 1, label: 'best to worst',
         face: RAIL_SCALES, word: 'ranking' });
+    }
+    /* BY HOW MUCH IS ONE NODE (2026-10-02): the pedestal card asks every
+       adjacent pair inside one card ("Question k of n−1" is the card's own
+       tab), so the docket carries one station for it */
+    if (gapsOn()) {
+      steps.push({ id: 'gaps', n: steps.length + 1, label: 'by how much',
+        face: RAIL_GAPS, word: 'by how much' });
     }
     /* THE HEAD TO HEAD IS ONE NODE (2026-10-01): six pairs would be six more
        rings — twelve on a 390px phone — so the docket carries a single
@@ -1713,6 +1741,7 @@
          CSS decides, keyed on width, data-view and the --call modifier */
       h += '<button type="button" role="listitem" class="jd-rail-step' +
         (st.id === 'call' ? ' jd-rail-step--call' : '') +
+        (st.id === 'gaps' ? ' jd-rail-step--gaps' : '') +
         (pairsNode ? ' jd-rail-step--pairs' : '') +
         (current ? ' is-current' : reached ? ' is-done' : '') +
         '" data-act="step" data-step="' + st.id +
@@ -1930,22 +1959,26 @@
     });
     h += '</div><span class="jd-vh jd-pod-live" role="status" aria-live="polite"></span></div>';
     /* the ranking hands on rather than filing when a card follows it: the
-       head to head (dataset v2, 2026-10-01) and/or the size (owner,
-       2026-08-30). The podium itself is untouched — only its button's
-       destination moved. */
-    var toPairs = pairDeck().length > 0;
-    var more = toPairs || tiers.length;
+       pedestal card (owner, 2026-10-02) — or the bench's head-to-head audit
+       (dataset v2, 2026-10-01) — and/or the size (owner, 2026-08-30). The
+       podium itself is untouched — only its button's destination moved. */
+    var toGaps = gapsOn();
+    var toPairs = !toGaps && pairDeck().length > 0;
+    var more = toGaps || toPairs || tiers.length;
     return h + (more ? '' : suppressHTML()) + actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="' +
       (more ? 'next' : 'file') + '"' + (callReady() ? '' : ' disabled') + '>' +
-      (toPairs ? 'next — head to head &rarr;'
+      (toGaps ? 'next — by how much &rarr;'
+        : toPairs ? 'next — head to head &rarr;'
         : more ? 'next — size &rarr;' : 'file the grades') + '</button>');
   }
 
   /* ═══════════════════════════════════════════════════════════════════════
      THE HEAD TO HEAD (dataset v2, PLAN-V2 §4 "A. Direct pairwise", owner
-     2026-10-01). After the podium, one card per UNORDERED PAIR of surviving
+     2026-10-01) — THE BENCH'S AUDIT since 2026-10-02 (owner): the pedestal
+     card (BY HOW MUCH, below) is the instrument, and these cards run only
+     on ?bench&pairs=1, in its place. After the podium, one card per UNORDERED PAIR of surviving
      drawings — four drawings, six cards — each showing the two side by side
      (stacked on a phone, the scale between them) under their blind letters,
      with the 7-point comparison scale rendered from taxonomy.comparison:
@@ -1969,6 +2002,13 @@
      ═══════════════════════════════════════════════════════════════════════ */
   var PAIR_PFX = 'pair:';
   function isPairStep(id) { return typeof id === 'string' && id.indexOf(PAIR_PFX) === 0; }
+  /* THE AUDIT (owner, 2026-10-02): the pedestal card is THE instrument for
+     visitors and the bench alike; these side-by-side cards stay as the
+     bench's audit mode, behind an explicit flag the bench reads from its
+     URL (?bench&pairs=1 → job.pairsAudit). In that mode the pedestal step
+     is skipped and the six cards run, filing direct pairs and a ranking
+     with no gaps. A visitor's turn never runs them. */
+  function pairsAudit() { return !!(curJob && curJob.pairsAudit); }
   /* the scale, best-for-the-first first, as the taxonomy lists it; empty
      when the payload carries none — then there is no pair step at all */
   function compValues() {
@@ -1979,7 +2019,7 @@
      shuffled order, each with its sides tossed. Dealt on first need and
      kept on `work`, so a repaint or a step back shows the same card. */
   function pairDeck() {
-    if (!work) return [];
+    if (!work || !pairsAudit()) return [];
     var ok = okSlots();
     if (ok.length < 2 || !compValues().length) return [];
     var sig = ok.join('');
@@ -2143,6 +2183,606 @@
     }
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════
+     BY HOW MUCH — THE PEDESTAL CARD (owner design, mockups/mockup-50-
+     pedestal-margins.html, integrated 2026-10-02). After the podium, ONE
+     card asks, one adjacent pair at a time, how much better each place is
+     than the one below it; the visitor answers by ticking one of four
+     words or by raising the pedestal. The answer is a GAP (0..3) on each
+     place of the ranking the card already files; jd2-rate derives every
+     pairwise 7-point score from it (spaced-rank-v1) — this card computes
+     and sends no scores, and files `pairs: null` (one sitting, one method).
+     It is THE instrument for visitors and the bench alike; the side-by-side
+     cards above are the bench's ?pairs=1 audit.
+
+     Owner rulings, as they bite below (PLAN-PEDESTAL-INTEGRATION §6):
+       — HEIGHT IS THE ANSWER. Raising a pedestal lays a COURSE under it and
+         under every pedestal to its left, in the margin's band colour with
+         a hairline at each whole notch; each course sits at the same height
+         under every pedestal it runs beneath, so the courses line up as
+         strata. Height of rank r = base + Σ drawn height of every margin
+         from r down. The 4th is the floor and never moves.
+       — NEGLIGIBLY IS A BRASS SHIM, a different material from the stone,
+         never a half block. Shims never stack: only the first negligible
+         pair from the 1st side draws one; a later one draws nothing and its
+         pedestals stand level. A shim always files as gap 0.
+       — An UNSET margin draws flat: nothing is claimed before an answer.
+       — The row's height is RESERVED as base + every OTHER margin's height
+         + three notches of headroom + the print, so the floor never moves
+         under a finger; it resizes only when the question moves.
+       — The two pedestals in the question stay at full strength; every
+         other one FADES WHOLE. "Rides along ↑" marks the pedestals an
+         answer actually lifted, for ~1.1 s.
+       — The gutters are CLEAR: the level line, the 1/2/3 rule and the
+         ? / ≈ badges are built and positioned but switched off with one
+         CSS rule (.jd-ped-pod .jd-ped-refline, …), for the owner to bring
+         any of them back.
+       — The labels are the taxonomy's `gaps` (labels in the ballot, `short`
+         in the slips); the card never says "about the same", because the
+         ranking already said which drawing is above.
+     The state lives on `work`: work.gaps (slot of the HIGHER place → its
+     margin; internally 0.5 = negligibly, 1..3 notches — notches() turns it
+     into the filed gap at the edge, so 0.5 is never sent), work.gapAt (the
+     pair being asked, 0..n−2) and work.gapSig (the podium order the gaps
+     describe: if the order changes, every gap is cleared — they described
+     a different order). The in-flight bits (a drag, the flashes) are `ped`.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var PED_STOPS = [0.5, 1, 2, 3];
+  var ped = { live: null, carry: null, carryT: 0, bumps: {}, drag: null };
+
+  /* the gaps scale by filed value (0..3), from the taxonomy */
+  function pedScale() {
+    var g = tax().gaps, by = {};
+    ((g && g.values) || []).forEach(function (v) { by[+v.value] = v; });
+    return by;
+  }
+  /* the card runs when there is a ranking to space (two or more drawings),
+     the taxonomy carries the four gap values, and this is not the audit */
+  function gapsOn() {
+    if (!work || pairsAudit() || okSlots().length < 2) return false;
+    var by = pedScale();
+    return !!(by[0] && by[1] && by[2] && by[3]);
+  }
+  /* WHAT THE PEDESTALS SHOW IS WHAT IS FILED: the visible notches. A shim
+     ("negligibly") draws no notch, so it files 0 — never 0.5. */
+  function pedNotches(v) { return v === 0.5 ? 0 : v; }
+  function pedEntry(v) { return pedScale()[pedNotches(v)] || {}; }
+  function pedLabel(v) { var e = pedEntry(v); return String(e.label || e.id || ''); }
+  function pedPhrase(v) { return pedLabel(v).toLowerCase(); }
+  function pedShort(v) { var e = pedEntry(v); return e['short'] ? String(e['short']) : pedPhrase(v); }
+
+  function pedN() { return okSlots().length; }
+  /* the podium, best first */
+  function pedOrder() {
+    var n = pedN(), o = [];
+    for (var k = 1; k <= n; k++) o.push(podAt(k));
+    return o;
+  }
+  function pedSig() { return callReady() ? pedOrder().join('') : ''; }
+  /* the margin of pair m (place m+1 over place m+2), as stored */
+  function pedGet(m) {
+    var s = pedOrder()[m], v = s && work.gaps ? work.gaps[s] : null;
+    return v == null ? null : v;
+  }
+  function pedPut(m, v) {
+    var s = pedOrder()[m];
+    if (!s) return;
+    if (!work.gaps) work.gaps = {};
+    if (v == null) delete work.gaps[s]; else work.gaps[s] = v;
+  }
+  /* RE-RANKING RESETS THE GAPS (the mockup's signature rule): checked
+     whenever the card is entered or its answer is read, with a full podium */
+  function pedSync() {
+    if (!work || !callReady()) return;
+    var sig = pedSig();
+    if (sig !== work.gapSig) {
+      work.gaps = {};
+      work.gapAt = 0;
+      work.gapSig = sig;
+      pedPersist();
+    }
+    var n = pedN();
+    if (!(work.gapAt >= 0 && work.gapAt <= n - 2)) work.gapAt = 0;
+  }
+  function pedAllSet() {
+    if (!callReady()) return false;
+    for (var m = 0; m < pedN() - 1; m++) if (pedGet(m) == null) return false;
+    return true;
+  }
+  function pedFirstUnset() {
+    for (var m = 0; m < pedN() - 1; m++) if (pedGet(m) == null) return m;
+    return 0;
+  }
+  /* THE CONTRACT'S SHAPE (the mockup's JD_pedestal hooks): the answer as
+     jd2-rate's ranking — [{slot, rank, gap}], gap the visible notches 0..3
+     on every place but the last, null while unset (and then complete is
+     false) — and the same shape back in, for back/forward, the turn's
+     persistence and the bench's prefill. A gap of 0 restores as
+     "negligibly" (the shim). */
+  function pedAnswer() {
+    var o = pedOrder(), n = o.length, ranking = [], complete = n > 1 && callReady();
+    o.forEach(function (s, r) {
+      if (!s) { complete = false; return; }
+      var row = { slot: s, rank: r + 1 };
+      if (r < n - 1) {
+        var g = pedGet(r);
+        row.gap = g == null ? null : pedNotches(g);
+        if (g == null) complete = false;
+      }
+      ranking.push(row);
+    });
+    return { ranking: ranking, complete: complete };
+  }
+  function pedRestore(ranking) {
+    if (!work) return false;
+    var ok = okSlots(), n = ok.length;
+    work.ranks = {};
+    work.gaps = {};
+    (ranking || []).forEach(function (row) {
+      if (!row || ok.indexOf(row.slot) === -1) return;
+      var r = Number(row.rank);
+      if (!(r >= 1 && r <= n && r === Math.floor(r))) return;
+      work.ranks[row.slot] = r;
+      if (row.gap != null && r < n) {
+        var g = Number(row.gap);
+        if (g >= 0 && g <= 3 && g === Math.floor(g)) work.gaps[row.slot] = g === 0 ? 0.5 : g;
+      }
+    });
+    podNormalize(ok);
+    /* a gap on a slot that no longer stands above another place is dropped */
+    var o = pedOrder();
+    Object.keys(work.gaps).forEach(function (s) {
+      var at = o.indexOf(s);
+      if (at === -1 || at >= n - 1) delete work.gaps[s];
+    });
+    work.gapSig = pedSig();
+    work.gapAt = pedFirstUnset();
+    pedPersist();
+    return true;
+  }
+  /* the filed gaps by slot (0..3, the last place absent), or null unless
+     EVERY adjacent pair is answered for the podium as it stands — the
+     server's rule is a gap on every place but the last, or on none */
+  function pedGapsOut() {
+    if (!gapsOn() || !callReady()) return null;
+    pedSync();
+    var o = pedOrder(), out = {};
+    for (var m = 0; m < o.length - 1; m++) {
+      var v = pedGet(m);
+      if (v == null) return null;
+      out[o[m]] = pedNotches(v);
+    }
+    return out;
+  }
+  /* THE TURN'S PERSISTENCE (v2 key jd2-turn): the turn record carries the
+     card's answer in the contract's shape. Curate mode has no turn record. */
+  function pedPersist() {
+    if (turn && !ownerJob && work && gapsOn()) {
+      turn.pedestal = pedAnswer().ranking;
+      persist();
+    }
+  }
+
+  /* ---- the geometry (the mockup's, verbatim in substance) ---------------- */
+  function pedRoot() { return bodyEl ? bodyEl.querySelector('.jd-ped') : null; }
+  function pedPx(name) {
+    var root = pedRoot();
+    return root ? (parseFloat(getComputedStyle(root).getPropertyValue(name)) || 0) : 0;
+  }
+  /* ONE SHIM AT MOST: a negligible margin draws a shim only when no pair
+     UPSTREAM of it (nearer the 1st) already has one */
+  function pedUpstreamShim(m) {
+    for (var q = 0; q < m; q++) if (pedValNow(q) === 0.5) return true;
+    return false;
+  }
+  function pedHairPx(m) { return pedUpstreamShim(m) ? 0 : pedPx('--shim'); }
+  /* a margin's drawn height. Unset draws flat: nothing has been claimed. */
+  function pedPxOf(v, m) { return v == null ? 0 : v === 0.5 ? pedHairPx(m) : v * pedPx('--notch'); }
+  function pedMpx(m) { return (ped.live && ped.live.m === m) ? ped.live.px : pedPxOf(pedGet(m), m); }
+  function pedHeightAt(r) {
+    var h = pedPx('--b');
+    for (var m = r; m < pedN() - 1; m++) h += pedMpx(m);
+    return h;
+  }
+  function pedSnap(p, m) {
+    var n = pedPx('--notch'), c = [[0.5, pedHairPx(m)], [1, n], [2, 2 * n], [3, 3 * n]], best = c[0];
+    c.forEach(function (x) { if (Math.abs(p - x[1]) < Math.abs(p - best[1])) best = x; });
+    return best[0];
+  }
+  /* the value a live drag would land on right now, or the stored one */
+  function pedValNow(m) {
+    return (ped.live && ped.live.m === m) ? pedSnap(ped.live.px, ped.live.m) : pedGet(m);
+  }
+
+  /* one print, as the podium carries it (the same framed artwork, label and
+     grade spark), but not the podium's handle: here a press on a print is a
+     press on its pedestal — it raises it — never "enlarge" */
+  function pedPrintHTML(slot) {
+    var rt = work.ratings[slot];
+    var spark = gaugeFor(null, JD_byRankDesc(tax().grades).length, rt ? rt.grade : null);
+    if (spark) spark = '<span class="jd-pod-spark" aria-hidden="true">' + spark + '</span>';
+    return '<div class="jd-ped-print" data-slot="' + slot + '" draggable="false">' +
+      plate(slot, { overlay: true, spark: spark }) + '</div>';
+  }
+  /* the ballot's icon is the pair itself: a base block under each, and on
+     the left one a SEGMENT per notch (a brass sliver for negligibly) */
+  function pedPicoHTML(v) {
+    var segs = '';
+    if (v === 0.5) segs = '<span class="jd-ped-sg is-shim"></span>';
+    else for (var i = 0; i < pedNotches(v); i++) segs += '<span class="jd-ped-sg"></span>';
+    return '<span class="jd-ped-pico" aria-hidden="true"><span class="jd-ped-p">' +
+      '<span class="jd-ped-bs"></span>' + segs + '</span>' +
+      '<span class="jd-ped-p"><span class="jd-ped-bs"></span></span></span>';
+  }
+
+  /* THE CARD, top to bottom: the ledger of slips, the podium in rank order,
+     the question (the questionnaire box), the actions. Built ONCE per
+     render; from then on everything is classes, styles and the question's
+     text written in place (pedLayout / pedPaint), so a drag survives and
+     focus stays where the visitor put it. */
+  function pedPanel(ok, tiers) {
+    if (ped.drag) pedDragEnd(null);
+    ped.live = null; ped.carry = null; ped.bumps = {};
+    clearTimeout(ped.carryT);
+    var o = pedOrder(), n = o.length, m, r;
+    var h = '<div class="jd-ped" style="--pairs:' + (n - 1) + '">' +
+      /* the record, ABOVE the podium: one slip per adjacent pair, positions
+         only, never model letters; no "implied" line (the server derives
+         the non-adjacent pairs) */
+      '<div class="jd-ped-ledger">';
+    for (m = 0; m < n - 1; m++) {
+      h += '<button type="button" class="jd-ped-slip" data-act="gappair" data-m="' + m + '">' +
+        '<span class="jd-ped-k"><i class="jd-ped-sw" aria-hidden="true"></i>' +
+        POD_ORD[m] + ' › ' + POD_ORD[m + 1] + '</span>' +
+        '<span class="jd-ped-w"></span></button>';
+    }
+    h += '</div><div class="jd-ped-pod"><div class="jd-ped-row">';
+    for (r = 0; r < n; r++) {
+      var floor = r === n - 1;
+      h += '<div class="jd-ped-tier' + (floor ? ' is-floor' : '') + '" data-r="' + r + '"' +
+        (floor ? '' : ' tabindex="0" role="slider" aria-orientation="vertical"' +
+          ' aria-valuemin="0" aria-valuemax="3"') + '>' +
+        '<div class="jd-ped-stand">' + pedPrintHTML(o[r]) + '</div><div class="jd-ped-block">';
+      for (m = r; m < n - 1; m++) h += '<div class="jd-ped-course" data-m="' + m + '"></div>';
+      h += '<div class="jd-ped-base">' + POD_ORD[r] + '</div></div>' +
+        (floor ? '' : '<span class="jd-ped-carry" aria-hidden="true">rides along ↑</span>') + '</div>';
+    }
+    /* the switched-off gutter furniture: a badge per pair, the level line,
+       the 1/2/3 rule with its marker (see the CSS switch) */
+    for (m = 0; m < n - 1; m++) {
+      h += '<span class="jd-ped-gmark" data-m="' + m + '" aria-hidden="true"></span>';
+    }
+    h += '<div class="jd-ped-refline" aria-hidden="true"></div>' +
+      '<div class="jd-ped-ruler" aria-hidden="true">' +
+      '<i class="jd-ped-tk" data-s="0.5"><b>≈</b></i><i class="jd-ped-tk" data-s="1"><b>1</b></i>' +
+      '<i class="jd-ped-tk" data-s="2"><b>2</b></i><i class="jd-ped-tk" data-s="3"><b>3</b></i>' +
+      '<span class="jd-ped-mk"></span></div></div>' +
+      '<div class="jd-pod-floor" aria-hidden="true"></div></div>' +
+      '<div class="jd-ped-q"></div>' +
+      '<span class="jd-vh jd-ped-live" role="status" aria-live="polite"></span></div>';
+    /* the button's act and words are pedPaint's: the next pair, or — on the
+       last — whatever follows (the size, or the filing). This card files
+       when nothing follows it, so it carries the keep-out then. */
+    return h + (tiers.length ? '' : suppressHTML()) + actions(
+      '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
+      '<button type="button" class="jd-turn-go" data-act="gapnext" disabled>next pedestal &rarr;</button>');
+  }
+
+  /* heights, positions and classes only — safe mid-drag */
+  function pedLayout() {
+    var root = pedRoot();
+    if (!root || !work) return;
+    var n = pedN(), k = work.gapAt;
+    var nt = pedPx('--notch'), b = pedPx('--b'), pw = pedPx('--pw');
+    var row = root.querySelector('.jd-ped-row');
+    /* headroom: everything already standing, plus the full three notches
+       the pair being set could still reach — independent of that pair's
+       own value, so the floor never slides away from the finger */
+    var reserve = 3 * nt;
+    for (var q0 = 0; q0 < n - 1; q0++) if (q0 !== k) reserve += pedPxOf(pedGet(q0), q0);
+    row.style.height = (b + reserve + pw + 26) + 'px';
+    var tiers = row.querySelectorAll('.jd-ped-tier'), rr = row.getBoundingClientRect();
+    var o = pedOrder();
+    Array.prototype.forEach.call(tiers, function (t, r) {
+      t.querySelector('.jd-ped-block').style.height = pedHeightAt(r) + 'px';
+      t.querySelector('.jd-ped-base').style.height = b + 'px';
+      t.classList.toggle('is-active', r === k);
+      t.classList.toggle('is-ref', r === k + 1);
+      t.classList.toggle('is-dim', r !== k && r !== k + 1);
+      t.classList.toggle('is-carried', ped.carry != null && r < ped.carry);
+      Array.prototype.forEach.call(t.querySelectorAll('.jd-ped-course'), function (c) {
+        var m = +c.getAttribute('data-m'), below = b;
+        for (var q = m + 1; q < n - 1; q++) below += pedMpx(q);
+        var hpx = pedMpx(m), dragging = ped.live && ped.live.m === m;
+        c.style.bottom = below + 'px';
+        c.style.height = hpx + 'px';
+        c.classList.toggle('is-active', m === k);
+        c.classList.toggle('is-zero', hpx < 1);
+        c.classList.toggle('is-shim', !dragging && pedGet(m) === 0.5 && hpx > 0);
+      });
+      if (r < n - 1) {
+        var sv = pedGet(r);
+        t.setAttribute('aria-valuenow', String(sv == null ? 0 : sv));
+        t.setAttribute('aria-valuetext', sv == null ? 'not set' : pedPhrase(sv));
+        t.setAttribute('aria-label', POD_ORD[r] + ', Model ' + String(o[r]).toUpperCase() +
+          ', over Model ' + String(o[r + 1]).toUpperCase());
+      }
+    });
+    /* every pair's state in its own gutter (? unset, ≈ negligibly) — built
+       and placed, and switched off in the CSS */
+    Array.prototype.forEach.call(root.querySelectorAll('.jd-ped-gmark'), function (gm) {
+      var m = +gm.getAttribute('data-m'), A = tiers[m], B = tiers[m + 1];
+      if (!A || !B) return;
+      var ra = A.getBoundingClientRect(), rb = B.getBoundingClientRect(), val = pedValNow(m);
+      gm.style.left = ((ra.right + rb.left) / 2 - rr.left) + 'px';
+      gm.style.bottom = (pedHeightAt(m + 1) + 14) + 'px';
+      gm.className = 'jd-ped-gmark';
+      if (val == null) { gm.textContent = '?'; gm.classList.add('is-unset'); }
+      else if (val === 0.5) { gm.textContent = '≈'; gm.classList.add('is-hair'); }
+      else { gm.textContent = ''; gm.classList.add('is-hidden'); }
+      gm.setAttribute('title', val == null ? 'not set yet' : pedPhrase(val));
+      if (m === k) gm.classList.add('is-hidden');   /* the ruler speaks for the active pair */
+    });
+    var A2 = tiers[k], B2 = tiers[k + 1];
+    if (!A2 || !B2) return;
+    var ra2 = A2.getBoundingClientRect(), rb2 = B2.getBoundingClientRect(), ref = pedHeightAt(k + 1);
+    var ruler = root.querySelector('.jd-ped-ruler'), line = root.querySelector('.jd-ped-refline');
+    ruler.style.left = (ra2.right - rr.left) + 'px';
+    ruler.style.width = (rb2.left - ra2.right) + 'px';
+    ruler.style.bottom = ref + 'px';
+    ruler.style.height = (3 * nt) + 'px';
+    var cur = pedValNow(k);
+    Array.prototype.forEach.call(ruler.querySelectorAll('.jd-ped-tk'), function (tk) {
+      var s = +tk.getAttribute('data-s');
+      tk.style.bottom = pedPxOf(s, k) + 'px';
+      tk.classList.toggle('is-on', cur === s);
+    });
+    var mk = ruler.querySelector('.jd-ped-mk');
+    mk.style.bottom = pedMpx(k) + 'px';
+    mk.classList.toggle('is-unset', cur == null);
+    line.style.left = (ra2.left - rr.left) + 'px';
+    line.style.width = (rb2.left - ra2.left + 6) + 'px';
+    line.style.bottom = ref + 'px';
+  }
+
+  /* the slips: positions, the band swatch, the answer in the pencil hand
+     (or a faint "not yet"); the asked pair's slip wears the graphite */
+  function pedLedger() {
+    var root = pedRoot();
+    if (!root) return;
+    Array.prototype.forEach.call(root.querySelectorAll('.jd-ped-slip'), function (sl) {
+      var m = +sl.getAttribute('data-m'), val = pedValNow(m);
+      sl.classList.toggle('is-on', m === work.gapAt);
+      sl.classList.toggle('is-unset', val == null);
+      sl.classList.toggle('is-bump', !!ped.bumps['m' + m]);
+      if (m === work.gapAt) sl.setAttribute('aria-current', 'true');
+      else sl.removeAttribute('aria-current');
+      var w = val == null ? 'not yet' : (val === 0.5 ? '≈ ' : '') + pedShort(val);
+      var wEl = sl.querySelector('.jd-ped-w');
+      if (wEl.textContent !== w) wEl.textContent = w;
+      sl.setAttribute('aria-label', POD_ORD[m] + ' over ' + POD_ORD[m + 1] + ': ' +
+        (val == null ? 'not answered yet' : pedPhrase(val)));
+    });
+  }
+  /* THE QUESTION (the questionnaire): the card asks, and stays asking. The
+     ranking already said which is better, so it says so back and asks only
+     how MUCH; the answer is the ticked box plus the raised pedestal. Its
+     words are rewritten only when the question moves; the ballot's ticks
+     follow the LIVE value, so they track a dragged pedestal before release. */
+  function pedQuestion() {
+    var root = pedRoot(), q = root && root.querySelector('.jd-ped-q');
+    if (!q) return;
+    var o = pedOrder(), n = o.length, k = work.gapAt;
+    var key = k + ':' + o.join('');
+    if (q.getAttribute('data-k') !== key) {
+      q.setAttribute('data-k', key);
+      q.innerHTML = '<span class="jd-ped-q-tab">Question ' + (k + 1) + ' of ' + (n - 1) + '</span>' +
+        /* the two model names in bold (owner, 2026-10-01) */
+        '<p class="jd-ped-q-said">You’ve indicated that <b>Model ' + String(o[k]).toUpperCase() +
+        '</b> is better than <b>Model ' + String(o[k + 1]).toUpperCase() + '</b>.</p>' +
+        '<p class="jd-ped-q-ask">How <em>much</em> better is it?</p>' +
+        '<div class="jd-ped-q-opts" role="group" aria-label="How much better">' +
+        PED_STOPS.map(function (v) {
+          return '<button type="button" class="jd-ped-qo" data-act="gapstop" data-gap="' + v +
+            '" aria-pressed="false">' + pedPicoHTML(v) +
+            '<span class="jd-ped-qo-l">' + esc(pedLabel(v)) + '</span>' +
+            '<span class="jd-ped-qo-box" aria-hidden="true"></span></button>';
+        }).join('') + '</div>';
+    }
+    var cur = pedValNow(k);
+    Array.prototype.forEach.call(q.querySelectorAll('.jd-ped-qo'), function (bt) {
+      var on = Number(bt.getAttribute('data-gap')) === cur;
+      if (bt.getAttribute('aria-pressed') !== String(on)) bt.setAttribute('aria-pressed', String(on));
+      var box = bt.querySelector('.jd-ped-qo-box');
+      var mark = on ? '<i>✓</i>' : '';
+      if (box.innerHTML !== mark) box.innerHTML = mark;
+    });
+  }
+  /* the slips, the question and the buttons. Gating as the mockup's: each
+     pair's NEXT waits for that pair's answer; the last pair's button hands
+     on to the size (or files) and waits for every answer; BACK on the
+     first pair returns to the podium, and back is always allowed. */
+  function pedPaint() {
+    if (!pedRoot()) return;
+    pedLedger();
+    pedQuestion();
+    var n = pedN(), k = work.gapAt, last = k >= n - 2, sized = sizeTiers().length > 0;
+    var go = bodyEl.querySelector('.jd-turn-actions .jd-turn-go');
+    var back = bodyEl.querySelector('.jd-turn-actions .jd-turn-alt');
+    if (go) {
+      go.setAttribute('data-act', last ? (sized ? 'next' : 'file') : 'gapnext');
+      go.disabled = last ? !pedAllSet() : pedGet(k) == null;
+      var words = last ? (sized ? 'next — size &rarr;' : 'file the grades') : 'next pedestal &rarr;';
+      if (go.getAttribute('data-words') !== words) {
+        go.setAttribute('data-words', words);
+        go.innerHTML = words;
+      }
+    }
+    if (back) back.setAttribute('data-act', k > 0 ? 'gapback' : 'back');
+  }
+  /* the card's first measure, after paint (render() calls it) */
+  function pedMount() {
+    if (!pedRoot()) return;
+    pedLayout();
+    pedPaint();
+  }
+  function pedSay(msg) {
+    var root = pedRoot(), live = root && root.querySelector('.jd-ped-live');
+    if (live) live.textContent = msg || '';
+  }
+  function pedSayAnswer(m) {
+    var o = pedOrder(), v = pedGet(m);
+    if (v == null) return;
+    pedSay('Model ' + String(o[m]).toUpperCase() + ' ' + pedPhrase(v) +
+      ' than Model ' + String(o[m + 1]).toUpperCase());
+  }
+
+  /* what changed: the slips that flash, and the pedestals that ride along
+     — only when the drawn height really moved (an unshimmed "negligibly"
+     lifts nothing) */
+  function pedSnapshot() {
+    var o = {};
+    for (var m = 0; m < pedN() - 1; m++) o['m' + m] = pedValNow(m);
+    return o;
+  }
+  function pedFlash(before, m) {
+    var after = pedSnapshot();
+    ped.bumps = {};
+    Object.keys(after).forEach(function (key) { if (after[key] !== before[key]) ped.bumps[key] = true; });
+    ped.carry = (m > 0 && pedPxOf(before['m' + m], m) !== pedPxOf(after['m' + m], m)) ? m : null;
+    clearTimeout(ped.carryT);
+    ped.carryT = setTimeout(function () {
+      ped.bumps = {}; ped.carry = null;
+      if (pedRoot() && work) { pedLayout(); pedLedger(); }
+    }, 1100);
+  }
+  function pedSetGap(m, val) {
+    var before = pedSnapshot();
+    pedPut(m, val);
+    pedFlash(before, m);
+    pedLayout();
+    pedPaint();
+    pedPersist();
+    pedSayAnswer(m);
+  }
+  function pedSetActive(m) {
+    var n = pedN();
+    if (!(m >= 0 && m <= n - 2)) return;
+    work.gapAt = m;
+    pedLayout();
+    pedPaint();
+  }
+
+  /* ---- the lift: drag a pedestal (print or block) up or down -------------
+     TOUCH GRIPS AT ONCE (2026-10-02): the pedestals are touch-action:none
+     and a press starts the lift immediately, the live podium's and the
+     drawer's own convention (jd-core: the ~180ms hold-to-grip was retired,
+     G5 revision 3, 2026-07-26, once ink owned the gesture). On the 100svh
+     card the page still scrolls from the slips, the question box and the
+     margins around the row. Like the podium's drag it lives on the WINDOW
+     (capture phase, filtered by pointerId), and nothing re-renders a
+     pedestal while it is in the hand: only styles and classes change. At
+     least 26px of travel per notch on phones; it snaps to the nearest drawn
+     stop (shim, 1, 2, 3) on release. */
+  function pedDown(e) {
+    if (ped.drag || !work || !bodyEl || !isOpen || confirmOn || zoom.isOn()) return;
+    if (e.button !== undefined && e.button > 0) return;
+    var t = (e.target && e.target.closest) ? e.target.closest('.jd-ped-tier') : null;
+    if (!t || !bodyEl.contains(t)) return;
+    var r = +t.getAttribute('data-r');
+    if (r >= pedN() - 1) return;
+    e.preventDefault();
+    try { t.focus({ preventScroll: true }); } catch (err) {}
+    if (work.gapAt !== r) pedSetActive(r);
+    ped.drag = { m: r, y0: e.clientY, p0: pedMpx(r), id: e.pointerId, moved: false, el: t,
+      before: pedSnapshot() };
+    try { t.setPointerCapture(e.pointerId); } catch (err) {}
+    window.addEventListener('pointermove', pedMove, true);
+    window.addEventListener('pointerup', pedUp, true);
+    window.addEventListener('pointercancel', pedUp, true);
+    window.addEventListener('blur', pedBlur);
+  }
+  function pedMove(e) {
+    var d = ped.drag;
+    if (!d || e.pointerId !== d.id) return;
+    var dy = d.y0 - e.clientY;
+    if (!d.moved && Math.abs(dy) < 4) return;
+    if (!d.moved) {
+      d.moved = true;
+      var root = pedRoot();
+      if (root) root.classList.add('is-drag');
+      document.body.classList.add('jd-ped-drag');
+    }
+    var nt = pedPx('--notch'), gain = nt / Math.max(nt, 26);
+    ped.live = { m: d.m, px: Math.max(0, Math.min(3 * nt, d.p0 + dy * gain)) };
+    ped.carry = d.m > 0 ? d.m : null;
+    pedLayout(); pedLedger(); pedQuestion();
+    if (e.cancelable) e.preventDefault();
+  }
+  /* every exit runs through here; `e` null = a repaint or a blur took it */
+  function pedDragEnd(e) {
+    var d = ped.drag;
+    if (!d) return;
+    ped.drag = null;
+    window.removeEventListener('pointermove', pedMove, true);
+    window.removeEventListener('pointerup', pedUp, true);
+    window.removeEventListener('pointercancel', pedUp, true);
+    window.removeEventListener('blur', pedBlur);
+    try { d.el.releasePointerCapture(d.id); } catch (err) {}
+    var root = pedRoot();
+    if (root) root.classList.remove('is-drag');
+    document.body.classList.remove('jd-ped-drag');
+    if (d.moved && ped.live && e && e.type === 'pointerup') {
+      var val = pedSnap(ped.live.px, ped.live.m);
+      ped.live = null;
+      pedPut(d.m, val);
+      pedFlash(d.before, d.m);
+      pedLayout(); pedPaint();
+      pedPersist();
+      pedSayAnswer(d.m);
+    } else {
+      ped.live = null; ped.carry = null;
+      if (root) { pedLayout(); pedPaint(); }
+    }
+  }
+  function pedUp(e) {
+    if (!ped.drag || (e.pointerId !== undefined && e.pointerId !== ped.drag.id)) return;
+    pedDragEnd(e);
+  }
+  function pedBlur() { pedDragEnd(null); }
+  window.addEventListener('pointerdown', pedDown, true);
+  window.addEventListener('resize', function () {
+    if (!pedRoot()) return;
+    cancelAnimationFrame(ped.rz);
+    ped.rz = requestAnimationFrame(function () { if (pedRoot() && work) pedLayout(); });
+  });
+  /* ↑/↓ (and →/←) on a focused pedestal: from unset, ↓ says "negligibly"
+     and ↑ says "slightly"; then one stop per press */
+  function onPedKey(e) {
+    if (!isOpen || confirmOn || zoom.isOn() || state !== 'rate' || !work || work.step !== 'gaps') return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    var t = e.target;
+    if (!t || !t.classList || !t.classList.contains('jd-ped-tier')) return;
+    var r = +t.getAttribute('data-r');
+    if (r >= pedN() - 1) return;
+    var up = e.key === 'ArrowUp' || e.key === 'ArrowRight';
+    var dn = e.key === 'ArrowDown' || e.key === 'ArrowLeft';
+    if (!up && !dn) return;
+    e.preventDefault();
+    work.gapAt = r;
+    var cur = pedGet(r);
+    var i = cur == null ? (up ? 1 : 0) : PED_STOPS.indexOf(cur) + (up ? 1 : -1);
+    pedSetGap(r, PED_STOPS[Math.max(0, Math.min(PED_STOPS.length - 1, i))]);
+  }
+  /* focusing a pedestal makes its pair the question */
+  function onPedFocus(e) {
+    if (!isOpen || state !== 'rate' || !work || work.step !== 'gaps' || ped.drag) return;
+    var t = e.target;
+    if (!t || !t.classList || !t.classList.contains('jd-ped-tier')) return;
+    var r = +t.getAttribute('data-r');
+    if (r < pedN() - 1 && r !== work.gapAt) pedSetActive(r);
+  }
+
   /* §4 the bench, §5 the call. Neither carries an instruction line: they are
      the two cards where the visitor is working, so they are the two with the
      least to read. The heading names the drawing on the bench, the rail says
@@ -2227,8 +2867,12 @@
     var tiers = sizeTiers(), sizes = tiers.length;
     /* a restored or degraded turn may hold a step that no longer exists */
     if (isPairStep(work.step) && !pairOf(work.step)) work.step = ok.length > 1 ? 'call' : ok[0];
-    if (work.step !== 'call' && work.step !== 'size' && !isPairStep(work.step) &&
-        ok.indexOf(work.step) === -1) {
+    /* the pedestal card spaces a FULL podium: reached by the rail with a
+       place left empty, it is the podium that comes up */
+    if (work.step === 'gaps' && !gapsOn()) work.step = ok.length > 1 ? 'call' : ok[0];
+    if (work.step === 'gaps' && !callReady()) work.step = 'call';
+    if (work.step !== 'call' && work.step !== 'size' && work.step !== 'gaps' &&
+        !isPairStep(work.step) && ok.indexOf(work.step) === -1) {
       work.step = ok[0];
     }
     if (work.step === 'call' && ok.length < 2) work.step = sizes ? 'size' : ok[0];
@@ -2236,15 +2880,21 @@
     work.reached[work.step] = true;
     var two = ok.length > 1;
     var call = work.step === 'call', size = work.step === 'size';
+    var gaps = work.step === 'gaps';
     var pair = isPairStep(work.step);
     var deck = pair ? pairDeck() : null;
+    /* entering the pedestal card: a podium re-ranked since the gaps were
+       answered clears them (they described a different order) */
+    if (gaps) pedSync();
     return head(size ? 'How big is it' : call ? 'Best to worst'
+        : gaps ? 'By how much'
         : pair ? 'Head to head · ' + (deck.indexOf(pairOf(work.step)) + 1) + ' of ' + deck.length
         : 'Grade drawing ' + work.step.toUpperCase(),
-      size ? 6 : (call || pair) ? 5 : 4,
-      { view: size ? 'size' : call ? 'call' : pair ? 'pair' : 'bench' }) +
+      size ? 6 : (call || gaps || pair) ? 5 : 4,
+      { view: size ? 'size' : call ? 'call' : gaps ? 'gaps' : pair ? 'pair' : 'bench' }) +
       (two || sizes ? railHTML(ok, tiers) : '') +
       (size ? sizePanel(tiers) : call ? callPanel(ok, tiers)
+        : gaps ? pedPanel(ok, tiers)
         : pair ? pairPanel(work.step, ok, tiers) : benchPanel(work.step, ok, tiers));
   }
 
@@ -2514,6 +3164,17 @@
     } else if (act === 'pairpick') {
       /* a head-to-head answer — in place, see pairPick */
       pairPick(Number(b.getAttribute('data-score')), true);
+    } else if (act === 'gapstop') {
+      /* the pedestal card's ballot: the asked pair's margin, in place */
+      if (work && work.step === 'gaps') pedSetGap(work.gapAt, Number(b.getAttribute('data-gap')));
+    } else if (act === 'gappair') {
+      /* a slip jumps to its pair */
+      if (work && work.step === 'gaps') pedSetActive(Number(b.getAttribute('data-m')));
+    } else if (act === 'gapnext') {
+      /* the next pair, once this one is answered (the button's own gate) */
+      if (work && work.step === 'gaps' && pedGet(work.gapAt) != null) pedSetActive(work.gapAt + 1);
+    } else if (act === 'gapback') {
+      if (work && work.step === 'gaps' && work.gapAt > 0) pedSetActive(work.gapAt - 1);
     } else if (act === 'step' || act === 'next' || act === 'back') {
       /* bench navigation. The whole panel re-renders (state lives in `work`,
          so nothing is lost) and focus lands back on the heading. */
@@ -2562,6 +3223,18 @@
         render();
         return;
       }
+      /* …and so does every margin on the pedestal card, for the podium as
+         it stands now (a re-ranking since cleared them) */
+      if (gapsOn()) {
+        pedSync();
+        if (!pedAllSet()) {
+          work.step = 'gaps';
+          work.gapAt = pedFirstUnset();
+          work.reached.gaps = true;
+          render();
+          return;
+        }
+      }
       /* a curation files at the SIZE card, which closes it; the size is the
          owner's call and never defaulted (CLAUDE.md's filing rule) */
       if (curJob && work.step === 'size' && !work.size) return;
@@ -2606,10 +3279,12 @@
   }
 
   /* the forward gate, per step: a drawing's every scale, the full podium,
-     a pair's one answer; the size card gates its own button */
+     every margin on the pedestal card, a pair's one answer; the size card
+     gates its own button */
   function stepAnswered(step) {
     if (step === 'size') return true;
     if (step === 'call') return callReady();
+    if (step === 'gaps') { pedSync(); return pedAllSet(); }
     if (isPairStep(step)) return pairLeftScore(pairOf(step)) != null;
     return benchRated(step);
   }
@@ -2634,6 +3309,11 @@
          → score −3..+3, positive = the first slot preferred; pairDeck is
          the sitting's deal of pair order and sides (see pairDeck) */
       pairs: {}, pairDeck: null,
+      /* THE PEDESTAL CARD's answers (owner, 2026-10-02 — see BY HOW MUCH):
+         slot of the higher place → its margin (0.5 = negligibly, 1..3
+         notches; absent = unset), the pair being asked, and the podium
+         order they describe */
+      gaps: {}, gapAt: 0, gapSig: '',
       winner: null, strength: null, reveal: null
     };
   }
@@ -2811,6 +3491,27 @@
     });
     return out.length ? out : null;
   }
+  /* THE RANKING ON THE WIRE: one entry per surviving slot, ranks dense from
+     1, exactly one 1st — the podium can't produce anything else — and, when
+     the pedestal card is the instrument, each place's GAP (0..3) on every
+     place but the last. The server's rule is a gap on every place but the
+     last OR ON NONE, so an unanswered margin sends no gaps at all: the
+     sitting files, and is incomplete (the card's gates make that rare).
+     Null when there is no call (one drawing). */
+  function rankingOut() {
+    var ok = okSlots();
+    if (ok.length < 2 || !callReady()) return null;
+    var ranking = ok.map(function (s) {
+      return { slot: s, rank: podRankOf(s) };
+    }).sort(function (p, q) { return p.rank - q.rank; });
+    var gaps = pedGapsOut();
+    if (gaps) {
+      ranking.forEach(function (p) {
+        if (p.rank < ok.length) p.gap = gaps[p.slot];
+      });
+    }
+    return ranking;
+  }
   function submitRatings() {
     if (!turn || !turn.run_id) { go('apology'); return; }
     var ratings = [];
@@ -2831,19 +3532,12 @@
          state — r.flag / r.flagNote — is kept for the day it returns with
          a v2 home of its own.) */
     });
-    /* THE CALL ON THE WIRE (podium, 2026-08-22). `ranking` is the real
-       answer: one entry per surviving slot, ranks dense from 1, exactly one
-       1st — the podium can't produce anything else; no gaps yet (the owner's
-       "by how much" card will add them). v1's `comparison` is no longer
-       sent: the head to head is `pairs`. Both are null in the degraded
-       one-slot path, where there is no call at all. */
-    var okNow = okSlots();
-    var ranking = null;
-    if (okNow.length > 1 && callReady()) {
-      ranking = okNow.map(function (s) {
-        return { slot: s, rank: podRankOf(s) };
-      }).sort(function (p, q) { return p.rank - q.rank; });
-    }
+    /* THE CALL ON THE WIRE (podium, 2026-08-22; gaps 2026-10-02): see
+       rankingOut. `pairs` is null whenever the pedestal card is the
+       instrument — a visitor's turn always — so the server derives them
+       (one sitting, one method). Both are null in the degraded one-slot
+       path, where there is no call at all. */
+    var ranking = rankingOut();
     var dev = window.JD_deviceRef ? JD_deviceRef(false) : null;
     var body = {
       run_id: turn.run_id,
@@ -2859,7 +3553,7 @@
       suppress: !!work.suppress,
       ratings: ratings,
       ranking: ranking,
-      pairs: pairsOut()
+      pairs: gapsOn() ? null : pairsOut()
     };
     /* the size only when the visitor chose one (the size card shows only
        when intake did not size the turn): an absent size leaves the
@@ -3480,6 +4174,21 @@
         if (sa < sb) work.pairs[sa + '|' + sb] = +p.score;
         else work.pairs[sb + '|' + sa] = -p.score;
       });
+      /* THE MARGINS PREFILLED (2026-10-02): each response's gap_after (the
+         owner's last sitting, by response — so by this card's seat) is
+         restored through the pedestal card's own contract shape, exactly
+         as back/forward and the turn's persistence restore it. On the
+         ?pairs=1 audit the gaps are not the instrument and stay unread. */
+      if (gapsOn()) {
+        var shape = [];
+        order.forEach(function (resp, k) {
+          if (resp.rank >= 1 && resp.rank <= n) {
+            shape.push({ slot: JD_SLOTS[k], rank: resp.rank,
+              gap: resp.gap_after != null ? resp.gap_after : null });
+          }
+        });
+        pedRestore(shape);
+      }
       /* the sitting's note starts empty: it is this sitting's rationale */
       work.note = '';
       /* the rail's linear first pass, resumed: every finished drawing is
@@ -3500,17 +4209,27 @@
          on its first pair still unanswered (2026-10-01; prefilled pairs
          count as answered — see job.pairs above) */
       var openPair = ranked ? firstOpenPair() : null;
+      /* …and the pedestal card likewise, on its first margin still unset
+         (prefilled gaps count as answered, and reach its rail station) */
+      var gapsOpen = ranked && gapsOn() && !pedAllSet();
+      if (ranked && gapsOn() && pedAllSet()) work.reached.gaps = true;
       if (firstOpenSlot) {
         work.step = firstOpenSlot;
       } else if (openPair) {
         work.step = PAIR_PFX + openPair.key;
         work.reached.call = true;
         work.reached[work.step] = true;
+      } else if (gapsOpen) {
+        work.step = 'gaps';
+        work.gapAt = pedFirstUnset();
+        work.reached.call = true;
+        work.reached.gaps = true;
       } else if (sizeStep && ranked && !work.size) {
         work.step = 'size';
         work.reached.size = true;
         ok.forEach(function (s2) { work.reached[s2] = true; });
         if (ok.length > 1) work.reached.call = true;
+        if (gapsOn()) work.reached.gaps = true;
         pairSteps().forEach(function (st) { work.reached[st] = true; });
       } else if (ok.length > 1) {
         work.step = 'call';
@@ -3529,6 +4248,11 @@
      callback as one batch — same moment the real flow files, same gate. The
      writes replace this curator's prior answers, so a retry after a partial
      failure is safe by construction.
+     THE GAPS RIDE ON THE RANKING (2026-10-02): each `per` entry carries
+     `gap` — its place's margin 0..3 from the pedestal card, null on the
+     last place and on every place unless every margin is answered (the
+     server's all-or-none rule) — and `pairs` is null: the server derives
+     them. Only on the ?pairs=1 audit is it the other way round.
      THE PAIRS RIDE ALONG (dataset v2, 2026-10-01): file(per, size, pairs,
      note), `pairs` the head-to-head answers in the jd2-rate wire shape
      ({slot_a, slot_b, score, shown_left}, score from slot_a's side — these
@@ -3541,6 +4265,7 @@
   function curateFile() {
     if (!curJob) return;
     var ok = okSlots();
+    var gaps = pedGapsOut();
     var per = ok.map(function (s) {
       var r = work.ratings[s], axes = {};
       Object.keys(r.axes).forEach(function (a) {
@@ -3551,10 +4276,11 @@
         slot: (work.slots[s].cur || {}).slot || null,
         grade: r.grade,
         axes: axes,
-        rank: ok.length > 1 ? (podRankOf(s) || null) : null
+        rank: ok.length > 1 ? (podRankOf(s) || null) : null,
+        gap: gaps && gaps[s] != null ? gaps[s] : null
       };
     });
-    var pairs = pairsOut();
+    var pairs = gapsOn() ? null : pairsOut();
     if (pairs) {
       pairs.forEach(function (p) {
         p.gen_a = work.slots[p.slot_a].gen_id;
@@ -3600,6 +4326,18 @@
     rerun: rerun,
     ownerRun: ownerRun,
     curate: curateOpen,
+    /* the pedestal card's contract hooks (the mockup's JD_pedestal): the
+       answer as jd2-rate's ranking with gaps, and the same shape back in.
+       Null / false when no sitting with a pedestal card is on the card. */
+    pedestal: {
+      answer: function () { return work && gapsOn() ? pedAnswer() : null; },
+      restore: function (ranking) {
+        if (!work || !gapsOn()) return false;
+        var done = pedRestore(ranking);
+        if (done && isOpen && state === 'rate') render();
+        return done;
+      }
+    },
     isOpen: function () { return isOpen; }
   };
 })();
