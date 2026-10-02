@@ -6,8 +6,8 @@
    ========================================================================== */
 
 /* ---- THE CURATOR'S BENCH (?bench) and ADMIN MODE (?admin) — JD_bench ------
-   The re-rating driver for the backlog (owner, 2026-08-28; successor to
-   rating-bench.html). The INSTRUMENT is the turn card itself —
+   The re-rating driver for the backlog (owner, 2026-08-28; successor to the
+   retired first instrument, removed at the v2 cutover). The INSTRUMENT is the turn card itself —
    JD_turn.curate() seats a run's drawings on the same bench, rail, podium
    and head to head a visitor gets, so the hours spent working the backlog
    are spent inside the real flow, and every refinement made along the way

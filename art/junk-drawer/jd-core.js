@@ -1306,13 +1306,12 @@ var JD_admin = (function () {
       if (window.JD_record && location.hash.length > 1) {
         window.JD_record.openFromHash();
       }
-      /* ?rerun=<item_id> — the rating bench opens the drawer here to re-issue
-         a curated item's prompt to the four current models. Handled beside the
+      /* ?rerun=<prompt_id> — re-issue a prompt to the pool as a NEW RUN on the
+         owner path (JD_turn.rerun → ownerRun, bench key required; dataset v2,
+         2026-10-01 — a rerun is never a visitor turn now). Handled beside the
          #<id> deep link and for the same reason: it resolves an id against
-         payload.items, so it can only run once the payload is in. The bench
-         cannot host this itself — the whole point is that a rerun is an
-         ordinary turn, and the turn flow lives here. The param is consumed
-         from the URL so a refresh does not spend a second generation. */
+         payload.items, so it can only run once the payload is in. The param
+         is consumed from the URL so a refresh does not spend a second run. */
       var rr = /[?&]rerun=([^&]+)/.exec(location.search);
       if (rr && window.JD_turn) {
         var wanted = decodeURIComponent(rr[1]);
