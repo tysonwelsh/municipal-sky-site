@@ -52,8 +52,10 @@ SEVEN files, loaded in order by `_scripts.php`. They are IIFEs talking through
   queries, never one per prompt or run): `jd2_runs_for_prompts`,
   `jd2_current_sessions_for_runs`, `jd2_standings_for_sessions`,
   `jd2_display_pick`.
-- `jd2-generate`, `jd2-title`, `jd2-rate`, `jd2-curate` and `jd2-gen-svg`:
-  the writers, the titler and the SVG server.
+- `jd2-generate`, `jd2-intake`, `jd2-rate`, `jd2-curate` and `jd2-gen-svg`:
+  the writers, the intake clerk and the SVG server. `jd2-intake-prompt.php`
+  (include-only) holds the clerk's system prompt, schema, call and mock;
+  `php api/jd2-intake-prompt.php --print` prints exactly what is sent.
 - `jd2-queue` (the bench), `jd2-ledger` (the ledger) and `jd2-analytics`
   (public: the about page's charts plus `pairs` and `margins`, with
   `?origin=owner|visitor`).
@@ -73,9 +75,15 @@ and `api/setup-jd-tables.php` (v1). `api/jd-backfill-curated.php` answers
   owner session.
 - `scripts/jd2-batch-run.php`: the CSV batch runner.
 - `scripts/jd2-export.py`: JSONL, plus standing and pairs CSVs.
+- `scripts/jd2-intake-check.php`: the intake clerk against the owner's 67
+  v1 sizes (confusion matrix, agreement, cost). Mock by default;
+  `JD_INTAKE_LIVE=1` spends real money and is the owner's to run.
 - `sizing-desk.html` is a v1 tool (it exports `entry.json` size edits) and
   is not re-pointed. v2 sizes are prompt columns (`size_class`,
-  `size_scale`) filed by the turn card's size card or through `jd2-curate`.
+  `size_scale`, `size_by`): the intake clerk files one the moment a prompt is
+  filed (`size_by` `model`); the bench's size card and `jd2-curate` file the
+  owner's (`owner`), which the clerk never overwrites; a visitor's turn shows
+  the size card only when intake failed (`visitor`).
 
 **v1, kept:**
 
@@ -156,8 +164,28 @@ card, and never forked into a bench-only copy.
   `api/jd-prices.json` rows, bump `poolVersion`, and bump the consent version
   if the provider list changes (privacy.php §4 must match).
 - **`utility`** names the helper models outside the pool, by use:
-  `utility.title` is the tag titler `jd2-title.php` calls
-  (`jd2_utility_model`; a taxonomy without it makes the titler answer 500).
+  `utility.intake` is the intake clerk `jd2-intake.php` calls
+  (`jd2_utility_model`; a taxonomy without it makes intake answer 500).
+  `utility.title` (the retired titler) is `defunct`, kept for the record.
+- **`facets`** is the intake classification: subject / treatment / probe,
+  each with a `question`, `min`, `max` and `headings` (`id`, `label`, a
+  thesaurus-style `scope` note). Heading ids are permanent once a prompt is
+  filed under them; `jd2_prompts.tags` holds `{facet: [heading id…]}`. A
+  heading is retired with `"defunct": true`, never deleted.
+- **`sizeTiers[]`** carry the intake prompt's tier words (`description`) and
+  `examples` (m's `examplesPhrase` strings them as the prompt reads); both
+  render into the prompt's ENTRY 2.
+- **`intakeVersion`** (`intake-v1`) names the intake prompt's bytes and is
+  stamped on every prompt intake answers. **Bump it whenever those bytes
+  change** — the prose in `api/jd2-intake-prompt.php`, a facet, a heading, a
+  scope note, a tier description or example — as harness ids are bumped:
+  answers under different intake prompts are not pooled. Check with
+  `--print` and diff against the owner's PLAN-INTAKE-PROMPT.md §2.
+- **No example answer is ever put in the intake prompt.** The structured-
+  output schema is the only statement of the answer's shape (each field
+  carries a one-line description in the prompt's own words); an example
+  would be a second copy that drifts and would pull the model toward its
+  own values.
 - Every edit adds a `changelog` line and bumps `version`. Sessions stamp the
   version; `instrument` (`v2.0`) changes only when the rules of a sitting
   change.
@@ -169,6 +197,13 @@ card, and never forked into a bench-only copy.
   The page asks once per device (`JD_admin`). Wrong keys are throttled.
 - Scripts read it from the environment as `JD_BENCH_KEY`. The deploy reads
   `JD_SETUP_KEY` from a repo secret.
+- The intake clerk has its own Anthropic key slot, `jd_intake_key` in
+  `private_config/secrets.php` (owner, 2026-10-02), read through
+  `jd_provider_key_slot('anthropic', 'intake')`; until it is added the clerk
+  falls back to `jd_claude_key` → `claude_key`. `intake_json.key` records
+  which SLOT answered (`jd_intake_key` or `jd_claude_key (fallback)`), by
+  name only. `api/health.php` reports `intake: true|false` — presence, never
+  the value.
 - **Keys never go in a file, a commit, argv you print, or a log.** A dev box
   with no `config/secrets.php` runs keyless.
 
@@ -194,7 +229,7 @@ share `local-dev/jd-dev.sqlite`, and the flow and reads tests empty the
 `jd2_*` tables first:
 
 - `php scripts/test-jd2-derive.php`: the derivation (no database).
-- `php scripts/test-jd2-flow.php`: generate, rate and curate, plus
+- `php scripts/test-jd2-flow.php`: generate, intake, rate and curate, plus
   `data.php`.
 - `php scripts/test-jd2-reads.php`: queue, ledger, analytics, export, batch
   runner.

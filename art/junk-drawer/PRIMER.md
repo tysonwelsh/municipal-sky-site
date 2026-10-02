@@ -53,11 +53,11 @@ two are never pooled. The full reasoning and every owner decision are in
 | the drawer (v2) | `art/junk-drawer/` — `index.php`, `data.php`, seven JS modules (`jd-core/filmstrip/furniture/record/darkroom/turn/bench.js`), `junk-drawer.css` |
 | the about page | `art/junk-drawer/about/` |
 | the legacy exhibit (v1, frozen) | `art/junk-drawer/legacy/` — a snapshot copy; **never edit** |
-| v2 endpoints | `api/jd2-generate/title/rate/curate/gen-svg/queue/ledger/analytics.php`, shared `api/jd2-config.php` |
+| v2 endpoints | `api/jd2-generate/intake/rate/curate/gen-svg/queue/ledger/analytics.php`, shared `api/jd2-config.php`; the intake clerk's prompt, schema and call in `api/jd2-intake-prompt.php` (`--print`) |
 | v2 schema runner + doc | `api/setup-jd2-tables.php`, `db/junk-drawer-v2-schema.md` |
 | v1 endpoints (frozen, reads only) | `api/jd-*.php`; `JD_V1_FROZEN = true` in `api/jd-config.php` |
 | v1 archive | `~/Media/junk-drawer-v1/2026-10-01/` (dump, JSONL, CSVs, items); runbook `db/junk-drawer-v1-archive.md`; git tag `junk-drawer-v1-final` |
-| the rubric | `art/junk-drawer/taxonomy.json` (v27) — grades, axes, size tiers, model registry + pool, comparison and gap scales, the titler model |
+| the rubric | `art/junk-drawer/taxonomy.json` (v28) — grades, axes, size tiers, model registry + pool, comparison and gap scales, the intake facets, `intakeVersion` and the intake model |
 | the curator's ledger | `art/junk-drawer/ledger.html` |
 | the owner's bench | `index.php?bench` (`?bench&prompt=<id>` for one prompt; `?admin` for the card editor) |
 | owner scripts | `scripts/jd2-batch-run.php` (CSV batch generation), `scripts/jd2-export.py` (JSONL + CSVs) |
@@ -111,8 +111,13 @@ six side-by-side cards on a 7-point scale ("the first is much better" …
 spacing between pedestals (0..3 notches, a "negligibly" shim = 0) yields
 the same scores by derivation. Then size, and for the owner a note. Owner
 and visitors use the same card; the bench just seats the backlog in it.
+Since 0.11.0 the **intake clerk** (one Sonnet call, `api/jd2-intake.php`)
+files each prompt's heading, size tier and faceted classification
+(`taxonomy.json` `facets`) the moment it is filed: visitors are no longer
+asked for a size; the bench's size card opens on the clerk's tier, and the
+owner's size (`size_by` `owner`) is never overwritten.
 
-Labels, descriptions, scales, the model pool and the titler model are all
+Labels, descriptions, scales, the model pool and the intake model are all
 **data in `taxonomy.json`**; ids are permanent, labels may be reworded, a
 retired axis gets `"defunct": true`. The four gap labels are placeholders
 until the owner settles the pedestal wording.

@@ -265,9 +265,9 @@ removed when Phase 4 reads `run_id`.
 | endpoint | gate | request → response |
 | --- | --- | --- |
 | `POST api/jd2-generate.php` | origin; visitor needs consent; `profile`/`rerun_of`/`run_id` need the key | `{client_ref, slot, prompt, client, consent:{version}, device_ref?, website}` (owner also `profile` default `bench`, `rerun_of`, `run_id`) → `{ok, svg, gen_id, slot, run_id, prompt_id, submission_id}` |
-| `POST api/jd2-title.php` | origin; the `client_ref` must be a prompt filed in the last hour | `{client_ref, prompt}` → `{ok, title}` (advisory; nothing stored; the model is `taxonomy.json` `utility.title`, read by `jd2_utility_model`, 500 when absent) |
+| `POST api/jd2-intake.php` | origin; visitor: the `client_ref` must be a prompt filed in the last hour (403 `no_turn`); owner: `prompt_id` with the bench key | `{client_ref, prompt}` or `{prompt_id}` → `{ok, prompt_id, title, size_class, size_by, tags, reasons, intake_version[, stored][, fallback]}` (the intake clerk, below; replaced `jd2-title.php` on 2026-10-02) |
 | `POST api/jd2-rate.php` | origin; visitor: only their own turn — a run a visitor requested whose prompt's `client_ref` the request carries (missing or wrong → 403 `not_yours`) — and one filed session per run (409 `already_rated`); owner: the bench key, no `client_ref` | `{run_id, client_ref (visitor), client, device_ref?, title?, size?, suppress?, ratings:[{slot, kind, axis_id?, value, note?}], ranking:[{slot, rank, gap?}]\|null, pairs:[{slot_a, slot_b, score, shown_left?}]\|null, blind?}` → `{ok, build, session_id, run_id, prompt_id, complete, reveal:[{slot, model_id, label, vendor, status, tokens?, cost_usd?, priced?}]}` |
-| `POST api/jd2-curate.php` | origin + bench key | `{prompt_id, visibility?, shown_run_id?, pinned_generation_id?, title?, size_class?, size_scale?}` or `{generation_id, hidden}` → `{ok, build, prompt:{…}, runs:[{…, generations, sessions, display_session_id, complete}]}` |
+| `POST api/jd2-curate.php` | origin + bench key | `{prompt_id, visibility?, shown_run_id?, pinned_generation_id?, title?, size_class?, size_scale?, category?, tags?}` or `{generation_id, hidden}` → `{ok, build, prompt:{…}, runs:[{…, generations, sessions, display_session_id, complete}]}` |
 | `GET api/jd2-gen-svg.php?gen=<id>` | origin; public when the prompt is `live` and the drawing not hidden, else bench key; otherwise 404 | → `image/svg+xml`, `nosniff`; a public answer (no key presented) is `private, max-age=86400` with a strong ETag (md5 of the svg) and 304 on `If-None-Match`; a keyed or non-public one is `no-store` |
 | `GET art/junk-drawer/data.php` | public | → `{generated, count, taxonomy, items, errors:[]}`, ETag (taken over its own reads: the session and generation aggregates, the prompts, runs and drawings it serves); `?item=<prompt_id>` any visibility (`hidden: true` unless live); `?slim=1` via `_slim.php`; a database outage answers an empty manifest |
 
@@ -307,7 +307,46 @@ instrument versions, `blind` (0 only for the owner's `blind:false`),
 `filed_at` = now. Filing also lands `title`, `size_class` and the keep-out
 (`suppress` → `hidden`, `hidden_by` = the rater's role) on the prompt, and a
 complete session on a `draft` prompt makes it `live` (`approved_at` is not
-written).
+written). The size lands only when the card SENT one: `size_class` with
+`size_by` = the rater's role (`owner` from the bench; `visitor` from the turn
+card, never over an owner's size). An absent size never files a NULL over the
+intake clerk's tier — the visitor's card no longer asks when intake sized
+the turn.
+
+**jd2-intake (the intake clerk, 2026-10-02).** One structured-output call per
+filed prompt returns the catalogue heading (the tag's title), the size tier
+and the faceted classification (`api/jd2-intake-prompt.php`: the system
+prompt — PLAN-INTAKE-PROMPT §2's bytes with the size tiers and the facets
+rendered from `taxonomy.json` — and the JSON schema built from the same
+file). The wire: `POST https://api.anthropic.com/v1/messages`, model
+`utility.intake.api_model` (`claude-sonnet-5-5`), `max_tokens` 1024, the
+rendered `system`, one user message (a sentence, then the prompt inside
+`<prompt>…</prompt>`), `output_config: {effort: "low", format: {type:
+"json_schema", schema}}`; no `thinking` key (its default), no temperature.
+The key is the clerk's own slot, `jd_intake_key` in `private_config/secrets.php`,
+falling back to `jd_claude_key` → `claude_key`; `intake_json.key` records the
+slot's NAME (`jd_intake_key` or `jd_claude_key (fallback)`), never the key.
+The answer is checked even though the schema guarantees its shape (heading
+2–5 words with the parenthesis, ≤ 40 characters, a capital first; a tier id;
+each facet's ids its own, no repeats, within `min..max`). One UPDATE, guarded
+by `intake_at IS NULL`, writes: `title` only when the row has none (an
+owner's title stands); `size_class` with `size_by = 'model'` **unless
+`size_by` is `owner` — the owner's size is never overwritten by the model**;
+`tags` only when the row has none; `intake_version`, `intake_model`,
+`intake_json` (the answer verbatim and parsed, `usage`, `stop_reason`, the key
+slot), `intake_cost_usd` (priced at write time from `jd-prices.json`) and
+`intake_at`. A prompt with `intake_at` answers its stored facts (`stored:
+true`) with no call. On any failure of the call (transport, HTTP error, a
+`refusal` or other `stop_reason`, an answer that fails the checks) it answers
+200 `{ok: true, title: <jd_turn_title's 41-character fallback>, size_class:
+null, tags: null, fallback: true}` and writes only `intake_json` (the error),
+leaving `intake_at` NULL so a later call retries: a missing intake never
+holds up a turn. In dev (`JD_DEV_MODE`) a deterministic mock answers
+(`intake_model` `mock`; `JD_INTAKE_MOCK_FAIL` makes it fail). Callers: the
+turn card (during the darkroom wait; a sized visitor turn skips the size
+card), the bench's NEW PROMPT (unless its form gave a title and a size), the
+batch runner (after a new row's first drawing, unless the CSV gave both), and
+`scripts/jd2-intake-check.php` (the same call, no write).
 
 Both writers answer `build`, the tooling fingerprint
 (`jd_build_stamp()['build']`, `api/jd-build.php`, whose file list spans every
@@ -350,7 +389,7 @@ owner session.
 | --- | --- | --- |
 | `GET api/jd2-queue.php` | origin + bench key; `no-store` | the bench's backlog → `{build, taxonomy_version, instrument_version, axes[], grades[], size_tiers[], comparison, gaps, models{id: label}, items[], progress{prompts, complete, drawing, cells_filed, cells_total}}`; `?prompt=<id>` one prompt in any state, `?all=1` every prompt, `?reveal=1` adds `model_id`, `?count=1` only `{today:{generations, limit, remaining, since, resets_in_s}}` |
 | `GET api/jd2-ledger.php` | origin + bench key; `no-store` | one row per prompt, every visibility → `{build, taxonomy_version, instrument_version, axes[], grades{}, models{}, counts{prompts, live, hidden, draft, bench_open}, items[]}`; `?prompt=<id>` one prompt |
-| `GET api/jd2-analytics.php` | origin; public; `Cache-Control: no-cache`, ETag and 304 (as data.php) | v1's `jd-analytics.php` keys and shapes (`totals, models, cost, firsts, grades, axes, spend, turns`) from the jd2 tables, plus `pairs{models, matrix, wins, bt}` and `margins[]`; `?origin=owner\|visitor` |
+| `GET api/jd2-analytics.php` | origin; public; `Cache-Control: no-cache`, ETag and 304 (as data.php) | v1's `jd-analytics.php` keys and shapes (`totals, models, cost, firsts, grades, axes, spend, turns`) from the jd2 tables, plus `pairs{models, matrix, wins, bt}`, `margins[]` and `tags{facet: {heading: {label, n, by_model{model: {mean, n}}}}}`; `?origin=owner\|visitor`; `?tag=<facet>:<heading>` keeps the prompts filed under that heading (population and spend; 400 for a heading the taxonomy lacks) |
 
 **The bench run and "open".** A prompt's bench run is `shown_run_id`, else its
 newest run (`jd2_bench_view`). The prompt is OPEN on the bench when that run
@@ -427,7 +466,21 @@ id is hard-coded; no `jd_*` table is read.
 
 `jd2-generate.php` takes one more owner field for the runner: `v1_item_id`
 (`YYYY-MM-DD-slug`), filed on a NEW prompt only. `jd2-curate.php` takes
-`category` (≤ 32 characters; null clears it).
+`category` (≤ 32 characters; null clears it), `tags` (the whole classification,
+every facet present, validated with `jd2_tags_check`; null clears it) and
+writes `size_by = 'owner'` with any `size_class` it files.
+
+The intake facts ride every owner-side read: `jd2-queue` items and
+`jd2-ledger` rows carry `tags`, `size_by`, `intake_version`, `intake_model`,
+`intake_at`, the clerk's `reasons` and `fallback` (the ledger also
+`intake_cost_usd` and `intake_error`; its payload names `facets` and
+`size_tiers`); `data.php` items carry `tags` and `size_by`. The export
+carries `tags`, `size_by` and `intake_*` on each prompt, and `size_class`,
+`size_by` and one `tags_<facet>` column per facet in the standing CSV. The
+batch runner calls intake after a new row's first drawing (skipped for
+`rerun_of` rows and when the CSV gave a title and a size) and logs what the
+clerk filed; the CSV's own title and size, filed through `jd2-curate.php`
+after the drawings, stand over the clerk's.
 
 ## History
 
@@ -436,7 +489,8 @@ id is hard-coded; no `jd_*` table is read.
   (`instrument` `v2.0`, `comparison`, `gaps`, the pool fields, `poolVersion`);
   the deploy runs the v2 runner after the v1 runner. No rows yet; the readers
   and writers are Phase 3.
-- 2026-10-01 — Phase 3b: the jd2 endpoints (generate, title, rate, curate,
+- 2026-10-01 — Phase 3b: the jd2 endpoints (generate, title — since
+  replaced by intake — rate, curate,
   gen-svg) and `data.php` on the jd2 tables; the "Endpoints" section above.
   No schema change.
 - 2026-10-01 (evening) — `jd2_prompts.category` and `jd2_sessions.note` added as guarded additive migrations (the owner's notes: a categorised ~100-prompt set; a rationale per sitting).
@@ -447,4 +501,8 @@ id is hard-coded; no `jd_*` table is read.
 - 2026-10-02 — intake (PLAN-INTAKE): `jd2_prompts.size_by`, `tags`,
   `intake_version`, `intake_model`, `intake_json`, `intake_cost_usd`,
   `intake_at`, guarded additive migrations (in the CREATE too); the word list
-  `JD2_SIZE_BY` in `jd2-config.php`.
+  `JD2_SIZE_BY` in `jd2-config.php`. `api/jd2-intake.php` replaces
+  `jd2-title.php`; `jd2-rate` files `size_by` and never a NULL size;
+  `jd2-curate` takes `tags`; the readers, the export and the batch runner
+  carry the intake facts; `jd2-analytics` gains `?tag=` and `tags`;
+  `taxonomy.json` v28 (`facets`, `intakeVersion`, `utility.intake`).
