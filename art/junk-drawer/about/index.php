@@ -128,7 +128,7 @@ include __DIR__ . '/../../../includes/header.php';
      which the turn card and the report card file through since the cutover */
   var BLOCK = ['/api/jd-generate.php', '/api/jd-rate.php', '/api/jd-title.php',
                '/api/jd-item-rate.php', '/api/jd-curate.php',
-               '/api/jd2-generate.php', '/api/jd2-rate.php', '/api/jd2-title.php',
+               '/api/jd2-generate.php', '/api/jd2-rate.php', '/api/jd2-intake.php',
                '/api/jd2-curate.php'];
   var TRACK = '/api/page-event-tracking.php';
   var orig = window.fetch ? window.fetch.bind(window) : null;

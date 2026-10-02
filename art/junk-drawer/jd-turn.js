@@ -41,7 +41,7 @@
      copy of this file. */
   var API_GEN = '/api/jd2-generate.php';
   var API_RATE = '/api/jd2-rate.php';
-  var API_TITLE = '/api/jd2-title.php';
+  var API_INTAKE = '/api/jd2-intake.php';
   /* v2's own storage keys: the legacy page deletes jd-turn-v1 on every load
      and keeps the v1 names, so the two drawers never read each other's
      turn, consent record or won items. Nothing is migrated. */
@@ -2666,25 +2666,29 @@
     go('generating');
     startSlowTimer();
     JD_track('turn_submit', null);
-    /* THE TAG'S TITLE (owner, 2026-08-29): a small fast model names the
-       object in 2–5 words, replacing the 52-char prompt truncation that
-       used to run on ("A crystal ball the kind a fortune teller might…").
-       Fired here so it rides the darkroom wait, invisible; every failure
-       path leaves work.title unset and shortTitle() carries on as before.
-       One retry after 4s covers the race where no slot's prompt row has
-       landed yet (jd2-title answers no_turn until one has). */
-    (function fetchTitle(attempt) {
+    /* THE INTAKE (2026-10-02, PLAN-INTAKE): one Sonnet call files the
+       prompt in the catalogue — its heading (the tag's title), its size
+       tier and its classification — on the prompt row, server-side. It
+       replaces the titler (owner, 2026-08-29) on the same footing: fired
+       here so it rides the darkroom wait, invisible, and a missing intake
+       never holds up a turn. A fallback answer (the call failed) carries no
+       title worth filing, so work.title stays unset and shortTitle() carries
+       on as before. One retry after 4s covers the race where no slot's
+       prompt row has landed yet (jd2-intake answers no_turn until one has). */
+    (function fetchIntake(attempt) {
       function retry() {
         setTimeout(function () {
-          if (mine === token) fetchTitle(attempt + 1);
+          if (mine === token) fetchIntake(attempt + 1);
         }, 4000);
       }
-      postJSON(API_TITLE, { client_ref: turn.client_ref, prompt: text }, null)
+      postJSON(API_INTAKE, { client_ref: turn.client_ref, prompt: text }, null)
         .then(function (j) {
           if (mine !== token || !work) return;
-          if (j && j.ok && j.title) {
-            work.title = j.title;
-            if (turn) { turn.title = j.title; persist(); }
+          if (j && j.ok) {
+            if (j.title && !j.fallback) {
+              work.title = j.title;
+              if (turn) { turn.title = j.title; persist(); }
+            }
           } else if (attempt < 2) {
             retry();
           }
@@ -2949,7 +2953,7 @@
       pairs: work.pairs || {},
       svg: s.svg,
       prompt: work.prompt,
-      /* the model-written tag title (jd2-title.php); records without one
+      /* the model-written tag title (jd2-intake.php); records without one
          fall back to shortTitle(prompt) wherever they're read */
       title: work.title || null,
       model_id: rv.model_id || '',

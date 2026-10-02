@@ -251,8 +251,9 @@ check('a retried slot re-answers its stored drawing (idempotent)', $st === 200 &
                  'consent' => ['version' => JD_CONSENT_VERSION], 'website' => '']);
 check('a slot the deal does not hold is refused against the deal', $st === 400
       && str_contains($j['error']['message'] ?? '', 'a, b, c, d'), json_encode($j));
-[$st, $j] = req('POST', '/api/jd2-title.php', ['client_ref' => $ref1, 'prompt' => 'a brass key with a paper tag']);
-check('jd2-title answers for the turn (mock titler)', $st === 200 && ($j['title'] ?? '') === 'a brass key', json_encode($j));
+[$st, $j] = req('POST', '/api/jd2-intake.php', ['client_ref' => $ref1, 'prompt' => 'a brass key with a paper tag']);
+check('jd2-intake answers for the turn (mock clerk): the inverted heading', $st === 200 && ($j['title'] ?? '') === 'Key, brass'
+      && empty($j['fallback']), json_encode($j));
 check('nothing is public yet: data.php is empty', (manifest()[1]['count'] ?? -1) === 0);
 
 // ============================================================================
@@ -277,7 +278,7 @@ check('a visitor POST with a wrong client_ref → 403 not_yours', $st === 403 &&
       $st . ' ' . json_encode($j));
 check('…and neither filed a sitting nor touched the prompt (title, visibility)',
       (int) one($db, 'SELECT COUNT(*) FROM jd2_sessions WHERE run_id = ?', [$run1]) === 0
-      && one($db, 'SELECT title FROM jd2_prompts WHERE id = ?', [$prompt1]) === null
+      && one($db, 'SELECT title FROM jd2_prompts WHERE id = ?', [$prompt1]) === 'Key, brass'
       && one($db, 'SELECT visibility FROM jd2_prompts WHERE id = ?', [$prompt1]) === 'draft');
 [$st, $j] = rate([
     'submission_id' => $run1,   // the v1 alias the unchanged card sends

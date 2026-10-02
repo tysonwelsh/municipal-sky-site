@@ -282,7 +282,7 @@ function jd2_required_cells(array $taxonomy): array
 //      — and the same rules over many runs at once        (jd2_current_sessions_for_runs,
 //        jd2_standings_for_sessions, jd2_display_pick)
 //
-// The endpoints are api/jd2-generate.php, jd2-title.php, jd2-rate.php,
+// The endpoints are api/jd2-generate.php, jd2-intake.php, jd2-rate.php,
 // jd2-curate.php, jd2-gen-svg.php and art/junk-drawer/data.php; their
 // request and response shapes are in db/junk-drawer-v2-schema.md, "Endpoints".
 
@@ -358,7 +358,7 @@ function jd2_pool(array $taxonomy): array
 
 /**
  * A helper model the drawer calls OUTSIDE the eval pool, by use (taxonomy.json
- * `utility.<use>`, e.g. `utility.title`, the tag titler): its wire
+ * `utility.<use>`, e.g. `utility.intake`, the intake clerk): its wire
  * `api_model` and its `provider`. Model names live in the taxonomy, never in
  * PHP; a 500 envelope with a sentence when the entry is absent or incomplete.
  *
