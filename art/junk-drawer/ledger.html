@@ -7,42 +7,38 @@
 <title>The Ledger — Junk Drawer curator's overview</title>
 <!-- ==========================================================================
   THE LEDGER — the curator's overview of the whole collection (owner ask,
-  2026-09-10: "a table where I can get an overview of objects … which ones
-  can be included, click on the prompt to pull up more info").
+  2026-09-10), on dataset v2 (PLAN-V2 §5): one row per PROMPT, every
+  visibility, newest first.
 
-  One plain table, one row per item — every curated entry on disk and every
-  visitor turn in the database, newest first, rows on the same prompt kept
-  together — with, for each: whether it is in the drawer right now and WHY
-  NOT if it isn't, which response the drawer shows, how far each response's
-  rating has got, and whether the bench would offer it (and why not). A row
-  opens into its detail: the prompt verbatim, every response with its
-  drawing, its grade and axis answers (whose word: the bench's, the entry's
-  seed, the visitor's), its rank, its notes; and the acts — HIDE / SHOW,
-  open the report card in admin mode, open the item on the bench.
+  Each row states whether the prompt is in the drawer and WHY NOT if it
+  isn't (shown / hidden / draft / incomplete), which drawing the drawer shows
+  and by which rule, and the bench's view (done / open / off, with what the
+  owner's sitting still needs). A row opens into the prompt verbatim and its
+  RUNS, newest first — each with its profile, harness and pool version, its
+  drawings as thumbnails (click to enlarge), the history of every sitting
+  filed on it (role, filed, complete, current — nothing is folded away), the
+  standing the drawer reads (grade and every live axis per drawing, each a
+  select; the place; the pair scores as a small grid) — and the acts:
+  HIDE / SHOW, SHOW THIS RUN, PIN, HIDE DRAWING, RE-RATE on the bench.
 
-  THE EDITOR IN THE TABLE (owner ask, 2026-09-29: "edit the ratings for each
-  model right there"). In the opened row the grade and every live axis are a
-  column each, and every cell is a small select holding the value on file
-  (the bench's word, else the seed's, else the entry file's — the same
-  precedence the drawer reads). Change any cell and that response's SAVE
-  lights; it files ONLY the cells you changed through api/jd-item-rate.php,
-  the same endpoint and contract the admin card uses (a curated response by
-  entry id + rid, a turn's by submission + generation), under the bench
-  identity — so a value you did not touch keeps its provenance. SAVE ALL
-  files every edited response on the item in one batch. Edits survive a
-  re-sort or a filter change until saved or reloaded. Ranks and sizes stay
-  the bench's business. A drawing enlarges when clicked (Esc or a click puts
-  it back). The toolbar's second line filters by rating: "at least one
-  response by MODEL graded X with axis A = V" — every part set must hold
-  on ONE response — combined with the standing filters and the search.
+  SAVE. Sessions are append-only (PLAN-V2 §3): nothing here edits a filed
+  sitting. A run's SAVE files a NEW owner session through api/jd2-rate.php
+  carrying the run's whole current standing (the session the drawer reads,
+  else the latest one on file, owner first) with the cells you changed:
+  every grade and axis, the ranking with its gaps, and the pairs (direct
+  pairs as they were asked; derived pairs are re-derived from the carried
+  ranking). The ledger edits GRADES AND AXES ONLY — places and pair scores
+  are the bench's (RE-RATE). It is filed unblind (the ledger names models).
+  When the standing on file is a visitor's, the new owner sitting carries
+  the visitor's ranking and pairs as the owner's; the status line says so
+  before you press SAVE.
 
-  Reads api/jd-ledger.php, which applies data.php's and the bench's own rules
-  server-side, so this page states them and never re-derives them. Hide /
-  show goes through api/jd-curate.php, the same switch the admin card and
-  the bench use. The key is the bench key, remembered per device in the same
-  localStorage slot the drawer's JD_admin uses (jd-admin-key), so signing in
-  on either signs in on both. Not linked from anywhere public; noindex; the
-  admin strip carries the one link.
+  Reads api/jd2-ledger.php (bench key; the server applies the drawer's and
+  the bench's rules, so this page states them and never re-derives them);
+  every act goes through api/jd2-curate.php; drawings come from
+  api/jd2-gen-svg.php with the key. The key is the bench key, remembered per
+  device in the same localStorage slot the drawer's admin mode uses
+  (jd-admin-key). Not linked from anywhere public; noindex.
 ========================================================================== -->
 <style>
   :root {
@@ -63,19 +59,17 @@
   .sub a { color: inherit; }
   .gate { max-width: 420px; margin: 40px auto; background: var(--card); border: 1px solid var(--line); padding: 16px; }
   .gate input { width: 100%; font: inherit; padding: 6px 8px; margin: 8px 0; border: 1px solid var(--line); background: #fff; }
-  .gate button, .acts button, .acts a, .chip, .row-acts button, .row-acts a, .savebtn {
+  .gate button, .chip, .row-acts button, .row-acts a, .savebtn, .mini {
     font: inherit; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;
     background: none; color: var(--ink); border: 1px solid var(--line); border-radius: 2px; padding: 3px 9px;
     text-decoration: none; display: inline-block; white-space: nowrap;
   }
-  .gate button:hover, .chip:hover, .row-acts button:hover, .row-acts a:hover, .savebtn:not(:disabled):hover { border-color: var(--ink); }
+  .mini { font-size: 9px; padding: 1px 5px; margin: 2px 2px 0 0; }
+  .gate button:hover, .chip:hover, .row-acts button:hover, .row-acts a:hover, .mini:not(:disabled):hover, .savebtn:not(:disabled):hover { border-color: var(--ink); }
+  .mini:disabled { color: var(--faint); border-color: var(--faint); cursor: default; }
   .chip.is-on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
   .toolbar { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin: 0 0 10px; position: sticky; top: 0; background: var(--paper); padding: 6px 0; z-index: 3; border-bottom: 1px solid var(--line); }
   .toolbar input[type=search] { font: inherit; padding: 4px 8px; border: 1px solid var(--line); background: #fff; min-width: 200px; flex: 1 1 200px; }
-  .toolbar .rf { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; flex-basis: 100%; color: var(--dim); font-size: 11px; }
-  .toolbar .rf select { font: inherit; font-size: 11px; padding: 2px 4px; border: 1px solid var(--line); background: #fff; color: var(--ink); max-width: 220px; }
-  .toolbar .rf select.is-on { border-color: var(--ink); background: #fff8e6; }
-  .toolbar .rf .sep { color: var(--faint); }
   .counts { color: var(--dim); font-size: 11px; white-space: nowrap; }
   .counts b { color: var(--ink); }
   .msg { color: var(--red); margin: 8px 0; }
@@ -83,67 +77,62 @@
   table { border-collapse: collapse; width: 100%; min-width: 960px; background: var(--card); }
   th, td { text-align: left; vertical-align: top; padding: 5px 8px; border-bottom: 1px solid var(--line); }
   /* not sticky: the table sits in an overflow-x wrapper, and a sticky
-     header inside a scroll container pins to THAT box — it sat over the
-     first row */
+     header inside a scroll container pins to THAT box */
   th { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); background: var(--paper); cursor: pointer; }
   th.sorted::after { content: " ▾"; }
   th.sorted.asc::after { content: " ▴"; }
   tr.item { cursor: pointer; }
   tr.item:hover td { background: rgba(255, 255, 255, 0.45); }
   tr.item.is-open td { background: rgba(255, 255, 255, 0.6); }
-  tr.group-start td { border-top: 2px solid var(--line); }
   td.title b { display: block; }
   td.title small { color: var(--dim); }
   .kind { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; padding: 1px 5px; border: 1px solid var(--line); border-radius: 2px; color: var(--dim); }
-  .kind.turn { color: var(--blue); border-color: var(--blue); }
+  .kind.visitor { color: var(--blue); border-color: var(--blue); }
   .st { font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; }
-  .st.shown { color: var(--green); } .st.hidden { color: var(--red); } .st.absent { color: var(--dim); }
-  .st.done { color: var(--green); } .st.open { color: var(--gold); } .st.blocked { color: var(--red); } .st.off { color: var(--dim); }
+  .st.shown, .st.live { color: var(--green); } .st.hidden { color: var(--red); } .st.draft, .st.incomplete { color: var(--dim); }
+  .st.done { color: var(--green); } .st.open { color: var(--gold); } .st.off { color: var(--dim); }
   .why { color: var(--dim); font-size: 11px; }
-  .why li { margin: 0; }
-  .devbtn { font: inherit; font-size: 10px; color: var(--blue); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline dotted; }
   ul.why { margin: 2px 0 0; padding-left: 14px; }
-  .resp { display: flex; flex-wrap: wrap; gap: 3px 6px; }
-  .resp span { font-size: 10px; border: 1px solid var(--line); border-radius: 2px; padding: 0 4px; white-space: nowrap; background: rgba(255,255,255,0.4); }
-  .resp span.ok { border-color: var(--green); }
-  .resp span.part { border-color: var(--gold); }
-  .resp span.none { color: var(--dim); }
-  .resp span.retired { text-decoration: line-through; color: var(--faint); }
-  .resp span.shows { box-shadow: 0 0 0 1px var(--ink); font-weight: 700; }
   tr.detail td { background: #fff; padding: 12px 14px 16px; border-bottom: 2px solid var(--line); }
   .detail-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
   .prompt { white-space: pre-wrap; font-style: italic; border-left: 3px solid var(--line); padding-left: 10px; margin: 0; }
   .ids { color: var(--dim); font-size: 11px; }
   .row-acts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-  .row-acts .note { color: var(--dim); font-size: 11px; }
+  .note { color: var(--dim); font-size: 11px; }
+  .run { border: 1px solid var(--line); padding: 8px 10px; background: var(--card); }
+  .run.is-drawer { box-shadow: inset 3px 0 0 var(--green); }
+  .run h3 { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 4px; font-weight: 700; }
+  .run h3 small { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--dim); }
   table.rt { min-width: 0; background: none; margin-top: 4px; }
   table.rt th { position: static; background: none; cursor: default; white-space: nowrap; }
-  table.rt th small { display: block; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--faint); }
   table.rt td { font-size: 11px; }
-  table.rt tr.retired td { opacity: 0.55; }
+  table.rt tr.off td { opacity: 0.55; }
   table.rt tr.is-dirty td { background: rgba(201, 168, 76, 0.12); }
   .thumb { width: 84px; height: 84px; border: 1px solid var(--line); background:
     repeating-linear-gradient(0deg, rgba(74,98,138,.14) 0 1px, transparent 1px 12px),
     repeating-linear-gradient(90deg, rgba(74,98,138,.14) 0 1px, transparent 1px 12px), #f8f3e2;
     display: flex; align-items: center; justify-content: center; overflow: hidden; }
-  .thumb img, .thumb svg { max-width: 100%; max-height: 100%; display: block; }
-  .thumb.none { color: var(--faint); font-size: 10px; }
+  .thumb svg { max-width: 100%; max-height: 100%; display: block; }
+  .thumb.none { color: var(--faint); font-size: 10px; text-align: center; }
   .thumb.loaded { cursor: zoom-in; }
   .thumb.loaded:hover { border-color: var(--ink); }
   .who { color: var(--dim); font-size: 10px; }
-  .notes { color: var(--dim); font-size: 10px; max-width: 34em; white-space: pre-wrap; }
   .hint { color: var(--dim); font-size: 11px; margin: 10px 0 0; }
-  /* the editor's cells */
+  .sessions { margin: 6px 0 0; padding: 0; list-style: none; font-size: 10px; color: var(--dim); }
+  .sessions li b { color: var(--ink); }
+  .sessions li.is-display b::after { content: " · the drawer reads this one"; color: var(--green); font-weight: 400; }
+  .two { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: flex-start; margin-top: 6px; }
+  table.pm { min-width: 0; width: auto; background: none; border-collapse: collapse; }
+  table.pm th, table.pm td { border: 1px solid var(--line); padding: 2px 6px; text-align: center; font-size: 10px; cursor: default; }
+  table.pm td.pos { color: var(--green); font-weight: 700; } table.pm td.neg { color: var(--red); } table.pm td.self { color: var(--faint); }
   td.ed { white-space: nowrap; }
   select.ed { font: inherit; font-size: 11px; padding: 2px 3px; border: 1px solid var(--line); background: #fff; color: var(--ink); max-width: 15em; }
   select.ed.is-dirty { border-color: var(--gold); background: #fff8e6; }
   select.ed.is-empty { color: var(--dim); }
-  .src { color: var(--faint); font-size: 9px; display: block; margin-top: 1px; }
   .savebtn:disabled { color: var(--faint); border-color: var(--faint); cursor: default; }
   .savebtn.is-dirty { border-color: var(--ink); color: var(--paper); background: var(--ink); }
-  .savebtn.is-ok { border-color: var(--green); color: var(--green); }
-  .savebtn.is-err { border-color: var(--red); color: var(--red); }
-  /* the enlarged drawing */
+  .status { font-size: 11px; color: var(--dim); margin-top: 6px; }
+  .status.warn { color: var(--red); }
   .lightbox { position: fixed; inset: 0; z-index: 20; background: rgba(58, 42, 18, 0.82); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: zoom-out; padding: 24px; }
   .lightbox .sheet { width: min(88vmin, 900px); height: min(88vmin, 900px); background:
     repeating-linear-gradient(0deg, rgba(74,98,138,.14) 0 1px, transparent 1px 24px),
@@ -156,24 +145,23 @@
 </head>
 <body>
 <h1>The Ledger</h1>
-<p class="sub">Every object the drawer has ever held — the entries on disk and the visitor turns — with its standing in the drawer, its ratings, and the bench's view. <a href="index.php?admin">admin</a> · <a href="index.php?bench">bench</a> · <a href="index.php">the drawer</a> <span id="build"></span></p>
+<p class="sub">Every prompt in dataset v2 — its standing in the drawer, its runs and every sitting filed on them, and the bench's view. <a href="index.php?bench">bench</a> · <a href="index.php?admin">admin</a> · <a href="index.php">the drawer</a> <span id="build"></span></p>
 <div id="app"></div>
 
 <script>
 (function () {
   'use strict';
   var KEY_SLOT = 'jd-admin-key';           /* shared with JD_admin (jd-core.js) */
-  var API = '/api/jd-ledger.php', API_CURATE = '/api/jd-curate.php', API_RATE = '/api/jd-item-rate.php';
+  var API = '/api/jd2-ledger.php', API_CURATE = '/api/jd2-curate.php', API_RATE = '/api/jd2-rate.php';
   var app = document.getElementById('app');
   var D = null;                            /* the ledger payload */
   var filter = 'all', query = '', sortKey = 'created', sortAsc = false;
-  var rf = { model: '', grade: '', axis: '', value: '' };   /* the rating filters: "at least one response by M graded G with A = V" — one response meeting every part set */
-  var openKey = null;
+  var openId = null;
   var svgCache = {};
-  /* unsaved edits, item key + '/' + rid => { grade: <value|undefined>, axes: { axisId: value } };
+  /* unsaved edits: run id => generation id => { grade: v, axes: { axisId: v } };
      kept outside the DOM so a re-sort or a filter change does not lose them */
   var dirty = {};
-  var saving = {};
+  var status = {};                         /* run id => { text, warn } after an act */
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function key() { try { return localStorage.getItem(KEY_SLOT) || ''; } catch (e) { return ''; } }
@@ -191,8 +179,7 @@
     document.getElementById('keygo').addEventListener('click', go);
     input.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
   }
-  /* quiet = re-read after a save: keep the table on screen and the scroll
-     where it was, then repaint from the server's word */
+  /* quiet = re-read after an act: keep the table on screen and the scroll */
   function load(quiet) {
     var y = window.scrollY;
     if (!quiet) app.innerHTML = '<p class="hint">reading the ledger…</p>';
@@ -206,286 +193,307 @@
         return;
       }
       D = res.j;
-      document.getElementById('build').textContent = '· ' + (D.build.version || '') + ' · ' + D.build.build + ' · tax v' + D.taxonomy_version;
+      document.getElementById('build').textContent = '· ' + (D.build.version || '') + ' · ' + D.build.build + ' · tax v' + D.taxonomy_version + ' · instrument ' + D.instrument_version;
       render();
-      if (quiet) { window.scrollTo(0, y); var d = app.querySelector('tr.detail'); if (d) loadThumbs(d); }
+      if (quiet) window.scrollTo(0, y);
     }, function () { if (!quiet) gate('network error'); });
   }
 
-  /* ---------- values: what the drawer reads, in its order ---------- */
-  /* the effective value of a response's cell — the standing (bench, else
-     seed, else visitor: the server folded that), else the entry file's */
-  function effGrade(r) {
-    if (r.standing && r.standing.grade != null) return { v: Number(r.standing.grade), src: 'db' };
-    if (r.entry && r.entry.grade != null) return { v: Number(r.entry.grade), src: 'entry' };
-    return { v: null, src: null };
-  }
-  function effAxis(r, axisId) {
-    if (r.standing && r.standing.axes && r.standing.axes[axisId] != null) return { v: Number(r.standing.axes[axisId]), src: 'db' };
-    if (r.entry && r.entry.axes && r.entry.axes[axisId] != null) return { v: Number(r.entry.axes[axisId]), src: 'entry' };
-    return { v: null, src: null };
-  }
+  /* ---------- small readers ---------- */
   function ranksDesc(map) { return Object.keys(map).map(Number).sort(function (a, b) { return b - a; }); }
   function gradeLabel(v) { return v == null ? '—' : (D.grades[String(Number(v))] || v); }
-  function axisById(id) { for (var i = 0; i < D.axes.length; i++) if (D.axes[i].id === id) return D.axes[i]; return null; }
-  function served(it) { return it.responses.filter(function (r) { return !r.retired; }); }
+  function modelLabel(id) { return (D.models && D.models[id]) || id; }
+  function itemById(id) { for (var i = 0; i < D.items.length; i++) if (D.items[i].prompt_id === id) return D.items[i]; return null; }
+  function runOf(it, rid) { for (var i = 0; i < it.runs.length; i++) if (it.runs[i].run_id === rid) return it.runs[i]; return null; }
+  function counting(run) { return run.generations.filter(function (g) { return g.status === 'ok' && !g.hidden; }); }
+  function drawings(it) {
+    var n = 0, ok = 0;
+    it.runs.forEach(function (r) { n += r.generations.length; ok += counting(r).length; });
+    return { runs: it.runs.length, n: n, ok: ok };
+  }
+  function money(v) { return v == null ? 'unpriced' : '$' + Number(v).toFixed(4); }
 
   /* ---------- the table ---------- */
   var FILTERS = [
-    ['all', 'all'], ['shown', 'in the drawer'], ['hidden', 'hidden'], ['absent', 'not in the drawer'],
-    ['bench', 'bench would offer'], ['blocked', 'bench cannot offer'], ['curated', 'curated'], ['turn', 'turns']
+    ['all', 'all'], ['live', 'live'], ['hidden', 'hidden'], ['draft', 'draft'], ['incomplete', 'incomplete'],
+    ['owner', 'owner'], ['visitor', 'visitor'], ['bench', 'bench open']
   ];
   function passes(it) {
-    if (filter === 'shown' || filter === 'hidden' || filter === 'absent') { if (it.drawer.state !== filter) return false; }
+    if (filter === 'live' || filter === 'hidden' || filter === 'draft') { if (it.visibility !== filter) return false; }
+    else if (filter === 'incomplete') { if (it.drawer.state !== 'incomplete') return false; }
+    else if (filter === 'owner' || filter === 'visitor') { if (it.origin !== filter) return false; }
     else if (filter === 'bench') { if (it.bench.state !== 'open') return false; }
-    else if (filter === 'blocked') { if (it.bench.state !== 'blocked') return false; }
-    else if (filter === 'curated' || filter === 'turn') { if (it.kind !== filter) return false; }
-    /* the rating filters: ONE served response must meet every part that is
-       set — model, grade, axis value — so "Gemini graded Prime with JNSQ =
-       Ain't got it" means that one drawing, not three different ones */
-    if (rf.model !== '' || rf.grade !== '' || (rf.axis !== '' && rf.value !== '')) {
-      var g = rf.grade !== '' ? Number(rf.grade) : null;
-      var a = rf.axis !== '' && rf.value !== '' ? rf.axis : null, v = a ? Number(rf.value) : null;
-      if (!served(it).some(function (r) {
-        if (rf.model !== '' && r.model !== rf.model) return false;
-        if (g !== null && effGrade(r).v !== g) return false;
-        if (a !== null && effAxis(r, a).v !== v) return false;
-        return true;
-      })) return false;
-    }
     if (query) {
       var q = query.toLowerCase();
-      var hay = (it.title + ' ' + it.prompt + ' ' + it.key + ' ' + (it.flags.device || '') + ' ' + it.responses.map(function (r) { return r.model_label + ' ' + r.model; }).join(' ')).toLowerCase();
+      var hay = [it.title, it.prompt, it.prompt_id, it.v1_item_id || '', it.category || '', it.device_ref || ''].concat(
+        it.runs.map(function (r) { return r.run_id + ' ' + r.generations.map(function (g) { return g.generation_id + ' ' + g.model_id + ' ' + modelLabel(g.model_id); }).join(' '); })
+      ).join(' ').toLowerCase();
       if (hay.indexOf(q) < 0) return false;
     }
     return true;
   }
-  function norm(p) { return String(p || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
   function sortVal(it) {
     switch (sortKey) {
       case 'title': return it.title.toLowerCase();
-      case 'kind': return it.kind;
+      case 'origin': return it.origin;
+      case 'visibility': return it.visibility;
+      case 'size': return it.size_class || '';
+      case 'n': return drawings(it).n;
       case 'drawer': return it.drawer.state;
       case 'bench': return it.bench.state;
-      case 'size': return (it.size.filed || it.size.entry || '');
-      case 'n': return it.bench.served;
       default: return it.created;
     }
   }
   function ordered() {
     var list = D.items.filter(passes);
-    /* rows on the same prompt stay together: the group takes the newest
-       member's sort value, members sort inside it by kind then date */
-    var groups = {};
-    list.forEach(function (it) { var g = norm(it.prompt); (groups[g] = groups[g] || []).push(it); });
-    var keys = Object.keys(groups);
-    keys.sort(function (a, b) {
-      var va = groups[a].map(sortVal).sort().slice(-1)[0], vb = groups[b].map(sortVal).sort().slice(-1)[0];
+    list.sort(function (a, b) {
+      var va = sortVal(a), vb = sortVal(b);
       var c = va < vb ? -1 : va > vb ? 1 : 0;
       return sortAsc ? c : -c;
     });
-    var out = [];
-    keys.forEach(function (k) {
-      var g = groups[k].slice().sort(function (a, b) {
-        if (a.kind !== b.kind) return a.kind === 'curated' ? -1 : 1;
-        return a.created < b.created ? 1 : -1;
-      });
-      g.forEach(function (it, i) { it._groupStart = i === 0 && g.length > 1; it._groupN = g.length; out.push(it); });
-    });
-    return out;
-  }
-  function respChip(it, r) {
-    var cls = r.retired ? 'retired' : (r.complete ? 'ok' : (r.standing && (r.standing.axes_n || r.standing.grade != null) ? 'part' : 'none'));
-    if (it.drawer.shows === r.rid) cls += ' shows';
-    var st = r.standing;
-    var txt = r.rid + ' ' + r.model_label + ' · ' + (st && st.grade != null ? gradeLabel(st.grade) : (r.entry && r.entry.grade != null ? gradeLabel(r.entry.grade) + '*' : '—')) +
-      ' · ' + (st ? st.axes_n : 0) + '/' + D.axes.length + (r.rank ? ' · #' + r.rank : '');
-    return '<span class="' + cls + '" title="' + esc(r.rid + ' · ' + r.model_label + (r.retired ? ' · retired' : '') + (st ? '' : ' · no database row')) + '">' + esc(txt) + '</span>';
-  }
-  /* every model that has a response anywhere in the ledger, by label */
-  function modelsSeen() {
-    var seen = {};
-    D.items.forEach(function (it) { it.responses.forEach(function (r) { if (r.model) seen[r.model] = r.model_label || r.model; }); });
-    return Object.keys(seen).sort(function (a, b) { return seen[a].localeCompare(seen[b]); }).map(function (id) { return { id: id, label: seen[id] }; });
-  }
-  function ratingFilterHTML() {
-    var h = '<div class="rf"><span>at least one response</span>';
-    h += '<span>by</span><select id="rf-model" class="' + (rf.model !== '' ? 'is-on' : '') + '"><option value="">any model</option>';
-    modelsSeen().forEach(function (m) { h += '<option value="' + esc(m.id) + '"' + (rf.model === m.id ? ' selected' : '') + '>' + esc(m.label) + '</option>'; });
-    h += '</select><span class="sep">·</span><span>graded</span><select id="rf-grade" class="' + (rf.grade !== '' ? 'is-on' : '') + '"><option value="">any grade</option>';
-    ranksDesc(D.grades).forEach(function (v) { h += '<option value="' + v + '"' + (rf.grade === String(v) ? ' selected' : '') + '>' + esc(D.grades[String(v)]) + '</option>'; });
-    h += '</select><span class="sep">·</span><span>with</span><select id="rf-axis" class="' + (rf.axis !== '' ? 'is-on' : '') + '"><option value="">any axis</option>';
-    D.axes.forEach(function (a) { h += '<option value="' + esc(a.id) + '"' + (rf.axis === a.id ? ' selected' : '') + '>' + esc(a.label) + '</option>'; });
-    h += '</select><span>=</span><select id="rf-value" class="' + (rf.value !== '' ? 'is-on' : '') + '"' + (rf.axis === '' ? ' disabled' : '') + '><option value="">any value</option>';
-    var ax = axisById(rf.axis);
-    if (ax) ranksDesc(ax.values).forEach(function (v) { h += '<option value="' + v + '"' + (rf.value === String(v) ? ' selected' : '') + '>' + esc(ax.values[String(v)]) + ' (' + v + ')</option>'; });
-    h += '</select>';
-    if (rf.model !== '' || rf.grade !== '' || rf.axis !== '') h += '<button type="button" class="chip" id="rf-clear">clear rating filters</button>';
-    h += '</div>';
-    return h;
+    return list;
   }
   function render() {
     var c = D.counts;
     var h = '<div class="toolbar">';
     FILTERS.forEach(function (f) { h += '<button type="button" class="chip' + (filter === f[0] ? ' is-on' : '') + '" data-filter="' + f[0] + '">' + f[1] + '</button>'; });
-    h += '<input type="search" id="q" placeholder="search title, prompt, id, model" value="' + esc(query) + '">';
-    h += '<span class="counts"><b>' + c.curated + '</b> curated · <b>' + c.turns + '</b> turns · <b>' + c.shown + '</b> in the drawer · <b>' + c.hidden + '</b> hidden · <b>' + c.absent + '</b> not in it · <b>' + c.bench_open + '</b> the bench would offer</span>';
+    h += '<input type="search" id="q" placeholder="search title, prompt, category, id, model" value="' + esc(query) + '">';
+    h += '<span class="counts"><b>' + c.prompts + '</b> prompts · <b>' + c.live + '</b> live · <b>' + c.hidden + '</b> hidden · <b>' + c.draft + '</b> draft · <b>' + c.bench_open + '</b> open on the bench</span>';
     h += '<button type="button" class="chip" id="reload">reload</button><button type="button" class="chip" id="signout">sign out</button>';
-    h += ratingFilterHTML();
     h += '</div>';
-    var list = ordered();
     var pending = Object.keys(dirty).length;
-    if (pending) h += '<p class="msg">' + pending + ' unsaved edit' + (pending === 1 ? '' : 's') + ' — open the row and press SAVE, or RELOAD to discard.</p>';
+    if (pending) h += '<p class="msg">' + pending + ' run' + (pending === 1 ? '' : 's') + ' with unsaved edits — open the row and press SAVE, or RELOAD to discard.</p>';
+    var list = ordered();
     h += '<div class="wrap"><table><thead><tr>';
-    [['title', 'item'], ['kind', 'kind'], ['created', 'created'], ['size', 'size'], ['n', 'responses'], ['drawer', 'in the drawer?'], ['bench', 'the bench']].forEach(function (col) {
+    [['title', 'prompt'], ['origin', 'origin'], ['visibility', 'visibility'], ['created', 'created'], ['size', 'size'], ['n', 'runs × drawings'], ['drawer', 'in the drawer?'], ['bench', 'the bench']].forEach(function (col) {
       h += '<th data-sort="' + col[0] + '" class="' + (sortKey === col[0] ? 'sorted' + (sortAsc ? ' asc' : '') : '') + '">' + col[1] + '</th>';
     });
     h += '</tr></thead><tbody>';
-    var rfOn = rf.model !== '' || rf.grade !== '' || (rf.axis !== '' && rf.value !== '');
-    if (!list.length) h += '<tr><td colspan="7" class="hint">nothing matches' + (rfOn ? ' the rating filters' : '') + '</td></tr>';
-    else if (rfOn) h += '<tr><td colspan="7" class="hint">' + list.length + ' item' + (list.length === 1 ? '' : 's') + ' match the rating filters</td></tr>';
+    if (!list.length) h += '<tr><td colspan="8" class="hint">nothing matches</td></tr>';
     list.forEach(function (it) {
-      var open = openKey === it.key;
-      h += '<tr class="item' + (open ? ' is-open' : '') + (it._groupStart ? ' group-start' : '') + '" data-key="' + esc(it.key) + '">';
-      h += '<td class="title"><b>' + esc(it.title) + '</b><small>' + esc(it.key) + (it._groupN > 1 ? ' · ' + it._groupN + ' on this prompt' : '') + '</small></td>';
-      h += '<td><span class="kind ' + it.kind + '">' + it.kind + '</span>' + (it.kind === 'turn' ? '<div class="why">' + esc(it.flags.status) + (it.flags.suppressed ? ' · suppressed' : '') +
-        /* the device code: press it to gather every turn from that browser */
-        (it.flags.device ? '<br><button type="button" class="devbtn" data-q="' + esc(it.flags.device) + '" title="every turn from this device">device ' + esc(it.flags.device.slice(0, 8)) + '</button>' : '') + '</div>' : '') + '</td>';
+      var open = openId === it.prompt_id, dn = drawings(it);
+      h += '<tr class="item' + (open ? ' is-open' : '') + '" data-id="' + esc(it.prompt_id) + '">';
+      h += '<td class="title"><b>' + esc(it.title) + '</b><small>' + (it.category ? '[' + esc(it.category) + '] ' : '') + esc(it.prompt.length > 90 ? it.prompt.slice(0, 89) + '…' : it.prompt) + '</small></td>';
+      h += '<td><span class="kind ' + esc(it.origin) + '">' + esc(it.origin) + '</span></td>';
+      h += '<td><span class="st ' + esc(it.visibility) + '">' + esc(it.visibility) + '</span>' + (it.hidden_by ? '<div class="why">by the ' + esc(it.hidden_by) + '</div>' : '') + '</td>';
       h += '<td>' + esc(String(it.created).slice(0, 10)) + '</td>';
-      h += '<td>' + esc(it.size.filed || it.size.entry || '—') + (it.size.filed && it.size.entry && it.size.filed !== it.size.entry ? '<div class="why">entry ' + esc(it.size.entry) + '</div>' : '') + (it.size.scale && it.size.scale !== 1 ? '<div class="why">× ' + esc(it.size.scale) + '</div>' : '') + '</td>';
-      h += '<td><div class="resp">' + it.responses.map(function (r) { return respChip(it, r); }).join('') + '</div></td>';
-      h += '<td><span class="st ' + it.drawer.state + '">' + (it.drawer.state === 'shown' ? 'in the drawer' : it.drawer.state === 'hidden' ? 'hidden' : 'not in it') + '</span>' +
-        (it.drawer.shows ? '<div class="why">shows ' + esc(it.drawer.shows) + ' — ' + esc(it.drawer.rule) + '</div>' : '') +
+      h += '<td>' + esc(it.size_class || '—') + (it.size_scale != null && it.size_scale !== 1 ? '<div class="why">× ' + esc(it.size_scale) + '</div>' : '') + '</td>';
+      h += '<td>' + dn.runs + ' × ' + (dn.runs ? Math.round(dn.n / dn.runs) : 0) + '<div class="why">' + dn.ok + ' of ' + dn.n + ' drawings count</div></td>';
+      h += '<td><span class="st ' + esc(it.drawer.state) + '">' + esc(it.drawer.state) + '</span>' +
+        (it.drawer.shows ? '<div class="why">shows ' + esc(showsLabel(it)) + ' — ' + esc(it.drawer.rule) + '</div>' : '') +
         (it.drawer.why ? '<div class="why">' + esc(it.drawer.why) + '</div>' : '') + '</td>';
-      h += '<td><span class="st ' + it.bench.state + '">' + ({ done: 'done', open: 'would offer', blocked: 'cannot offer', off: 'skips it' })[it.bench.state] + '</span>' +
+      h += '<td><span class="st ' + esc(it.bench.state) + '">' + esc(it.bench.state) + '</span>' +
         (it.bench.needs.length ? '<ul class="why">' + it.bench.needs.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>' : '') + '</td>';
       h += '</tr>';
-      if (open) h += '<tr class="detail"><td colspan="7">' + detailHTML(it) + '</td></tr>';
+      if (open) h += '<tr class="detail"><td colspan="8">' + detailHTML(it) + '</td></tr>';
     });
     h += '</tbody></table></div>';
-    h += '<p class="hint">A chip per response: rid, model, grade (an asterisk = the entry\'s grade, no database row yet), axes answered / live axes, and #rank. Green = fully rated; gold = partly; struck = retired. The boxed chip is the one the drawer shows. Ratings the bench filed outrank an entry\'s seed, which outranks a visitor\'s. In an open row every grade and axis is a select: change a cell and SAVE files just what you changed, under the bench\'s name. Click a drawing to enlarge it.</p>';
+    h += '<p class="hint">In the drawer: <b>shown</b> = live and a run stands for it; <b>hidden</b> = hidden by the owner or the visitor; <b>draft</b> = not live yet; <b>incomplete</b> = live, but no run has a complete sitting, so the drawer skips it. The bench: <b>open</b> = in the bench\'s backlog (the owner\'s sitting on the newest — or chosen — run is missing or incomplete); <b>done</b> = the owner\'s current sitting is complete; <b>off</b> = hidden, still drawing, or nothing survived. Open a row for its runs, its sittings and the editor; click a drawing to enlarge it.</p>';
     app.innerHTML = h;
-    app.querySelectorAll('[data-filter]').forEach(function (b) { b.addEventListener('click', function () { filter = b.getAttribute('data-filter'); render(); }); });
-    var q = document.getElementById('q');
-    q.addEventListener('input', function () { query = q.value; render(); document.getElementById('q').focus(); var qq = document.getElementById('q'); qq.setSelectionRange(qq.value.length, qq.value.length); });
-    document.getElementById('reload').addEventListener('click', function () { dirty = {}; load(); });
-    document.getElementById('signout').addEventListener('click', function () { setKey(''); gate(''); });
-    document.getElementById('rf-model').addEventListener('change', function (e) { rf.model = e.target.value; render(); });
-    document.getElementById('rf-grade').addEventListener('change', function (e) { rf.grade = e.target.value; render(); });
-    document.getElementById('rf-axis').addEventListener('change', function (e) { rf.axis = e.target.value; rf.value = ''; render(); });
-    document.getElementById('rf-value').addEventListener('change', function (e) { rf.value = e.target.value; render(); });
-    var clr = document.getElementById('rf-clear'); if (clr) clr.addEventListener('click', function () { rf = { model: '', grade: '', axis: '', value: '' }; render(); });
-    app.querySelectorAll('th[data-sort]').forEach(function (th) {
-      th.addEventListener('click', function () {
-        var k = th.getAttribute('data-sort');
-        if (sortKey === k) sortAsc = !sortAsc; else { sortKey = k; sortAsc = k === 'title'; }
-        render();
-      });
-    });
-    app.querySelectorAll('tr.item').forEach(function (tr) {
-      tr.addEventListener('click', function (e) {
-        if (e.target.closest && e.target.closest('a, button')) return;
-        var k = tr.getAttribute('data-key');
-        openKey = openKey === k ? null : k;
-        render();
-        if (openKey) { var d = app.querySelector('tr.detail'); if (d) { loadThumbs(d); } }
-      });
-    });
-    app.querySelectorAll('[data-act]').forEach(function (b) { b.addEventListener('click', function () { act(b); }); });
-    app.querySelectorAll('[data-q]').forEach(function (b) { b.addEventListener('click', function () { query = b.getAttribute('data-q'); filter = 'all'; render(); }); });
-    wireEditor();
+    wire();
+  }
+  function showsLabel(it) {
+    for (var i = 0; i < it.runs.length; i++) {
+      var g = it.runs[i].generations.filter(function (x) { return x.generation_id === it.drawer.shows; })[0];
+      if (g) return 'slot ' + g.slot + ' (' + modelLabel(g.model_id) + ')';
+    }
+    return it.drawer.shows;
   }
 
-  /* ---------- the detail: one column per axis, every cell a select ---------- */
-  function dkey(it, r) { return it.key + '/' + r.rid; }
-  function selectHTML(it, r, what, cur) {
-    /* what: 'grade' or an axis id; cur: { v, src } — the value on file */
-    var d = dirty[dkey(it, r)] || {};
-    var pending = what === 'grade' ? d.grade : (d.axes ? d.axes[what] : undefined);
-    var shown = pending !== undefined ? pending : cur.v;
-    var map = what === 'grade' ? D.grades : axisById(what).values;
-    var canEdit = !!(r.gen_id || it.kind === 'curated');   /* a curated response with no row is filed by rid */
-    var h = '<select class="ed' + (pending !== undefined ? ' is-dirty' : '') + (shown == null ? ' is-empty' : '') + '" data-key="' + esc(it.key) + '" data-rid="' + esc(r.rid) + '" data-what="' + esc(what) + '"' + (canEdit ? '' : ' disabled') + '>';
+  /* ---------- the detail ---------- */
+  function detailHTML(it) {
+    var h = '<div class="detail-grid">';
+    h += '<p class="prompt">' + esc(it.prompt) + '</p>';
+    h += '<div class="ids">prompt ' + esc(it.prompt_id) + ' · ' + esc(it.origin) + ' · created ' + esc(it.created) +
+      (it.category ? ' · category ' + esc(it.category) : '') +
+      (it.v1_item_id ? ' · descends from v1 item ' + esc(it.v1_item_id) : '') +
+      (it.device_ref ? ' · device ' + esc(it.device_ref) : '') +
+      (it.shown_run_id ? ' · shown run chosen: ' + esc(it.shown_run_id) : ' · shown run: the newest complete') +
+      (it.pinned_generation_id ? ' · pinned ' + esc(it.pinned_generation_id) : '') +
+      (it.approved_at ? ' · approved ' + esc(it.approved_at) : '') + '</div>';
+    h += '<div class="row-acts">';
+    if (it.visibility === 'live') h += '<button type="button" data-act="hide" data-id="' + esc(it.prompt_id) + '">hide from the drawer</button>';
+    else h += '<button type="button" data-act="show" data-id="' + esc(it.prompt_id) + '">' + (it.visibility === 'draft' ? 'make it live' : 'show in the drawer') + '</button>';
+    h += '<a href="index.php?bench&amp;prompt=' + encodeURIComponent(it.prompt_id) + '" target="_blank" rel="noopener">re-rate on the bench</a>';
+    if (it.drawer.state === 'shown') h += '<a href="index.php?admin&amp;item=' + encodeURIComponent(it.prompt_id) + '" target="_blank" rel="noopener">report card (admin)</a>';
+    h += '<span class="note" data-note="' + esc(it.prompt_id) + '">' + esc((status[it.prompt_id] || {}).text || '') + '</span></div>';
+    it.runs.forEach(function (run) { h += runHTML(it, run); });
+    h += '</div>';
+    return h;
+  }
+  function runHTML(it, run) {
+    var isDrawer = it.drawer.run_id === run.run_id, chosen = it.shown_run_id === run.run_id;
+    var d = run.display;
+    var h = '<div class="run' + (isDrawer ? ' is-drawer' : '') + '">';
+    h += '<h3>' + esc(run.kind) + ' run <small>' + esc(run.run_id) + ' · requested by the ' + esc(run.requested_by) + ' · ' + esc(run.profile) +
+      ' profile · harness ' + esc(run.harness) + ' · pool ' + esc(run.pool_version) + ' · ' + esc(run.status) + (run.settled ? '' : ' (still drawing)') +
+      ' · ' + esc(String(run.created).slice(0, 16)) + (isDrawer ? ' · <b>the drawer shows this run</b>' : '') + '</small></h3>';
+    h += '<div class="row-acts">';
+    if (chosen) h += '<button type="button" data-act="unshow-run" data-id="' + esc(it.prompt_id) + '">let the drawer choose (newest complete)</button>';
+    else h += '<button type="button" data-act="show-run" data-id="' + esc(it.prompt_id) + '" data-run="' + esc(run.run_id) + '">show this run</button>';
+    h += '</div>';
+
+    /* the drawings and the standing the drawer reads */
+    h += '<table class="rt"><thead><tr><th>drawing</th><th>slot · model</th><th>grade</th>';
+    D.axes.forEach(function (a) { h += '<th title="' + esc(a.id) + '">' + esc(a.label) + '</th>'; });
+    h += '<th>place</th><th>acts</th></tr></thead><tbody>';
+    run.generations.forEach(function (g) {
+      var ok = g.status === 'ok', counts = ok && !g.hidden;
+      var ed = (dirty[run.run_id] || {})[g.generation_id] || {};
+      h += '<tr class="' + (counts ? '' : 'off') + (dirty[run.run_id] && dirty[run.run_id][g.generation_id] ? ' is-dirty' : '') + '">';
+      h += '<td>' + (ok ? '<div class="thumb" data-url="/api/jd2-gen-svg.php?gen=' + encodeURIComponent(g.generation_id) + '" data-cap="' +
+        esc('slot ' + g.slot + ' · ' + modelLabel(g.model_id) + ' · ' + it.title) + '"></div>' :
+        '<div class="thumb none">' + esc(g.status) + (g.reject_reason ? '<br>' + esc(g.reject_reason) : '') + '</div>') + '</td>';
+      h += '<td><b>' + esc(g.slot) + '</b> ' + esc(modelLabel(g.model_id)) + '<div class="who">' + esc(g.api_model) + ' · ' + esc(money(g.cost_usd)) +
+        (g.latency_ms != null ? ' · ' + (g.latency_ms / 1000).toFixed(1) + ' s' : '') + (g.hidden ? ' · <b>hidden from the card</b>' : '') +
+        (it.drawer.shows === g.generation_id ? ' · <b>the drawer shows this one</b>' : '') +
+        (it.pinned_generation_id === g.generation_id ? ' · pinned' : '') + '</div></td>';
+      var gradeOnFile = d && d.grades[g.generation_id] != null ? Number(d.grades[g.generation_id]) : null;
+      h += '<td class="ed">' + selectHTML(run, g, 'grade', gradeOnFile, ed.grade, counts) + '</td>';
+      D.axes.forEach(function (a) {
+        var v = d && d.axes[g.generation_id] && d.axes[g.generation_id][a.id] != null ? Number(d.axes[g.generation_id][a.id]) : null;
+        h += '<td class="ed">' + selectHTML(run, g, a.id, v, ed.axes ? ed.axes[a.id] : undefined, counts) + '</td>';
+      });
+      var place = d && d.ranks[g.generation_id] != null ? d.ranks[g.generation_id] : null;
+      var gap = d && d.gaps[g.generation_id] != null ? d.gaps[g.generation_id] : null;
+      h += '<td>' + (place != null ? '#' + place + (gap != null ? '<div class="who">gap ' + gap + ' to the next</div>' : '') : '—') + '</td>';
+      h += '<td>';
+      if (counts) {
+        h += it.pinned_generation_id === g.generation_id
+          ? '<button type="button" class="mini" data-act="unpin" data-id="' + esc(it.prompt_id) + '">unpin</button>'
+          : '<button type="button" class="mini" data-act="pin" data-id="' + esc(it.prompt_id) + '" data-gen="' + esc(g.generation_id) + '">pin</button>';
+      }
+      if (ok) h += '<button type="button" class="mini" data-act="' + (g.hidden ? 'show-gen' : 'hide-gen') + '" data-id="' + esc(it.prompt_id) + '" data-gen="' + esc(g.generation_id) + '">' + (g.hidden ? 'show drawing' : 'hide drawing') + '</button>';
+      h += '</td></tr>';
+    });
+    h += '</tbody></table>';
+
+    /* the sittings, and the pair grid */
+    h += '<div class="two"><div><b class="who">sittings on this run</b><ul class="sessions">';
+    if (!run.sessions.length) h += '<li>none filed</li>';
+    run.sessions.forEach(function (s) {
+      h += '<li class="' + (d && d.session_id === s.session_id ? 'is-display' : '') + '"><b>' + esc(s.rater_role) + '</b> · ' + esc(s.status) +
+        (s.filed_at ? ' ' + esc(s.filed_at) : '') + ' · ' + (s.complete ? 'complete' : 'incomplete') + (s.current ? ' · current' : ' · superseded') +
+        (s.blind ? ' · blind' : ' · names visible') + ' · tax v' + esc(s.taxonomy_version) + ' · ' + esc(s.instrument_version) + ' · ' + esc(s.client) +
+        (s.note ? '<br><i>' + esc(s.note) + '</i>' : '') + '</li>';
+    });
+    h += '</ul></div>';
+    h += '<div>' + pairGrid(run) + '</div></div>';
+
+    /* save */
+    var plan = savePlan(it, run);
+    var nDirty = Object.keys(dirty[run.run_id] || {}).length;
+    h += '<div class="row-acts" style="margin-top:6px"><button type="button" class="savebtn' + (nDirty ? ' is-dirty' : '') + '" data-save="' + esc(run.run_id) + '" data-id="' + esc(it.prompt_id) + '"' + (nDirty ? '' : ' disabled') + '>save' + (nDirty ? ' ' + nDirty + ' edited drawing' + (nDirty === 1 ? '' : 's') : '') + '</button>' +
+      '<span class="status' + (plan.warn ? ' warn' : '') + '">' + esc((status[run.run_id] || {}).text || plan.note) + '</span></div>';
+    h += '</div>';
+    return h;
+  }
+  function selectHTML(run, g, what, onFile, pending, enabled) {
+    var shown = pending !== undefined ? pending : onFile;
+    var map = what === 'grade' ? D.grades : D.axes.filter(function (a) { return a.id === what; })[0].values;
+    var h = '<select class="ed' + (pending !== undefined ? ' is-dirty' : '') + (shown == null ? ' is-empty' : '') + '" data-run="' + esc(run.run_id) + '" data-gen="' + esc(g.generation_id) + '" data-what="' + esc(what) + '"' + (enabled ? '' : ' disabled') + '>';
     h += '<option value=""' + (shown == null ? ' selected' : '') + '>—</option>';
     ranksDesc(map).forEach(function (v) {
       h += '<option value="' + v + '"' + (shown === v ? ' selected' : '') + '>' + esc(map[String(v)]) + (what === 'grade' ? '' : ' (' + v + ')') + '</option>';
     });
-    h += '</select>';
-    if (cur.v != null) h += '<span class="src">' + (cur.src === 'entry' ? 'entry file*' : whoCell(r, what)) + '</span>';
-    else h += '<span class="src">—</span>';
-    return h;
+    return h + '</select>';
   }
-  /* whose word a database cell is: bench / seed / visitor */
-  function whoCell(r, what) {
-    var st = r.standing; if (!st || !st.by) return 'db';
-    var order = ['bench', 'seed', 'visitor'];
-    for (var i = 0; i < order.length; i++) {
-      var b = st.by[order[i]]; if (!b) continue;
-      if (what === 'grade' ? b.grade != null : b.axes_n > 0) {
-        /* by[c] carries counts only; the pick already prefers bench > seed
-           > visitor, so the first client with anything on file is the word */
-        return order[i];
-      }
-    }
-    return 'db';
-  }
-  function detailHTML(it) {
-    var h = '<div class="detail-grid">';
-    h += '<p class="prompt">' + esc(it.prompt) + '</p>';
-    h += '<div class="ids">' + esc(it.kind === 'curated' ? 'entry ' + it.item_id : 'turn ' + it.submission_id) +
-      (it.submission_id && it.kind === 'curated' ? ' · submission ' + esc(it.submission_id) : '') +
-      (it.flags.primary ? ' · pinned ' + esc(it.flags.primary) : '') +
-      (it.flags.rerun_requested ? ' · rerun requested' + (it.flags.rerun_landed ? ' (landed)' : ' (not landed)') : '') +
-      (it.flags.rerun_of ? ' · rerun of ' + esc(it.flags.rerun_of) : '') +
-      (it.flags.client ? ' · via ' + esc(it.flags.client) : '') +
-      (it.flags.device ? ' · device ' + esc(it.flags.device) : (it.kind === 'turn' ? ' · no device code (before 2026-09-10, or storage refused)' : '')) + '</div>';
-    h += '<div class="row-acts">';
-    var canToggle = it.submission_id || it.kind === 'curated';
-    if (it.drawer.state === 'hidden') h += '<button type="button" data-act="show" data-key="' + esc(it.key) + '">show in the drawer</button>';
-    else if (it.drawer.state === 'shown' && canToggle) h += '<button type="button" data-act="hide" data-key="' + esc(it.key) + '">hide from the drawer</button>';
-    if (it.kind === 'curated' && !it.flags.retired_file) h += '<a href="index.php?admin&item=' + encodeURIComponent(it.drawer_id) + '" target="_blank" rel="noopener">report card (admin)</a>';
-    if (it.kind === 'turn' && it.drawer.state === 'shown' && it.drawer_id) h += '<a href="index.php?admin&item=' + encodeURIComponent(it.drawer_id) + '" target="_blank" rel="noopener">report card (admin)</a>';
-    if (it.bench.state === 'open' || it.bench.state === 'done') h += '<a href="index.php?bench&item=' + encodeURIComponent(it.item_id) + '" target="_blank" rel="noopener">open on the bench</a>';
-    var nDirty = it.responses.filter(function (r) { return !!dirty[dkey(it, r)]; }).length;
-    if (nDirty > 1) h += '<button type="button" class="savebtn is-dirty" data-saveall="' + esc(it.key) + '">save all ' + nDirty + ' edited</button>';
-    h += '<span class="note" data-note></span></div>';
-    h += '<table class="rt"><thead><tr><th>drawing</th><th>response</th><th>grade</th>';
-    D.axes.forEach(function (a) { h += '<th title="' + esc(a.id) + '">' + esc(a.label) + '</th>'; });
-    h += '<th>rank</th><th>save</th></tr></thead><tbody>';
-    it.responses.forEach(function (r) {
-      var dk = dkey(it, r), isDirty = !!dirty[dk];
-      h += '<tr class="' + (r.retired ? 'retired' : '') + (isDirty ? ' is-dirty' : '') + '">';
-      h += '<td>' + (r.url ? '<div class="thumb" data-url="' + esc(r.url) + '" data-cap="' + esc(r.rid + ' · ' + r.model_label + ' · ' + it.title) + '"></div>' : '<div class="thumb none">no drawing' + (r.reject ? '<br>' + esc(r.reject) : '') + '</div>') + '</td>';
-      h += '<td><b>' + esc(r.rid) + '</b> ' + esc(r.model_label) + '<div class="who">' + esc(r.model) + (r.slot ? ' · slot ' + esc(r.slot) : ' · no database row') + (r.date ? ' · ' + esc(r.date) : '') +
-        (r.retired ? (it.kind === 'turn' ? ' · ' + esc(r.status) : ' · retired in the entry') : '') + (it.drawer.shows === r.rid ? ' · <b>the drawer shows this one</b>' : '') + '</div>' +
-        '<div class="who">' + who(r, 'grade') + ' · ' + who(r, 'axes') + '</div>' +
-        ((r.standing && r.standing.note) || (r.entry && r.entry.notes) ? '<div class="notes">' + esc((r.standing && r.standing.note) || '') + (r.entry && r.entry.notes ? (r.standing && r.standing.note ? '\n' : '') + esc(r.entry.notes) : '') + '</div>' : '') + '</td>';
-      h += '<td class="ed">' + selectHTML(it, r, 'grade', effGrade(r)) + '</td>';
-      D.axes.forEach(function (a) {
-        var cur = effAxis(r, a.id);
-        h += '<td class="ed">' + selectHTML(it, r, a.id, cur) + (r.standing && r.standing.notes && r.standing.notes[a.id] ? '<span class="src" title="' + esc(r.standing.notes[a.id]) + '">note</span>' : '') + '</td>';
+  /* the pair scores of the standing, row over column, by slot (positive =
+     the row's drawing preferred) */
+  function pairGrid(run) {
+    var d = run.display, gs = counting(run);
+    if (!d || !d.pairs.length || gs.length < 2) return '<span class="who">no pair scores on file</span>';
+    var score = {};
+    d.pairs.forEach(function (p) { score[p.gen_a + '|' + p.gen_b] = p.score; score[p.gen_b + '|' + p.gen_a] = -p.score; });
+    var h = '<b class="who">pair scores (' + esc(d.pairs[0].source) + ', row over column)</b><table class="pm"><tr><th></th>';
+    gs.forEach(function (g) { h += '<th>' + esc(g.slot) + '</th>'; });
+    h += '</tr>';
+    gs.forEach(function (r) {
+      h += '<tr><th>' + esc(r.slot) + '</th>';
+      gs.forEach(function (c) {
+        if (r === c) { h += '<td class="self">·</td>'; return; }
+        var s = score[r.generation_id + '|' + c.generation_id];
+        h += '<td class="' + (s > 0 ? 'pos' : s < 0 ? 'neg' : '') + '" title="' + esc(r.slot + ' (' + modelLabel(r.model_id) + ') over ' + c.slot + ' (' + modelLabel(c.model_id) + ')') + '">' + (s == null ? '' : (s > 0 ? '+' : '') + s) + '</td>';
       });
-      h += '<td>' + (r.rank ? '#' + r.rank + '<div class="who">' + esc(r.rank_by) + '</div>' : '—') + '</td>';
-      var sv = saving[dk];
-      h += '<td><button type="button" class="savebtn' + (isDirty ? ' is-dirty' : '') + (sv === 'ok' ? ' is-ok' : sv === 'err' ? ' is-err' : '') + '" data-save="' + esc(it.key) + '" data-rid="' + esc(r.rid) + '"' + (isDirty && sv !== 'busy' ? '' : ' disabled') + '>' +
-        (sv === 'busy' ? 'saving…' : sv === 'ok' ? 'saved ✓' : sv === 'err' ? '⚠ retry' : isDirty ? 'save' : 'saved') + '</button></td>';
       h += '</tr>';
     });
-    h += '</tbody></table>';
-    if (it.kind === 'curated') h += '<p class="hint">* = the entry file\'s word, not yet in the database (a re-run of the backfill seeds it; a SAVE here files the bench\'s word over it).</p>';
-    h += '</div>';
-    return h;
+    return h + '</table>';
   }
-  function who(r, what) {
-    var st = r.standing; if (!st) return what === 'grade' ? 'grade: entry only' : 'axes: entry only';
-    var parts = [];
-    ['bench', 'seed', 'visitor'].forEach(function (c) {
-      var b = st.by[c]; if (!b) return;
-      if (what === 'grade' && b.grade != null) parts.push(c + ' ' + gradeLabel(b.grade));
-      if (what === 'axes' && b.axes_n) parts.push(c + ' ' + b.axes_n + '/' + D.axes.length);
+
+  /* ---------- SAVE: a new owner session carrying the standing ---------- */
+  /* What a SAVE would file for this run, and what to say about it before it
+     is pressed. The base is the run's display standing (the session the
+     drawer reads; else the latest on file, owner first). Grades and axes:
+     the base's, with the edits laid over. The ranking: the base's places
+     and gaps, carried only when they place exactly this run's counting
+     drawings 1..n (a drawing hidden since leaves a hole, and a hole is the
+     bench's to fix). The pairs: direct pairs as asked (both drawings still
+     counting); derived pairs are not sent — jd2-rate re-derives them from
+     the carried gaps. */
+  function savePlan(it, run) {
+    var d = run.display, gs = counting(run), edits = dirty[run.run_id] || {};
+    var out = { body: null, note: '', warn: false };
+    var ratings = [];
+    gs.forEach(function (g) {
+      var e = edits[g.generation_id] || {};
+      var gr = e.grade !== undefined ? e.grade : (d && d.grades[g.generation_id] != null ? Number(d.grades[g.generation_id]) : null);
+      if (gr != null) ratings.push({ slot: g.slot, kind: 'grade', value: gr });
+      D.axes.forEach(function (a) {
+        var v = e.axes && e.axes[a.id] !== undefined ? e.axes[a.id]
+          : (d && d.axes[g.generation_id] && d.axes[g.generation_id][a.id] != null ? Number(d.axes[g.generation_id][a.id]) : null);
+        if (v != null) ratings.push({ slot: g.slot, kind: 'axis', axis_id: a.id, value: v });
+      });
     });
-    return (what === 'grade' ? 'grade: ' : 'axes: ') + (parts.length ? parts.join(', ') : 'none filed');
+    var ranking = null, pairs = null, why = [];
+    if (d) {
+      var places = gs.map(function (g) { return d.ranks[g.generation_id]; });
+      var exact = places.every(function (p) { return p != null; }) && places.slice().sort(function (a, b) { return a - b; }).every(function (p, i) { return p === i + 1; });
+      if (exact && gs.length > 1) {
+        var gaps = gs.map(function (g) { return d.gaps[g.generation_id]; });
+        var withGaps = gs.every(function (g, i) { return places[i] === gs.length ? gaps[i] == null : gaps[i] != null; });
+        ranking = gs.map(function (g, i) { var r = { slot: g.slot, rank: places[i] }; if (withGaps && places[i] !== gs.length) r.gap = gaps[i]; return r; });
+      } else if (gs.length > 1) {
+        why.push('the places on file do not cover this run\'s drawings 1..' + gs.length + ', so no ranking is carried');
+      }
+      var ids = {}; gs.forEach(function (g) { ids[g.generation_id] = g.slot; });
+      if (d.pairs.length && d.pairs[0].source === 'direct') {
+        pairs = d.pairs.filter(function (p) { return ids[p.gen_a] && ids[p.gen_b]; }).map(function (p) {
+          var x = { slot_a: ids[p.gen_a], slot_b: ids[p.gen_b], score: p.score };
+          if (p.shown_left && (p.shown_left === ids[p.gen_a] || p.shown_left === ids[p.gen_b])) x.shown_left = p.shown_left;
+          return x;
+        });
+      }
+    }
+    out.body = { run_id: run.run_id, client: 'web', blind: false, ratings: ratings, ranking: ranking, pairs: pairs && pairs.length ? pairs : null };
+    var base = d ? 'the ' + d.rater_role + '\'s sitting ' + d.session_id.slice(-6) + (d.complete ? '' : ' (incomplete)') : 'nothing on file';
+    out.note = 'Sessions are append-only: SAVE files a NEW owner sitting carrying ' + base + ' with your edits — grades and axes only; places and pairs are the bench\'s (re-rate).';
+    if (d && d.rater_role === 'visitor') { out.note += ' The visitor\'s ranking and pairs will be filed as yours.'; out.warn = true; }
+    if (why.length || !d) { out.note += ' This sitting will be incomplete' + (why.length ? ': ' + why.join('; ') : '') + ' — rate it on the bench to complete it.'; out.warn = true; }
+    return out;
   }
+  function save(it, run, btn) {
+    var plan = savePlan(it, run);
+    btn.disabled = true; btn.textContent = 'saving…';
+    fetch(API_RATE, { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify(plan.body) })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; }).then(function (j) { return { ok: r.ok && j.ok, j: j }; }); })
+      .then(function (res) {
+        if (!res.ok) {
+          btn.disabled = false; btn.textContent = '⚠ retry';
+          setStatus(run.run_id, '⚠ not saved (' + ((res.j.error || {}).code || 'failed') + ((res.j.error || {}).message ? ': ' + res.j.error.message : '') + ')', true);
+          return;
+        }
+        delete dirty[run.run_id];
+        status[run.run_id] = { text: 'saved · new owner sitting ' + res.j.session_id.slice(-6) + ' · ' + (res.j.complete ? 'complete' : 'incomplete — finish it on the bench') };
+        load(true);
+      }, function () { btn.disabled = false; btn.textContent = '⚠ retry'; setStatus(run.run_id, '⚠ network', true); });
+  }
+  function setStatus(rid, text, warn) {
+    var el = app.querySelector('[data-save="' + rid + '"]');
+    var s = el && el.parentNode.querySelector('.status');
+    if (s) { s.textContent = text; s.className = 'status' + (warn ? ' warn' : ''); }
+  }
+
+  /* ---------- drawings ---------- */
   function loadThumbs(root) {
     root.querySelectorAll('.thumb[data-url]').forEach(function (el) {
       var url = el.getAttribute('data-url');
@@ -495,9 +503,8 @@
         var s = el.querySelector('svg'); if (s) { s.removeAttribute('width'); s.removeAttribute('height'); s.setAttribute('preserveAspectRatio', 'xMidYMid meet'); s.style.width = '100%'; s.style.height = '100%'; }
       }
       if (svgCache[url]) { place(svgCache[url]); return; }
-      /* a turn's drawing may be off display (unrated) — only the keyed
-         request gets it, so every drawing is fetched with the key and
-         inlined rather than pointed at with an <img> */
+      /* a draft's or a hidden prompt's drawing answers only the keyed
+         request, so every drawing is fetched with the key and inlined */
       fetch(url, { headers: headers() }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
         if (!/<svg/i.test(t)) { el.className = 'thumb none'; el.textContent = 'not available'; return; }
         t = t.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/\son[a-z]+="[^"]*"/gi, '');
@@ -506,8 +513,6 @@
       }, function () { el.className = 'thumb none'; el.textContent = 'not available'; });
     });
   }
-
-  /* ---------- the enlarged drawing ---------- */
   function enlarge(url, cap) {
     var t = svgCache[url]; if (!t) return;
     closeLightbox();
@@ -521,106 +526,83 @@
   function closeLightbox() { var b = document.getElementById('lightbox'); if (b) b.parentNode.removeChild(b); }
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLightbox(); });
 
-  /* ---------- the editor: edits, saves ---------- */
-  function wireEditor() {
+  /* ---------- wiring ---------- */
+  function wire() {
+    app.querySelectorAll('[data-filter]').forEach(function (b) { b.addEventListener('click', function () { filter = b.getAttribute('data-filter'); render(); }); });
+    var q = document.getElementById('q');
+    q.addEventListener('input', function () { query = q.value; render(); var qq = document.getElementById('q'); qq.focus(); qq.setSelectionRange(qq.value.length, qq.value.length); });
+    document.getElementById('reload').addEventListener('click', function () { dirty = {}; status = {}; load(); });
+    document.getElementById('signout').addEventListener('click', function () { setKey(''); gate(''); });
+    app.querySelectorAll('th[data-sort]').forEach(function (th) {
+      th.addEventListener('click', function () {
+        var k = th.getAttribute('data-sort');
+        if (sortKey === k) sortAsc = !sortAsc; else { sortKey = k; sortAsc = k === 'title'; }
+        render();
+      });
+    });
+    app.querySelectorAll('tr.item').forEach(function (tr) {
+      tr.addEventListener('click', function (e) {
+        if (e.target.closest && e.target.closest('a, button')) return;
+        var id = tr.getAttribute('data-id');
+        openId = openId === id ? null : id;
+        render();
+      });
+    });
+    app.querySelectorAll('[data-act]').forEach(function (b) { b.addEventListener('click', function () { act(b); }); });
     app.querySelectorAll('select.ed').forEach(function (sel) {
       sel.addEventListener('change', function () {
-        var k = sel.getAttribute('data-key'), rid = sel.getAttribute('data-rid'), what = sel.getAttribute('data-what');
-        var it = itemByKey(k); if (!it) return;
-        var r = it.responses.filter(function (x) { return x.rid === rid; })[0]; if (!r) return;
-        var dk = dkey(it, r);
+        var rid = sel.getAttribute('data-run'), gid = sel.getAttribute('data-gen'), what = sel.getAttribute('data-what');
+        var it = itemById(openId); if (!it) return;
+        var run = runOf(it, rid); if (!run) return;
+        var d = run.display;
+        var onFile = what === 'grade' ? (d && d.grades[gid] != null ? Number(d.grades[gid]) : null)
+          : (d && d.axes[gid] && d.axes[gid][what] != null ? Number(d.axes[gid][what]) : null);
         var val = sel.value === '' ? null : Number(sel.value);
-        var cur = what === 'grade' ? effGrade(r).v : effAxis(r, what).v;
-        var d = dirty[dk] || { axes: {} };
-        if (val === null || val === cur) {
-          /* back to the value on file (or cleared): that cell is no longer an edit */
-          if (what === 'grade') delete d.grade; else delete d.axes[what];
-        } else {
-          if (what === 'grade') d.grade = val; else d.axes[what] = val;
-        }
-        if (d.grade === undefined && !Object.keys(d.axes).length) delete dirty[dk]; else dirty[dk] = d;
-        delete saving[dk];
+        var byGen = dirty[rid] || {}, e = byGen[gid] || { axes: {} };
+        if (val === onFile || val === null) {
+          /* back to the value on file (or cleared — a carried cell cannot be
+             unfiled from a new sitting): no longer an edit */
+          if (what === 'grade') delete e.grade; else delete e.axes[what];
+        } else if (what === 'grade') e.grade = val; else e.axes[what] = val;
+        if (e.grade === undefined && !Object.keys(e.axes).length) delete byGen[gid]; else byGen[gid] = e;
+        if (Object.keys(byGen).length) dirty[rid] = byGen; else delete dirty[rid];
+        delete status[rid];
         render();
-        var d2 = app.querySelector('tr.detail'); if (d2) loadThumbs(d2);
       });
     });
     app.querySelectorAll('[data-save]').forEach(function (b) {
       b.addEventListener('click', function () {
-        var it = itemByKey(b.getAttribute('data-save')); if (!it) return;
-        var r = it.responses.filter(function (x) { return x.rid === b.getAttribute('data-rid'); })[0]; if (!r) return;
-        save(it, [r]);
-      });
-    });
-    app.querySelectorAll('[data-saveall]').forEach(function (b) {
-      b.addEventListener('click', function () {
-        var it = itemByKey(b.getAttribute('data-saveall')); if (!it) return;
-        save(it, it.responses.filter(function (r) { return !!dirty[dkey(it, r)]; }));
+        var it = itemById(b.getAttribute('data-id')); if (!it) return;
+        var run = runOf(it, b.getAttribute('data-save')); if (run) save(it, run, b);
       });
     });
     app.querySelectorAll('.thumb[data-url]').forEach(function (el) {
       el.addEventListener('click', function () { if (el.classList.contains('loaded')) enlarge(el.getAttribute('data-url'), el.getAttribute('data-cap')); });
     });
-  }
-  function itemByKey(k) { return D.items.filter(function (i) { return i.key === k; })[0]; }
-  /* file the edited cells of the given responses — one request, one
-     transaction on the server. Only what changed is sent: a grade left as
-     it was is omitted (null = leave alone), an axis left as it was is not
-     in `axes` (only the axes sent are replaced). */
-  function save(it, rs) {
-    /* a curated item is addressed by entry id + rid (the server brings its
-       rows level with entry.json first, so a response with no row yet is
-       fine); a turn by submission + generation — the admin card's two shapes */
-    var curated = it.kind === 'curated';
-    var responses = [], keys = [];
-    rs.forEach(function (r) {
-      var d = dirty[dkey(it, r)]; if (!d) return;
-      if (!curated && !r.gen_id) return;
-      var one = { axes: d.axes || {} };
-      if (d.grade !== undefined) one.grade = d.grade;
-      if (curated) one.rid = r.rid; else one.generation_id = r.gen_id;
-      responses.push(one); keys.push(dkey(it, r));
-    });
-    if (!responses.length) return;
-    var body = curated ? { item_id: it.item_id, responses: responses } : { submission_id: it.submission_id, responses: responses };
-    keys.forEach(function (k) { saving[k] = 'busy'; });
-    render();
-    var d0 = app.querySelector('tr.detail'); if (d0) loadThumbs(d0);
-    var note = app.querySelector('[data-note]'); if (note) note.textContent = 'saving ' + responses.length + ' response' + (responses.length === 1 ? '' : 's') + '…';
-    fetch(API_RATE, { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify(body) })
-      .then(function (r) { return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; }).then(function (j) { return { ok: r.ok && j.ok, j: j }; }); })
-      .then(function (res) {
-        if (!res.ok) {
-          keys.forEach(function (k) { saving[k] = 'err'; });
-          render();
-          var d1 = app.querySelector('tr.detail'); if (d1) loadThumbs(d1);
-          var n1 = app.querySelector('[data-note]'); if (n1) n1.textContent = '⚠ not saved (' + (((res.j || {}).error || {}).code || 'failed') + (((res.j || {}).error || {}).message ? ': ' + res.j.error.message : '') + ')';
-          return;
-        }
-        keys.forEach(function (k) { delete dirty[k]; saving[k] = 'ok'; });
-        /* the ledger re-reads: the server's word, standing and chips alike */
-        load(true).then(function () {
-          var n2 = app.querySelector('[data-note]'); if (n2) n2.textContent = 'saved · ' + (res.j.written || 0) + ' row' + (res.j.written === 1 ? '' : 's') + ' written';
-        });
-      }, function () {
-        keys.forEach(function (k) { saving[k] = 'err'; });
-        render();
-        var d3 = app.querySelector('tr.detail'); if (d3) loadThumbs(d3);
-        var n3 = app.querySelector('[data-note]'); if (n3) n3.textContent = '⚠ network';
-      });
+    var d = app.querySelector('tr.detail'); if (d) loadThumbs(d);
   }
 
-  /* ---------- the acts ---------- */
+  /* ---------- the acts: every one a jd2-curate request ---------- */
   function act(btn) {
-    var k = btn.getAttribute('data-key'), what = btn.getAttribute('data-act');
-    var it = itemByKey(k);
-    if (!it) return;
-    var body = it.submission_id ? { submission_id: it.submission_id } : { item_id: it.item_id };
-    body.retire = what === 'hide';
-    btn.disabled = true; btn.textContent = what === 'hide' ? 'hiding…' : 'showing…';
+    var id = btn.getAttribute('data-id'), what = btn.getAttribute('data-act');
+    var gen = btn.getAttribute('data-gen'), run = btn.getAttribute('data-run');
+    var body = {
+      hide: { prompt_id: id, visibility: 'hidden' },
+      show: { prompt_id: id, visibility: 'live' },
+      'show-run': { prompt_id: id, shown_run_id: run },
+      'unshow-run': { prompt_id: id, shown_run_id: null },
+      pin: { prompt_id: id, pinned_generation_id: gen },
+      unpin: { prompt_id: id, pinned_generation_id: null },
+      'hide-gen': { prompt_id: id, generation_id: gen, hidden: true },
+      'show-gen': { prompt_id: id, generation_id: gen, hidden: false }
+    }[what];
+    if (!body) return;
+    btn.disabled = true; btn.textContent = '…';
     fetch(API_CURATE, { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify(body) })
-      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok && j.ok, j: j }; }); })
+      .then(function (r) { return r.json().catch(function () { return { ok: false, error: { code: 'server_error' } }; }).then(function (j) { return { ok: r.ok && j.ok, j: j }; }); })
       .then(function (res) {
         if (!res.ok) { btn.disabled = false; btn.textContent = '⚠ ' + ((res.j.error && res.j.error.code) || 'failed'); return; }
+        status[id] = { text: 'filed: ' + what.replace('-', ' ') };
         load(true);                              /* the ledger re-reads: the server's word */
       }, function () { btn.disabled = false; btn.textContent = '⚠ network'; });
   }

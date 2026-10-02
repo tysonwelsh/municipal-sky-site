@@ -700,3 +700,232 @@ function jd2_db_or_null(): ?PDO
         return null;
     }
 }
+
+// ===========================================================================
+// Phase 3c — what the owner-side readers share (jd2-queue.php, jd2-ledger.php,
+// jd2-analytics.php; PLAN-V2 §5):
+//
+//  11. a prompt's runs and drawings, read once             (jd2_prompt_runs)
+//  12. is a run's drawing finished                         (jd2_run_settled)
+//  13. the run the bench rates, and what it still needs    (jd2_bench_view, jd2_needs)
+//  14. which drawing the drawer shows on a run, and why    (jd2_shows)
+//
+// They sit on top of section 10 and never restate it: "current", "owner over
+// visitor" and "complete" are still jd2_current_session, jd2_display_session
+// and jd2_is_complete, called from here.
+
+// ---------------------------------------------------------------------------
+// 11. A prompt's runs, newest first, each with EVERY generation row (any
+// status, hidden or not; no svg/raw text) under 'gens' and the ids of the
+// ones that count (ok, not hidden) under 'counting'.
+
+/** @return list<array<string,mixed>> */
+function jd2_prompt_runs(PDO $db, string $promptId): array
+{
+    $q = $db->prepare(
+        'SELECT id, prompt_id, kind, requested_by, profile, harness, pool_version, deal, status, created
+           FROM jd2_runs WHERE prompt_id = ? ORDER BY created DESC, id DESC'
+    );
+    $q->execute([$promptId]);
+    $runs = $q->fetchAll(PDO::FETCH_ASSOC);
+    $g = $db->prepare(
+        'SELECT id, run_id, slot, model_id, api_model, provider, status, reject_reason, hidden,
+                latency_ms, usage_json, cost_usd, priced, created
+           FROM jd2_generations WHERE run_id = ? ORDER BY slot'
+    );
+    foreach ($runs as &$run) {
+        $g->execute([$run['id']]);
+        $run['gens'] = $g->fetchAll(PDO::FETCH_ASSOC);
+        $run['counting'] = [];
+        foreach ($run['gens'] as $gen) {
+            if ($gen['status'] === JD2_GEN_OK && (int) $gen['hidden'] === 0) {
+                $run['counting'][] = (string) $gen['id'];
+            }
+        }
+    }
+    unset($run);
+    return $runs;
+}
+
+// ---------------------------------------------------------------------------
+// 12. A run is SETTLED when every slot its deal dealt has a generation row and
+// none of them is still pending. A run still drawing (the batch runner is
+// mid-row, or a slot request never came) is not offered for rating: a sitting
+// filed now would go incomplete the moment the next drawing lands.
+
+/** @param array $run a jd2_prompt_runs() row */
+function jd2_run_settled(array $run): bool
+{
+    $dealt = jd2_deal_decode($run['deal'] ?? null);
+    $bySlot = [];
+    foreach ($run['gens'] as $g) {
+        if ($g['status'] === JD2_GEN_PENDING) {
+            return false;
+        }
+        $bySlot[(string) $g['slot']] = true;
+    }
+    foreach (array_keys($dealt) as $slot) {
+        if (!isset($bySlot[$slot])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// 13. The bench's view of a prompt. The run the owner rates is the one the
+// drawer shows when the owner chose it (shown_run_id), else the NEWEST run —
+// a rerun the owner asked for is the thing waiting to be rated. The prompt is
+// DONE on the bench when the owner's current session on that run is complete
+// (jd2_is_complete over the run's counting drawings); a visitor's sitting
+// never closes the owner's backlog — the campaign is the owner re-rating
+// everything under one instrument (PLAN-V2 §0).
+
+/**
+ * @param array $prompt  the jd2_prompts row (needs shown_run_id)
+ * @param list<array> $runs  jd2_prompt_runs()
+ * @return array{run:?array,settled:bool,owner:?array,standing:?array,complete:bool,needs:list<string>}
+ */
+function jd2_bench_view(PDO $db, array $prompt, array $runs, array $taxonomy): array
+{
+    $run = null;
+    foreach ($runs as $r) {
+        if ($prompt['shown_run_id'] !== null && $r['id'] === $prompt['shown_run_id']) {
+            $run = $r;
+            break;
+        }
+    }
+    $run ??= $runs[0] ?? null;
+    if ($run === null) {
+        return ['run' => null, 'settled' => false, 'owner' => null, 'standing' => null,
+                'complete' => false, 'needs' => ['no run on file']];
+    }
+    $settled = jd2_run_settled($run);
+    $owner = jd2_current_session($db, (string) $run['id'], JD2_ROLE_OWNER);
+    $standing = $owner === null ? null : jd2_session_standing($db, (string) $owner['id']);
+    $complete = $standing !== null && jd2_is_complete($standing, $run['counting'], $taxonomy);
+    $needs = [];
+    if (!$settled) {
+        $dealt = count(jd2_deal_decode($run['deal'] ?? null));
+        $done = 0;
+        foreach ($run['gens'] as $g) {
+            $done += $g['status'] === JD2_GEN_PENDING ? 0 : 1;
+        }
+        $needs[] = "still drawing: $done of $dealt drawings back";
+    }
+    if ($run['counting'] === []) {
+        $needs[] = 'no drawing survived — nothing to rate (rerun it)';
+    } elseif (!$complete) {
+        $needs = array_merge($needs, jd2_needs($standing, $run['gens'], $taxonomy));
+    }
+    return ['run' => $run, 'settled' => $settled, 'owner' => $owner, 'standing' => $standing,
+            'complete' => $complete, 'needs' => $needs];
+}
+
+/**
+ * What a sitting still lacks over a run's counting drawings, in plain words,
+ * drawings named by SLOT (never by model: the bench is blind). The same three
+ * tests as jd2_is_complete — every cell, a strict ranking, every pair — so an
+ * empty list and a complete session go together.
+ *
+ * @param array|null $standing  jd2_session_standing(), or null for no sitting
+ * @param list<array> $gens     the run's generation rows (id, slot, status, hidden)
+ * @return list<string>
+ */
+function jd2_needs(?array $standing, array $gens, array $taxonomy): array
+{
+    $counting = [];
+    foreach ($gens as $g) {
+        if ($g['status'] === JD2_GEN_OK && (int) $g['hidden'] === 0) {
+            $counting[(string) $g['id']] = (string) $g['slot'];
+        }
+    }
+    if ($counting === []) {
+        return [];
+    }
+    if ($standing === null) {
+        return ['no owner sitting yet'];
+    }
+    $axes = jd_live_axes($taxonomy);
+    $out = [];
+    $noGrade = [];
+    $axisGaps = [];
+    foreach ($counting as $gid => $slot) {
+        $j = $standing['judgments'][$gid] ?? null;
+        if ($j === null || $j['grade'] === null) {
+            $noGrade[] = $slot;
+        }
+        $missing = 0;
+        foreach (array_keys($axes) as $axis) {
+            if ($j === null || !array_key_exists((string) $axis, $j['axes'])) {
+                $missing++;
+            }
+        }
+        if ($missing > 0) {
+            $axisGaps[] = $slot . ' (' . $missing . ' of ' . count($axes) . ')';
+        }
+    }
+    if ($noGrade) {
+        $out[] = 'no grade: ' . implode(', ', $noGrade);
+    }
+    if ($axisGaps) {
+        $out[] = 'axes unanswered: ' . implode(', ', $axisGaps);
+    }
+    $n = count($counting);
+    if ($n > 1) {
+        $places = [];
+        foreach (array_keys($counting) as $gid) {
+            $pos = $standing['rankings'][$gid]['rank_pos'] ?? null;
+            if ($pos !== null) {
+                $places[$pos] = true;
+            }
+        }
+        if (count($places) < $n) {
+            $out[] = 'ranked: ' . count($places) . ' of ' . $n;
+        }
+        $scored = [];
+        foreach ($standing['pairs'] as $p) {
+            if (isset($counting[$p['gen_a']], $counting[$p['gen_b']])) {
+                $scored[$p['gen_a'] < $p['gen_b'] ? $p['gen_a'] . '|' . $p['gen_b'] : $p['gen_b'] . '|' . $p['gen_a']] = true;
+            }
+        }
+        $want = $n * ($n - 1) / 2;
+        if (count($scored) < $want) {
+            $out[] = 'pairs scored: ' . count($scored) . ' of ' . $want;
+        }
+    }
+    return $out;
+}
+
+// ---------------------------------------------------------------------------
+// 14. Which drawing the drawer shows on a run — data.php's rule, stated once
+// for the readers that report it: the pinned drawing when it is one of the
+// run's counting drawings, else 1st place in the standing, else (no ranking)
+// the first counting drawing by slot.
+
+/**
+ * @param list<array> $gens  the run's generation rows
+ * @return array{0:?string,1:?string}  [generation id, the rule in words]
+ */
+function jd2_shows(?string $pin, array $gens, ?array $standing): array
+{
+    $counting = [];
+    foreach ($gens as $g) {
+        if ($g['status'] === JD2_GEN_OK && (int) $g['hidden'] === 0) {
+            $counting[(string) $g['id']] = (string) $g['slot'];
+        }
+    }
+    if ($counting === []) {
+        return [null, null];
+    }
+    if ($pin !== null && isset($counting[$pin])) {
+        return [$pin, 'pinned by the owner'];
+    }
+    foreach ($standing['rankings'] ?? [] as $gid => $r) {
+        if ((int) $r['rank_pos'] === 1 && isset($counting[$gid])) {
+            return [(string) $gid, 'first place'];
+        }
+    }
+    asort($counting);
+    return [(string) array_key_first($counting), count($counting) === 1 ? 'the one drawing' : 'no ranking — first by slot'];
+}

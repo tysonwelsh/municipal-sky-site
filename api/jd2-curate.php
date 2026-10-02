@@ -14,7 +14,10 @@
 //     pinned_generation_id?: <gen id> | null,  which drawing the drawer shows;
 //                                        null = the current sitting's 1st place
 //     title?: string | null, size_class?: <sizeTiers id> | null,
-//     size_scale?: number | null }       the fine dial on the tier; null = 1
+//     size_scale?: number | null,        the fine dial on the tier; null = 1
+//     category?: string | null }         the owner's prompt-set category, a
+//                                        free word ≤ 32 chars (the CSV batch
+//                                        runner's column); null clears it
 //
 //   { generation_id, hidden: bool }      drop one drawing from the card (or put
 //                                        it back) without touching its run;
@@ -93,6 +96,18 @@ if (array_key_exists('size_scale', $body)) {
     }
     $sets[] = 'size_scale = ?';
     $vals[] = $ss === null ? null : round((float) $ss, 3);
+}
+if (array_key_exists('category', $body)) {
+    $cat = $body['category'];
+    if ($cat !== null && !is_string($cat)) {
+        jd_fail(400, 'bad_request', 'category must be a string or null.');
+    }
+    $cat = $cat === null ? null : trim($cat);
+    if ($cat !== null && mb_strlen($cat) > 32) {
+        jd_fail(400, 'bad_request', 'category is at most 32 characters.');
+    }
+    $sets[] = 'category = ?';
+    $vals[] = ($cat === null || $cat === '') ? null : $cat;
 }
 $hideGen = null;
 if ($generationId !== null) {
@@ -188,7 +203,7 @@ function jd2_prompt_standing(PDO $db, string $promptId, array $taxonomy): array
 {
     $q = $db->prepare(
         'SELECT id, text, title, origin, created, size_class, size_scale, visibility, hidden_by,
-                hidden_at, shown_run_id, pinned_generation_id, v1_item_id
+                hidden_at, shown_run_id, pinned_generation_id, v1_item_id, category
            FROM jd2_prompts WHERE id = ?'
     );
     $q->execute([$promptId]);

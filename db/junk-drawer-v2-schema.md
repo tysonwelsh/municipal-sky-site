@@ -313,6 +313,88 @@ run, else 1st place. The item keeps v1's turn-item shape (rids `r1…` in place
 order) plus `run_id`, `prompt_id`, `origin`, each response's `gen_id`, and
 `pairs: [{a: rid, b: rid, score, source}]`.
 
+### The owner-side reads (Phase 3c)
+
+| endpoint | gate | request → response |
+| --- | --- | --- |
+| `GET api/jd2-queue.php` | origin + bench key; `no-store` | the bench's backlog → `{build, taxonomy_version, instrument_version, axes[], grades[], size_tiers[], comparison, gaps, models{id: label}, items[], progress{prompts, complete, drawing, cells_filed, cells_total}}`; `?prompt=<id>` one prompt in any state, `?all=1` every prompt, `?reveal=1` adds `model_id`, `?count=1` only `{today:{generations, limit, remaining, since, resets_in_s}}` |
+| `GET api/jd2-ledger.php` | origin + bench key; `no-store` | one row per prompt, every visibility → `{build, taxonomy_version, instrument_version, axes[], grades{}, models{}, counts{prompts, live, hidden, draft, bench_open}, items[]}`; `?prompt=<id>` one prompt |
+| `GET api/jd2-analytics.php` | origin; public; `Cache-Control: no-cache` | v1's `jd-analytics.php` keys and shapes (`totals, models, cost, firsts, grades, axes, spend, turns`) from the jd2 tables, plus `pairs{models, matrix, wins, bt}` and `margins[]`; `?origin=owner\|visitor` |
+
+**The bench run and "open".** A prompt's bench run is `shown_run_id`, else its
+newest run (`jd2_bench_view`). The prompt is OPEN on the bench when that run
+has SETTLED (every dealt slot has a generation and none is pending —
+`jd2_run_settled`), at least one drawing counts, the prompt is not hidden, and
+the owner's current session on it is missing or incomplete; DONE when the
+owner's current session is complete. A visitor's complete sitting never closes
+the owner's backlog. `needs` are plain words over slots (`jd2_needs`: no grade,
+axes unanswered, ranked k of n, pairs scored k of n). The bench is blind: a
+queue response carries `generation_id, slot, svg_url, hidden`, the owner's
+latest sitting as `prefill {grade, axes, rank_pos, gap_after}` and the
+visitor's current one as `visitor {grade, axes, rank_pos}`; the item carries
+`pairs_prefill [{slot_a, slot_b, score, source}]`.
+
+**The ledger's states.** `drawer.state`: `shown` (live, and a run stands —
+`shown_run_id`, else the newest run with a complete display session),
+`hidden`, `draft`, `incomplete` (live, no run stands); `drawer.shows` and
+`drawer.rule` name the drawing by data.php's rule (`jd2_shows`: the pin when it
+is in the run, else 1st place, else first by slot). `bench.state`: `done`,
+`open`, or `off` (hidden, still drawing, nothing survived). Every run lists
+every generation (any status, with its `cost_usd` snapshot and latency), every
+session filed on it (`current` and `complete` per session — history, not folded
+away), and `display`: the run's display session (`jd2_display_session` with its
+owner-first fallback; `complete` says which) as grades, axes, notes, ranks,
+gaps and pairs keyed by generation id. The ledger page's SAVE files a new
+owner session through `jd2-rate.php` carrying that standing with the edited
+grade and axis cells (places and pairs carried as they are: direct pairs sent
+as direct, derived ones re-derived from the carried gaps), `blind: false`.
+
+**Analytics v2.** Population: every run of every LIVE prompt, and on each run
+ONE session — `jd2_display_session` (the owner's current complete session,
+else the visitor's) — so no drawing is ever rated by two raters averaged
+together; only counting drawings (ok, not hidden). Both origins by default,
+`?origin=` keeps one. `firsts` = rank-1 share over the runs with two or more
+counting drawings a model survived in. `cost` averages the `cost_usd`
+snapshots of surviving drawings; `spend` and `totals.cost_usd` sum every priced
+drawing of the origin filter whatever its visibility or status (spend is
+spend); NULL cost is never $0. `pairs.matrix[i][j]` = `[mean score of model i
+over model j, n]` (antisymmetric; diagonal and unmet `[null, 0]`); `wins` from
+each score's sign (0 = a tie); `bt` = Bradley–Terry log-strengths by Hunter's
+MM iteration with ties as half a win each and one virtual tie per pair of
+models that met, normalised to a mean log-strength of 0 (`P(i over j) =
+1/(1+exp(s_j − s_i))`); `margins[]` = per pair of models that met,
+`{model_a, model_b, mean, n, hist{"-3".."3"}}`, signed for `model_a`. No model
+id is hard-coded; no `jd_*` table is read.
+
+**Owner scripts.**
+
+- `scripts/jd2-export.py` (`--sqlite PATH` | `--mysql` with `JD_DB_*`; from
+  the owner's machine `JD_DB_HOST=municipalsky.com`) — JSONL, one line per
+  prompt with its runs, generations (`--include-svg`, `--include-raw`) and
+  every session's judgments, rankings and pairs; `--standing out.csv` one row
+  per generation with its run's display session's cells; `--pairs out.csv` one
+  row per pair of every display session. Its one rule is the display session
+  (owner's current complete, else visitor's current complete).
+- `scripts/jd2-batch-run.php prompts.csv [--base URL] [--dry-run] [--resume]
+  [--rate-url] [--local] [--state PATH]` — the CSV batch runner (CLI only;
+  `JD_BENCH_KEY` from the environment, never printed). Columns `prompt`
+  (required), `title`, `size`, `category`, `v1_item_id`, `rerun_of`. Each row
+  is drawn through `jd2-generate.php` under the `bench` profile, ONE model per
+  request, the pool's slots in sequence (curl waits `JD_BENCH_TIMEOUT` + 30
+  s); title, size and category file through `jd2-curate.php`; `v1_item_id`
+  rides on the first slot of a new prompt (and is filled automatically when
+  the prompt text is exactly a legacy item's). State in
+  `local-dev/jd2-batch-state.json` (per base URL, by prompt text: the minted
+  `client_ref`, ids, each slot's outcome) — written before the first request
+  and after every answer, so `--resume` finishes a stopped row without filing
+  twice. It refuses to start when the plan needs more drawings than today's
+  breaker has left (`jd2-queue.php?count=1`). `--local` runs against its own
+  `php -S` with `JD_DEV_MOCK=1` (the hermetic test path).
+
+`jd2-generate.php` takes one more owner field for the runner: `v1_item_id`
+(`YYYY-MM-DD-slug`), filed on a NEW prompt only. `jd2-curate.php` takes
+`category` (≤ 32 characters; null clears it).
+
 ## History
 
 - 2026-10-01 — the seven `jd2_*` tables (Phase 2 of PLAN-V2), with the
@@ -324,3 +406,7 @@ order) plus `run_id`, `prompt_id`, `origin`, each response's `gen_id`, and
   gen-svg) and `data.php` on the jd2 tables; the "Endpoints" section above.
   No schema change.
 - 2026-10-01 (evening) — `jd2_prompts.category` and `jd2_sessions.note` added as guarded additive migrations (the owner's notes: a categorised ~100-prompt set; a rationale per sitting).
+- 2026-10-01 — Phase 3c: the owner-side reads (`jd2-queue`, `jd2-ledger`,
+  `jd2-analytics` with pairwise and Bradley–Terry), `scripts/jd2-export.py`,
+  `scripts/jd2-batch-run.php`, `ledger.html` on v2; `jd2-generate` takes
+  `v1_item_id`, `jd2-curate` takes `category`. No schema change.

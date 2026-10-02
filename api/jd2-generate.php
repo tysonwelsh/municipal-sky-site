@@ -21,6 +21,9 @@
 //   { rerun_of: <prompt_id> }          a NEW run of an existing prompt; no new
 //                                      prompt row; prompt text is the stored one
 //   { run_id: <run id> }               fill a slot of an existing run
+//   { v1_item_id?: <v1 item id> }      lineage (PLAN-V2 §0): filed on a NEW
+//                                      prompt only (the batch runner's CSV
+//                                      column); ignored on a rerun or a join
 // and no consent (the owner is not sending a stranger's words anywhere).
 //
 // RERUNS AND CONVERGENCE. A prompt's client_ref is UNIQUE, which is what lets
@@ -80,8 +83,13 @@ if (!is_string($honeypot) || $honeypot !== '') {
 $rerunOf = $body['rerun_of'] ?? null;
 $joinRunId = $body['run_id'] ?? null;
 $profileIn = $body['profile'] ?? null;
-if (!$isOwner && ($rerunOf !== null || $joinRunId !== null || $profileIn !== null)) {
-    jd2_fail(403, 'forbidden', 'profile, rerun_of and run_id need the bench key.', ['slot' => $slot]);
+$v1ItemId = $body['v1_item_id'] ?? null;
+if (!$isOwner && ($rerunOf !== null || $joinRunId !== null || $profileIn !== null || $v1ItemId !== null)) {
+    jd2_fail(403, 'forbidden', 'profile, rerun_of, run_id and v1_item_id need the bench key.', ['slot' => $slot]);
+}
+// a v1 item id is its directory name (2026-08-09-mao-badge); jd2_prompts.v1_item_id is VARCHAR(64)
+if ($v1ItemId !== null && (!is_string($v1ItemId) || !preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]{1,53}$/', $v1ItemId))) {
+    jd2_fail(400, 'bad_request', 'v1_item_id must be a v1 item id (YYYY-MM-DD-slug).', ['slot' => $slot]);
 }
 if ($rerunOf !== null && !jd_is_ulid($rerunOf)) {
     jd2_fail(400, 'bad_request', 'rerun_of must be a prompt id.', ['slot' => $slot]);
@@ -170,6 +178,7 @@ try {
                 'visitor_hash' => $isOwner ? null : $rater['hash'],
                 'device_ref' => $isOwner ? null : $deviceRef,
                 'consent_version' => $isOwner ? null : JD_CONSENT_VERSION,
+                'v1_item_id' => $isOwner ? $v1ItemId : null,
             ], $profile, $taxonomy);
             // The loser of the race had its INSERT ignored; both read back
             // the one prompt (and its run) the unique key let through.
@@ -396,13 +405,13 @@ function jd2_file_prompt_and_run(PDO $db, array $p, string $profile, array $taxo
         $insert = $db->prepare(
             jd_insert_ignore($db) . ' jd2_prompts
                 (id, text, origin, created, visibility, visitor_hash, device_ref,
-                 consent_version, consent_at, client_ref)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                 consent_version, consent_at, client_ref, v1_item_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
         $insert->execute([
             $promptId, $p['text'], $p['origin'], $now, JD2_VIS_DRAFT,
             $p['visitor_hash'], $p['device_ref'], $p['consent_version'],
-            $p['consent_version'] === null ? null : $now, $p['client_ref'],
+            $p['consent_version'] === null ? null : $now, $p['client_ref'], $p['v1_item_id'] ?? null,
         ]);
         if ($insert->rowCount() === 1) {
             jd2_insert_run($db, $promptId, 'initial', $p['origin'], $profile, $taxonomy);
