@@ -1188,7 +1188,8 @@ window.KOLOB = window.KOLOB || {};
   //                   the names clash, and every voice reads sunday() for
   //                   the row
   //   section()       the rite now: prelude … postlude, or interlude
-  //   sectionIndex()  its place in the plan;  plan() the plan's sections
+  //   sectionIndex()  its place in the plan;  plan() the plan's sections'
+  //                   types (one array a plan, shared: read, never written)
   //   sectionDur()    its planned length, s (a guest, or a line the choir
   //                   is still singing, may hold it longer)
   //   jointing()      the section's time is up and its joint is sounding
@@ -1282,6 +1283,15 @@ window.KOLOB = window.KOLOB || {};
     for (var i = 0; i <= C.si && i < C.plan.length; i++) if (C.plan[i].type === "hymn" || C.plan[i].type === "doxology") k++;
     return "h:" + C.meetingNum + ":" + Math.max(1, k);
   }
+  // the plan's sections by type, mapped once a plan (the page's poll asks
+  // for them every 300 ms of a meeting, through getConductor): a plan is
+  // replaced whole, never edited but for a section's length, so the array
+  // stands until C.plan does. It is shared: read it, never write it.
+  var planTypes = { of: null, types: null };
+  function planTypesNow() {
+    if (planTypes.of !== C.plan) { planTypes.of = C.plan; planTypes.types = C.plan.map(function (s) { return s.type; }); }
+    return planTypes.types;
+  }
   var Book = Object.freeze({
     meetingNum: function () { return C.meetingNum; },
     activity: function () { return C.meeting ? C.meeting.activity : null; },
@@ -1324,7 +1334,7 @@ window.KOLOB = window.KOLOB || {};
     sectionIndex: function () { return C.si; },
     sectionDur: function () { return C.sectionDur; },
     jointing: function () { return !!C.jointing; },
-    plan: function () { return C.plan.map(function (s) { return s.type; }); },
+    plan: function () { return planTypesNow(); },
     meter: function () { return C.meter; },
     verseLine: function () { return C.verseLine || 0; },
     advanceVerse: function (k) { C.verseLine = (C.verseLine || 0) + k; },

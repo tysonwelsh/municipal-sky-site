@@ -22,7 +22,7 @@ harness's cost sidecars; three drive a **muted** headless Chrome.
 | `repetition.js` | How often does a meeting say the same thing twice, and which shapes turn up in every meeting? | the dump | ~2 s for 20 meetings |
 | `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds read; A/B of 20 seeds at 1200 s, rendered four at a time, ~70 s |
 | `cost.js` | What does the audio graph cost, work by work (a lane, a guest, a press), and did a change move it (A/B)? | the harness's cost sidecars | ~20 s for two builds, four seeds each |
-| `screens.js` | What does the staff look like at 860 and 390 px, and what does a frame cost at 4× CPU throttling? | the page, muted | real time: ~2.5 min per width |
+| `screens.js` | What does the staff look like at 860 and 390 px, what does the console print, and what do a frame, the timers and the PLAY press cost (at 4× CPU throttling)? | the page, muted | real time: ~2.5 min per width |
 | `pageload.js` | What does PHP spend on the page, how soon is it parsed and loaded, and does the load guard still keep PLAY disabled when a room is missing? | the page, muted | ~10 s |
 | `capture.js` | What does a seeded meeting sound like, as a WAV, a spectrogram, loudness (LUFS) and peak? | the page, muted | real time: 4 min for a 4-min window |
 | `render.js` | Renders a dump set to keep, or to read twice. | the harness | ~1 s per seed |
@@ -53,6 +53,7 @@ node _harness.js 1200 22 cost                    # what the audio graph cost, ch
 node tools/cost.js --a git:HEAD --b worktree     # …before and after, work by work (seeds 3, 7, 22, 37)
 node tools/screens.js --seed 1847                # staff at 20/60/120 s, 860 + 390 px, frames at 4×
 node tools/screens.js --seed 22 --freeze         # the same, frame-exact: two runs compare by pixel (AE 0)
+node tools/screens.js --seed 22 --freeze --text --root <git archive of HEAD>   # another build's page, its console's text beside it (diff the text-*.json)
 node tools/pageload.js                           # the page's load: PHP's time, the browser's, and the guard with a room missing
 node tools/capture.js --seed 1847 --to 240       # four minutes, recorded
 ```
@@ -279,7 +280,9 @@ character, `getImageData` blank). The plates are the size the page lays them out
 at (860 px: the staff 687 × 240 CSS px and the wheel 687 × 200 at DPR 2; 390 px:
 316 × 196 and 316 × 150 at DPR 3); `KolobViz.init` before PLAY, as the page's
 load calls it; the console's poll (`setConductor` with the conductor, playing,
-held) every 300 ms; a frame every 1/60 s of the virtual clock. The mock's
+held) every 300 ms (the page's stands still while the meeting is stopped,
+where nothing the drawing reads of it moves; this one runs on); a frame every
+1/60 s of the virtual clock. The mock's
 analyser hears nothing, so the organ facade stands at rest. The report's
 `staff:` line gives the frames, the canvas calls, the canvases and paths made,
 the digest of everything drawn (16 hex) and its digest minute by minute, so two
@@ -804,8 +807,8 @@ difference is the harness or the flags, not the engine).
 ## screens.js
 
 ```sh
-node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--freeze] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
-                      [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
+node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--freeze] [--text] [--fps-secs 20] [--idle-secs 0] [--throttle 4]
+                      [--full] [--ives] [--latin] [--root <dir>] [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 ```
 
 It loads `?seed=N` in muted headless Chrome and presses PLAY. At each time in
@@ -837,6 +840,17 @@ page is made of the same notes in every run. In `--full` only the staff is
 held: the wheel's organ is the live sound's spectrum and the console runs on.
 The page runs free again before the frame timing.
 
+**What the console prints (`--text`, PLAN-REFACTOR §4.3).** Beside the shots,
+`text-<width>.json` holds the console's text: the programme card (the day,
+the mode · meter line, the direction, the card's classes), the board (the
+seed, the hymn, the day's numbers), the buttons' and the scene's classes and
+the minutes' rows — read at each capture as the audio clock passes its time,
+then held by PAUSE, let go again, and a second after STOP. Two builds are
+compared by `diff` (each record's `at`, the audio time it was read at, aside:
+a row written in the moment before the read may land on either side of it).
+`--root <dir>` serves another tree — a commit unpacked with `git archive` —
+so the A side of a comparison is measured by this file's own options.
+
 **Frame time.** After the shots, the CPU is throttled `--throttle`× for
 `--fps-secs` (0 to skip). Every requestAnimationFrame callback is timed, and
 callbacks sharing a frame are summed. The report gives p50/p90/p99/max per
@@ -851,10 +865,17 @@ own cost shows, the tail is where the load shows. The report prints
 `os.loadavg()` beside each width and warns when it was over half the cores;
 re-run on a quiet machine before you read p99, max or long tasks as the page's
 own. The phone's p99 is the number to watch as the staff multiplies the ink.
+In the same window every `setTimeout` and `setInterval` callback is timed by
+its function's name (the console's `poll`, the clock's pump `tick`): **the
+timers** table gives their count and time, the poll's apart; `--idle-secs N`
+times them again for N seconds after STOP (the poll runs only while a meeting
+plays, PLAN-REFACTOR §4.3). **The PLAY press** is the click's own time on
+the main thread — its handlers run at once: the house built, the meeting
+called — and the long tasks begun in the second after it (§4.5).
 
 **The report** (`report.md`, each PNG embedded): the frame-time table (width,
 frames, p50, p90, p99, max, rAF interval, long tasks, section, load avg) with
-its notes on pacing and load; per width, a table of shots (meeting time,
+its notes on pacing and load; the timers; the PLAY press; per width, a table of shots (meeting time,
 section, staff size in CSS px, file `staff-<width>-t<secs>.png`); console
 errors and warnings from each width.
 

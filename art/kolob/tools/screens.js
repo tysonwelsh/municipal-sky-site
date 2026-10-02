@@ -7,8 +7,9 @@
 // the Eye; PLAN-COMPOSITION §2.6 "an engraving smoke test"; §12 "Budget").
 //
 //   node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390]
-//        [--section hymn] [--freeze] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
-//        [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
+//        [--section hymn] [--freeze] [--text] [--fps-secs 20] [--idle-secs 0] [--throttle 4]
+//        [--full] [--ives] [--latin] [--root <dir>] [--port 8113] [--chrome-port 9423]
+//        [--profile <dir>] [--out <dir>]
 //
 // Times are seconds of the meeting (the audio clock, from the moment PLAY was
 // pressed); with --section, from the moment the meeting was jumped there.
@@ -31,6 +32,21 @@
 // again at that width. In the whole page (--full) only the staff is held: the
 // wheel's organ is the live sound's spectrum, and the console and the
 // broadside go on.) The page runs free again before the frame timing.
+//
+// --text writes, beside the shots, what the console prints: the programme
+// card (the day, the mode · meter line, the direction), the board (the seed,
+// the hymn, the day's numbers), the buttons' and the scene's classes and the
+// minutes' rows, as text-<width>.json — at each capture (read as the audio
+// clock passes its time), held by PAUSE, let go again, and after STOP; two
+// builds' files are compared with diff (PLAN-REFACTOR §4.3). The report also
+// gives the PLAY press — the click's own time on the main thread, and the long
+// tasks of the second after it — and, beside the frame times, what the
+// page's timers cost in that window (every setTimeout and setInterval
+// callback, by its function's name: the console's poll, the clock's pump),
+// and with --idle-secs N the same for N seconds after STOP. --root serves
+// another tree (a commit unpacked from `git archive`), so this file measures
+// a build older than its options.
+//
 // Headless Chrome may pace requestAnimationFrame slowly (~1 fps on some
 // machines), so frames are judged by what each one costs, not by how many came.
 // What a frame costs also rises with what else the machine is doing (other
@@ -49,10 +65,13 @@ const HELP = `screens.js — muted headless screenshots of the staff + frame tim
   --widths 860,390       viewport widths (default 860,390; 390 is emulated as a phone, DPR 3)
   --section <type>       jump there first (dev jump: prelude invocation hymn testimony sacrament doxology postlude)
   --freeze               frame-exact captures: the page held and painted at each time, counted from the downbeat (KolobViz.freezeAt)
+  --text                 the console's text at each capture, held, let go and stopped (text-<width>.json)
   --fps-secs 20          seconds of frame timing under throttle (default 20; 0 to skip)
+  --idle-secs 0          seconds after STOP whose timers are timed (default 0: none)
   --throttle 4           CPU throttling rate for the frame timing (default 4)
   --full                 also capture the whole page
   --ives / --latin       arm the Ives switch / show Latin letters
+  --root <dir>           the tree to serve (default this repo): another build's, from git archive
   --port 8113            the local PHP server (started if nothing serves this tree there)
   --chrome-port 9423     Chrome's debugging port (another port brings its own profile)
   --profile <dir>        Chrome profile (default <tmpdir>/kolob-r2-tools-chrome[-<port>])
@@ -72,9 +91,38 @@ const INSTRUMENT = (o) => `(function(){
       try { cb(ts); } finally { if (S.on) S.cb.push([ts, performance.now() - t0]); }
     });
   };
-  window.__long = [];
-  try { new PerformanceObserver(function (l) { l.getEntries().forEach(function (e) { if (S.on) window.__long.push(e.duration); }); }).observe({ entryTypes: ["longtask"] }); } catch (e) {}
+  window.__long = []; window.__longAt = [];
+  try { new PerformanceObserver(function (l) { l.getEntries().forEach(function (e) { window.__longAt.push([e.startTime, e.duration]); if (S.on) window.__long.push(e.duration); }); }).observe({ entryTypes: ["longtask"] }); } catch (e) {}
+  // every timer's callback timed, by its function's name, while T.on
+  var T = window.__timers = { on: false, by: {} };
+  function timed(fn) {
+    var name = fn.name || "(anonymous)";
+    return function () {
+      var t0 = performance.now();
+      try { return fn.apply(this, arguments); }
+      finally { if (T.on) { var e = T.by[name] || (T.by[name] = [0, 0]); e[0]++; e[1] += performance.now() - t0; } }
+    };
+  }
+  ["setTimeout", "setInterval"].forEach(function (k) {
+    var orig = window[k];
+    window[k] = function (fn) { var a = Array.prototype.slice.call(arguments); if (typeof fn === "function") a[0] = timed(fn); return orig.apply(window, a); };
+  });
 })();`;
+
+// what the console prints (--text)
+const TEXT = `(function(){
+  function el(id) { return document.getElementById(id); }
+  function t(id) { var e = el(id); return e ? e.textContent : null; }
+  function h(id) { var e = el(id); return e ? e.innerHTML : null; }
+  var sc = document.querySelector(".kolob-scene"), pa = el("kolob-pause");
+  return { at: KolobAudio.getAudioTime(), day: t("kolob-rh-left"), mm: h("kolob-rh-mm"), direction: t("kolob-direction"), live: el("kolob-running-head").className,
+    seed: t("kolob-seed-current"), hymn: h("kolob-board-hymn"), nums: h("kolob-board-nums"),
+    play: el("kolob-play").className, pause: pa.className + " aria-pressed=" + pa.getAttribute("aria-pressed"), scene: sc ? sc.className : null,
+    minutes: [].map.call(document.querySelectorAll("#kolob-log > div"), function (r) { return r.textContent; }) };
+})()`;
+function timersOf(by) {
+  return Object.keys(by).map((k) => ({ name: k, calls: by[k][0], ms: by[k][1] })).sort((x, y) => y.ms - x.ms);
+}
 
 const VIEW = {
   860: { width: 860, height: 1300, deviceScaleFactor: 2, mobile: false },
@@ -82,15 +130,16 @@ const VIEW = {
 };
 
 (async () => {
-  const a = U.parseArgs(process.argv.slice(2), ["help", "full", "ives", "latin", "freeze"]);
+  const a = U.parseArgs(process.argv.slice(2), ["help", "full", "ives", "latin", "freeze", "text"]);
   if (a.help) { console.log(HELP); return; }
   const seed = +a.seed || 1847;
   const times = U.parseList(a.times, ["20", "60", "120"], Number).sort((x, y) => x - y);
   const widths = U.parseList(a.widths, ["860", "390"], Number);
-  const fpsSecs = a["fps-secs"] != null ? +a["fps-secs"] : 20, throttle = +a.throttle || 4;
+  const fpsSecs = a["fps-secs"] != null ? +a["fps-secs"] : 20, throttle = +a.throttle || 4, idleSecs = +a["idle-secs"] || 0;
   const out = a.out ? U.outDir(a) : U.outDir({}, "screens-" + seed);
 
-  const server = await C.ensureServer({ port: +a.port || C.DEFAULT_HTTP_PORT });
+  const root = a.root ? path.resolve(String(a.root)) : C.REPO;
+  const server = await C.ensureServer({ port: +a.port || C.DEFAULT_HTTP_PORT, root });
   const b = await C.launch({ port: +a["chrome-port"] || C.DEFAULT_CHROME_PORT, profile: a.profile });
   C.cleanupOnExit([b, server.proc]);
   const logs = C.collectConsole(b);
@@ -112,7 +161,7 @@ const VIEW = {
     await b.send("Emulation.setDeviceMetricsOverride", view);
     await C.sleep(800);
     if (freeze) await b.evalJS("window.__jumps = [], KolobAudio.setEventListener(function (ev) { if (ev && ev.type === 'section-start') window.__jumps.push(ev); }), 1");
-    await b.evalJS("document.getElementById('kolob-play').click(), 1");
+    const press = await b.evalJS("(function(){var t0=performance.now();document.getElementById('kolob-play').click();return {at:t0,ms:performance.now()-t0}})()");
     await C.waitFor(b, "KolobAudio.isPlaying() && KolobAudio.getAudioTime() > 0", 10000, 50);
     let t0 = await b.evalJS("KolobAudio.getAudioTime()");
     let jumped = null, origin = 0;              // (frozen: the jump's second of the meeting)
@@ -128,7 +177,7 @@ const VIEW = {
       }
       else { t0 = await b.evalJS("KolobAudio.getAudioTime()"); jumped = a.section; }
     }
-    const shots = [];
+    const shots = [], text = {};
     for (const T of times) {
       const target = t0 + origin + T;
       if (freeze && (a.section || T !== times[0])) await b.evalJS("KolobViz.freezeAt(" + (origin + T) + "), 1");
@@ -137,6 +186,7 @@ const VIEW = {
         if (now >= target) break;
         await C.sleep(Math.min(1000, Math.max(50, (target - now) * 1000 - 50)));
       }
+      if (a.text) text["t" + String(Math.round(T)).padStart(3, "0")] = await b.evalJS(TEXT);
       let held = null;
       if (freeze) {
         held = await C.waitFor(b, "(function(){var f=KolobViz.probe('freeze');return f.frozen&&f.at===" + (origin + T) + "?f:null})()", 15000, 100);
@@ -164,16 +214,24 @@ const VIEW = {
       shots.push({ T, at: st.t - t0 - origin, section: st.section, meeting: st.meeting, file, full, size: Math.round(clip.width) + "×" + Math.round(clip.height) });
       process.stderr.write(w + "px @" + T + "s ");
     }
+    if (a.text) {                              // held, and let go again
+      await b.evalJS("document.getElementById('kolob-pause').click(), 1");
+      await C.sleep(1000);
+      text.paused = await b.evalJS(TEXT);
+      await b.evalJS("document.getElementById('kolob-pause').click(), 1");
+      await C.sleep(1000);
+      text.resumed = await b.evalJS(TEXT);
+    }
     if (freeze) await b.evalJS("KolobViz.freezeAt(null), 1");   // (the page runs free again: the frame timing is a live page's)
     // frame time, CPU throttled
     let fps = null;
     if (fpsSecs > 0) {
-      await b.evalJS("window.__frames.cb.length = 0, window.__long.length = 0, window.__frames.on = true, 1");
+      await b.evalJS("window.__frames.cb.length = 0, window.__long.length = 0, window.__timers.by = {}, window.__frames.on = window.__timers.on = true, 1");
       await b.send("Emulation.setCPUThrottlingRate", { rate: throttle });
       const w0 = Date.now(), a0 = await b.evalJS("KolobAudio.getAudioTime()"), load0 = os.loadavg()[0];
       await C.sleep(fpsSecs * 1000);
       const load1 = os.loadavg()[0];
-      const raw = await b.evalJS("(window.__frames.on = false, JSON.stringify({cb: window.__frames.cb, long: window.__long, a: KolobAudio.getAudioTime(), section: KolobAudio.getConductor().section}))");
+      const raw = await b.evalJS("(window.__frames.on = window.__timers.on = false, JSON.stringify({cb: window.__frames.cb, long: window.__long, timers: window.__timers.by, a: KolobAudio.getAudioTime(), section: KolobAudio.getConductor().section}))");
       await b.send("Emulation.setCPUThrottlingRate", { rate: 1 });
       const r = JSON.parse(raw);
       const frames = new Map();
@@ -185,12 +243,24 @@ const VIEW = {
         frames: ft.length, wall: (Date.now() - w0) / 1000, audio: r.a - a0, section: r.section,
         p50: U.quantile(ft, 0.5), p90: U.quantile(ft, 0.9), p99: U.quantile(ft, 0.99), max: ft.length ? Math.max(...ft) : null,
         interval: U.median(fi), long: r.long.length, longMs: U.sum(r.long),
-        load: Math.max(load0, load1),
+        load: Math.max(load0, load1), timers: timersOf(r.timers),
       };
     }
     await b.evalJS("document.getElementById('kolob-stop') && document.getElementById('kolob-stop').click(), 1");
-    await C.sleep(300);
-    results.push({ w, view, shots, fps, jumped, errors: logs.slice(errs0) });
+    await C.sleep(a.text || idleSecs ? 1000 : 300);
+    if (a.text) {
+      text.stopped = await b.evalJS(TEXT);
+      fs.writeFileSync(path.join(out, "text-" + w + ".json"), JSON.stringify(text, null, 1) + "\n");
+    }
+    let idle = null;
+    if (idleSecs > 0) {
+      await b.evalJS("window.__timers.by = {}, window.__timers.on = true, 1");
+      await C.sleep(idleSecs * 1000);
+      idle = timersOf(JSON.parse(await b.evalJS("(window.__timers.on = false, JSON.stringify(window.__timers.by))")));
+    }
+    // the PLAY press: the click's own time, and the long tasks begun in the second after it
+    press.long = JSON.parse(await b.evalJS("JSON.stringify(window.__longAt)")).filter(([st]) => st >= press.at - 50 && st < press.at + 1000).map(([, d]) => d);
+    results.push({ w, view, shots, fps, idle, press, jumped, errors: logs.slice(errs0) });
     process.stderr.write("\n");
   }
 
@@ -198,9 +268,9 @@ const VIEW = {
   const L = [];
   L.push("# Screens — seed " + seed);
   L.push("");
-  L.push("- " + url.replace(server.base, "") + (a.ives ? " · Ives switch armed" : "") + (a.latin ? " · Latin" : "") + (a.section ? " · jumped to " + a.section : "") + (freeze ? " · frozen: each capture the page held at its second (from the " + (a.section ? "jump's section-start" : "downbeat") + ") and painted there, frame-exact" : "") + " · muted headless Chrome (" + b.args.filter((x) => /mute|headless/.test(x)).join(" ") + ") · " + new Date().toISOString().slice(0, 16).replace("T", " "));
+  L.push("- " + url.replace(server.base, "") + (root !== C.REPO ? " · the tree " + root : "") + (a.ives ? " · Ives switch armed" : "") + (a.latin ? " · Latin" : "") + (a.section ? " · jumped to " + a.section : "") + (freeze ? " · frozen: each capture the page held at its second (from the " + (a.section ? "jump's section-start" : "downbeat") + ") and painted there, frame-exact" : "") + " · muted headless Chrome (" + b.args.filter((x) => /mute|headless/.test(x)).join(" ") + ") · " + new Date().toISOString().slice(0, 16).replace("T", " "));
   let version = "";
-  try { version = fs.readFileSync(path.join(C.REPO, "art/kolob/VERSION"), "utf8").trim().split(" — ")[0]; } catch (e) { /* no VERSION: the report names none */ }
+  try { version = fs.readFileSync(path.join(root, "art/kolob/VERSION"), "utf8").trim().split(" — ")[0]; } catch (e) { /* no VERSION: the report names none */ }
   L.push("- build " + version + " · served by " + (server.reused ? "an existing" : "a fresh") + " php -S on " + server.base);
   L.push("");
   L.push("## Frame time, CPU throttled " + throttle + "×");
@@ -221,6 +291,32 @@ const VIEW = {
     if (busy.length) notes.push("**⚠ The machine was busy** (load average " + busy.map((r) => r.fps.load.toFixed(1)).join(" / ") + " on " + cores + " cores during " + busy.map((r) => r.w + " px").join(", ") + "): other processes took the throttled CPU's time, and p99, max and the long tasks run high under load. Re-run on a quiet machine before reading them as the page's.");
   }
   notes.forEach((t) => { L.push(""); L.push(/^\*\*/.test(t) ? t : "*" + t + "*"); });
+  L.push("");
+  // what the timers cost, beside the frames (and after STOP, with --idle-secs)
+  const timerRow = (r, ts, win) => {
+    const all = U.sum(ts.map((x) => x.ms)), poll = ts.find((x) => x.name === "poll");
+    return [r.w + " px", win, ts.reduce((n, x) => n + x.calls, 0) + " (" + U.fmt(all, 1) + " ms)",
+      poll ? poll.calls + " (" + U.fmt(poll.ms, 1) + " ms, " + U.fmt(poll.ms / poll.calls, 3) + " ms a call)" : "none",
+      ts.slice(0, 4).map((x) => x.name + " " + U.fmt(x.ms, 1)).join(" · ")];
+  };
+  const tr = [];
+  results.forEach((r) => {
+    if (r.fps) tr.push(timerRow(r, r.fps.timers, "playing, " + fpsSecs + " s (throttled " + throttle + "×)"));
+    if (r.idle) tr.push(timerRow(r, r.idle, "stopped, " + idleSecs + " s"));
+  });
+  if (tr.length) {
+    L.push("## The timers");
+    L.push("");
+    L.push("Every setTimeout and setInterval callback the page ran in the window, timed on the main thread by its function's name (`poll` is the console's).");
+    L.push("");
+    L.push(U.table(["width", "window", "callbacks (ms)", "the console's poll", "costliest (ms)"], tr));
+    L.push("");
+  }
+  L.push("## The PLAY press");
+  L.push("");
+  L.push("The click's own time (its handlers, run at once: the house built, the meeting called), and the long tasks (over 50 ms) begun in the second after it.");
+  L.push("");
+  L.push(U.table(["width", "the click", "long tasks"], results.map((r) => [r.w + " px", U.fmt(r.press.ms, 1) + " ms", r.press.long.length ? r.press.long.length + " (" + r.press.long.map((d) => d.toFixed(0)).join(", ") + " ms)" : "0"])));
   L.push("");
   results.forEach((r) => {
     L.push("## " + r.w + " px (" + r.view.width + "×" + r.view.height + ", DPR " + r.view.deviceScaleFactor + (r.view.mobile ? ", phone" : "") + ")");

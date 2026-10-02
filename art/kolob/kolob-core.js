@@ -1564,7 +1564,7 @@ window.KolobAudio = (function () {
         twoBands: M.visitSecond ? M.visitSecond() : false,
         f0: S.F0, season: S.seasonPos,
         sectionIndex: M.sectionIndex(), planLength: plan.length,
-        plan: plan,                                            // the wheel folds hymns onto one seat
+        plan: plan,                                            // the wheel folds hymns onto one seat (one array a plan, kolob-meeting.js plan(): read, never written)
         fifths: S.Harmony.fifthCount(),
       };
     },

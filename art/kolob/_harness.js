@@ -816,7 +816,9 @@ watchClock();                                    // throw=: the clock PLAY makes
 // them out at (860 px: the staff 687 × 240, the wheel 687 × 200, DPR 2; 390
 // px, a phone: 316 × 196 and 316 × 150, DPR 3). init() before PLAY, as the
 // page's load calls it; the console's poll (kolob-ui.js poll(): the
-// conductor, playing, held) every 300 ms; a frame every 1/60 s. The digest
+// conductor, playing, held) every 300 ms (the page's stands still while the
+// meeting is stopped, where nothing the drawing reads of it moves: this one
+// runs on, and hands it the same); a frame every 1/60 s. The digest
 // of everything drawn is told minute by minute and whole. The analyser the
 // facade reads is the mock's, which hears nothing: the organ stands at rest.
 // ----------------------------------------------------------------------------
