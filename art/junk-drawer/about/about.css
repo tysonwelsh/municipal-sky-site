@@ -554,6 +554,42 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   margin: var(--ab-gap-band) 0 0; padding-top: 0;
 }
 
+/* THE DOCKET WEARS RINGS HERE (2026-10-01). From 769px the drawer's turn
+   card dresses each rail node as a pill wearing its word — sized for the
+   bench's 960 measure, where seven pills (A-D, ranking, head to head,
+   size) hold one line. This card stands 740px wide with the "next" button
+   sharing the rail's row, leaving the rail ~610px: the pills (~760px for
+   six) ran past the card's right edge and under the button. Inline, the
+   docket keeps the phone's bare rings instead — seven fit in ~340px — at
+   every desktop width and in every view (bench, ranking, head to head).
+   The drawer's own modal is untouched: everything is scoped to this page's
+   .jd-inline-card. */
+@media (min-width: 769px) {
+  .jd-about .jd-inline-card .jd-turn .jd-rail .jd-rail-step {
+    min-height: 0; padding: 0;
+    background: none; border: 0; border-radius: 0;
+  }
+  .jd-about .jd-inline-card .jd-turn .jd-rail .jd-rail-step.is-done { color: var(--tink-2); }
+  .jd-about .jd-inline-card .jd-turn .jd-rail .jd-rail-word { display: none; }
+  .jd-about .jd-inline-card .jd-turn .jd-rail .jd-rail-ring {
+    display: flex; width: 26px; height: 26px;
+    background: rgba(255, 250, 232, 0.35);
+    border: 1px solid var(--trule); border-radius: 50%;
+  }
+  .jd-about .jd-inline-card .jd-turn .jd-rail .jd-rail-step.is-done .jd-rail-ring {
+    background: var(--graphite); border-color: var(--graphite);
+    color: var(--tpaper-hi);
+  }
+  .jd-about .jd-inline-card .jd-turn .jd-rail .jd-rail-step.is-current .jd-rail-ring {
+    border: 2px solid var(--tred); background: var(--tpaper-hi);
+  }
+}
+/* (a coarse pointer grows the rings toward the touch floor, as the drawer's
+   own docket does — junk-drawer.css, any-pointer: coarse) */
+@media (min-width: 769px) and (any-pointer: coarse) {
+  .jd-about .jd-inline-card .jd-turn .jd-rail .jd-rail-ring { width: 34px; height: 34px; }
+}
+
 /* THE REPORT CARD TAKES THE SAME PORTRAIT (owner, 2026-09-15). In the
    drawer the record is landscape at 960px — the photograph in a 420px
    column, the paperwork beside it. Here it stands the way the instrument

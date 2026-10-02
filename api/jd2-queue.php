@@ -66,14 +66,12 @@ try {
     $sql = 'SELECT id, text, title, origin, created, visibility, size_class, size_scale,
                    shown_run_id, pinned_generation_id, v1_item_id, category
               FROM jd2_prompts';
-    if ($only !== null) {
-        $q = $db->prepare($sql . ' WHERE id = ?');
-        $q->execute([$only]);
-    } else {
-        $q = $db->query($sql . ' ORDER BY created DESC, id DESC');
-    }
+    // every view reads every prompt: `progress` counts the whole campaign
+    // even when ?prompt= asks for one row (the same walk the default view
+    // makes), and the loop below keeps only the asked-for prompt's item
+    $q = $db->query($sql . ' ORDER BY created DESC, id DESC');
     $prompts = $q->fetchAll(PDO::FETCH_ASSOC);
-    if ($only !== null && $prompts === []) {
+    if ($only !== null && !in_array($only, array_column($prompts, 'id'), true)) {
         jd_fail(404, 'not_found', 'That prompt is not on file.');
     }
 
@@ -107,7 +105,7 @@ try {
         }
 
         $open = !$hidden && $rateable && !$view['complete'];
-        if ($only === null && !$all && !$open) {
+        if ($only !== null ? (string) $p['id'] !== $only : (!$all && !$open)) {
             continue;
         }
         $items[] = jd2q_item($db, $p, $runs, $view, $reveal);
