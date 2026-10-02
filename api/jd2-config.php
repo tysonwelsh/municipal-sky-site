@@ -262,3 +262,441 @@ function jd2_required_cells(array $taxonomy): array
 {
     return array_merge(array_map('strval', array_keys(jd_live_axes($taxonomy))), ['grade']);
 }
+
+// ===========================================================================
+// Phase 3 — what the jd2 endpoints share (PLAN-V2 §3, §5, §11):
+//
+//   6. the named status words                            (constants)
+//   7. the model pool and the deal                       (jd2_pool, jd2_deal)
+//   8. the error envelope with the run's ids             (jd2_fail)
+//   9. who is rating: owner or visitor                   (jd2_rater, jd2_require_bench_key)
+//  10. the current session, its standing, completeness   (jd2_current_session, …)
+//
+// The endpoints are api/jd2-generate.php, jd2-title.php, jd2-rate.php,
+// jd2-curate.php, jd2-gen-svg.php and art/junk-drawer/data.php; their
+// request and response shapes are in db/junk-drawer-v2-schema.md, "Endpoints".
+
+require_once __DIR__ . '/visitor-hash.php';
+
+// ---------------------------------------------------------------------------
+// 6. The status words the writers file, by name. Each IS a member of its
+// list above (the list is what the runner's CHECKs and comments are built
+// from); a name here is only so a statement reads `JD2_GEN_OK`, not 'ok'.
+
+const JD2_RUN_PENDING = 'pending';
+const JD2_RUN_GENERATED = 'generated';
+const JD2_RUN_FAILED = 'failed';
+
+const JD2_GEN_PENDING = 'pending';
+const JD2_GEN_OK = 'ok';
+const JD2_GEN_FAILED = 'failed';
+const JD2_GEN_REJECTED = 'rejected';
+
+const JD2_SESSION_FILED = 'filed';
+
+const JD2_VIS_DRAFT = 'draft';
+const JD2_VIS_LIVE = 'live';
+const JD2_VIS_HIDDEN = 'hidden';
+
+const JD2_ROLE_OWNER = 'owner';
+const JD2_ROLE_VISITOR = 'visitor';
+
+/** The slot letters a run can deal: a..z, so a pool may hold up to 26 models. */
+const JD2_SLOT_LETTERS = 'abcdefghijklmnopqrstuvwxyz';
+
+// ---------------------------------------------------------------------------
+// 7. The pool is data (PLAN-V2 §6): taxonomy.json `models[]` entries with
+// `"pool": true`, each naming its `provider` and wire `api_model`, in file
+// order. Nothing in PHP names a model; a pool refresh is an edit to the
+// taxonomy and a bump of its `poolVersion`, which every run records.
+// The provider must be one the provider layer can call (a JD_EFFORT key):
+// an unknown slug would otherwise fall through jd_provider_call() to the
+// OpenAI branch and spend against the wrong vendor.
+
+/**
+ * @return list<array{model_id:string,api_model:string,provider:string}>
+ *   the active pool, in taxonomy order; a 500 envelope when it is empty or
+ *   a member cannot be called
+ */
+function jd2_pool(array $taxonomy): array
+{
+    $pool = [];
+    foreach ($taxonomy['models'] ?? [] as $m) {
+        if (!is_array($m) || ($m['pool'] ?? false) !== true) {
+            continue;
+        }
+        $id = (string) ($m['id'] ?? '');
+        $provider = (string) ($m['provider'] ?? '');
+        $apiModel = (string) ($m['api_model'] ?? '');
+        if ($id === '' || $provider === '' || $apiModel === '' || !isset(JD_EFFORT['web'][$provider])) {
+            error_log('jd2_pool: taxonomy.json pool member ' . var_export($id, true)
+                . ' lacks a callable provider or an api_model');
+            jd_fail(500, 'server_error', 'The model pool is misconfigured.');
+        }
+        $pool[] = ['model_id' => $id, 'api_model' => $apiModel, 'provider' => $provider];
+    }
+    if ($pool === []) {
+        error_log('jd2_pool: taxonomy.json has no model with "pool": true');
+        jd_fail(500, 'server_error', 'The model pool is empty.');
+    }
+    if (count($pool) > strlen(JD2_SLOT_LETTERS)) {
+        error_log('jd2_pool: ' . count($pool) . ' pool members, more than the 26 slot letters');
+        jd_fail(500, 'server_error', 'The model pool is misconfigured.');
+    }
+    return $pool;
+}
+
+/** The pool snapshot's name (taxonomy.json `poolVersion`), stamped on every run; a 500 when absent. */
+function jd2_pool_version(array $taxonomy): string
+{
+    $v = $taxonomy['poolVersion'] ?? null;
+    if (!is_string($v) || $v === '' || strlen($v) > 32) {
+        error_log('jd2_pool_version: taxonomy.json has no usable poolVersion');
+        jd_fail(500, 'server_error', 'The model pool is misconfigured.');
+    }
+    return $v;
+}
+
+/**
+ * The deal: which model draws in which seat, drawn ONCE per run and stored
+ * in jd2_runs.deal. Slots are the first count($pool) letters a, b, c …; the
+ * models are a uniformly random permutation of the pool (Fisher–Yates over
+ * random_int), so model identity never correlates with slot position —
+ * v1's pair_order discipline, for any pool size instead of a table of 24.
+ *
+ * @param list<array{model_id:string}> $pool  jd2_pool()
+ * @return array<string,string>  slot letter => model_id, in slot order
+ */
+function jd2_deal(array $pool): array
+{
+    $ids = array_map(static fn ($m) => (string) $m['model_id'], array_values($pool));
+    for ($i = count($ids) - 1; $i > 0; $i--) {
+        $j = random_int(0, $i);
+        [$ids[$i], $ids[$j]] = [$ids[$j], $ids[$i]];
+    }
+    $deal = [];
+    foreach ($ids as $k => $id) {
+        $deal[JD2_SLOT_LETTERS[$k]] = $id;
+    }
+    return $deal;
+}
+
+/** A stored deal (jd2_runs.deal) back as slot => model_id; [] when unreadable. */
+function jd2_deal_decode(mixed $json): array
+{
+    $deal = is_string($json) ? json_decode($json, true) : null;
+    if (!is_array($deal)) {
+        return [];
+    }
+    $out = [];
+    foreach ($deal as $slot => $modelId) {
+        if (is_string($slot) && preg_match('/^[a-z]$/', $slot) && is_string($modelId) && $modelId !== '') {
+            $out[$slot] = $modelId;
+        }
+    }
+    ksort($out);
+    return $out;
+}
+
+// ---------------------------------------------------------------------------
+// 8. jd_fail()'s envelope, carrying the v2 ids. A jd2 failure names the run
+// and the prompt when they exist by then; `submission_id` repeats the run id
+// because the unchanged v1 turn card (jd-turn.js, until Phase 4) reads a
+// failed slot's submission_id to know which turn it belonged to. SHIM: drop
+// the alias when the Phase 4 card reads run_id.
+
+function jd2_fail(int $status, string $code, string $message, array $context = []): void
+{
+    $payload = ['ok' => false];
+    if (isset($context['run_id']) && $context['run_id'] !== null) {
+        $payload['submission_id'] = $context['run_id'];   // shim alias, see above
+    }
+    foreach (['run_id', 'prompt_id', 'gen_id', 'slot'] as $key) {
+        if (isset($context[$key]) && $context[$key] !== null) {
+            $payload[$key] = $context[$key];
+        }
+    }
+    $payload['error'] = ['code' => $code, 'message' => $message];
+    if (isset($context['retry_after'])) {
+        $payload['retry_after'] = (int) $context['retry_after'];
+        if (!headers_sent()) {
+            header('Retry-After: ' . (int) $context['retry_after']);
+        }
+    }
+    jd_json_out($status, $payload);
+}
+
+// ---------------------------------------------------------------------------
+// 9. Who is rating (or drawing). Two populations, never pooled (PLAN-V2 §3):
+//
+//   owner   — the request PRESENTS the bench key (X-Bench-Key or ?key=) and
+//             it is right; rater_hash is jd_curator_hash(), the fixed value
+//             that groups the owner's sittings across days;
+//   visitor — everyone else; rater_hash is msky_visitor_hash(), the salted
+//             daily hash, exactly as v1 (no cookie, no session).
+//
+// A request that presents a WRONG key is refused (403, and a throttled miss)
+// rather than quietly demoted to a visitor: a mistyped key must not file
+// the owner's sitting under the visitor population. The gate is v1's one
+// switch, JD_BENCH_REQUIRE_KEY, through jd2_require_bench_key(); a box with
+// no key on file (a dev checkout without config/secrets.php) is open, so
+// there any presented key makes the caller the owner.
+
+/** 403/429 unless the caller holds the bench key — v1's gate, one switch for both datasets. */
+function jd2_require_bench_key(): void
+{
+    jd_require_bench_key();
+}
+
+/** @return array{role:string,hash:string} */
+function jd2_rater(): array
+{
+    if (jd_bench_key_supplied() !== '') {
+        jd2_require_bench_key();
+        return ['role' => JD2_ROLE_OWNER, 'hash' => jd_curator_hash()];
+    }
+    return ['role' => JD2_ROLE_VISITOR, 'hash' => msky_visitor_hash(jd_secrets())];
+}
+
+// ---------------------------------------------------------------------------
+// 10. Reading a run's ratings. Three rules, applied by every reader:
+//
+//   CURRENT  — sessions are append-only; a role's current session on a run
+//              is its latest `filed` one (by filed_at, then id).
+//   OWNER OVER VISITOR — where one session must stand for the run, the
+//              owner's current session outranks the visitor's.
+//   COMPLETE — a session is complete when every non-hidden ok drawing of the
+//              run carries a grade and every live axis, and — when there is
+//              more than one — a strict ranking places them all and every
+//              unordered pair of them has a score (direct or derived).
+//
+// For display (data.php, the curate standing) the three combine in
+// jd2_display_session(): the owner's current session if it is complete,
+// else the visitor's current session if it is complete; an incomplete
+// sitting never displaces a complete one.
+
+/**
+ * The latest filed session on $runId: the owner's when $role is null and the
+ * owner has one (else the visitor's), or only $role's when named.
+ *
+ * @return array<string,mixed>|null  the jd2_sessions row
+ */
+function jd2_current_session(PDO $db, string $runId, ?string $role = null): ?array
+{
+    $sql = "SELECT id, run_id, rater_role, rater_hash, device_ref, client, taxonomy_version,
+                   instrument_version, blind, seat_order, started_at, filed_at, status
+              FROM jd2_sessions
+             WHERE run_id = ? AND status = '" . JD2_SESSION_FILED . "'";
+    $args = [$runId];
+    if ($role !== null) {
+        $sql .= ' AND rater_role = ?';
+        $args[] = $role;
+    }
+    $sql .= " ORDER BY CASE rater_role WHEN '" . JD2_ROLE_OWNER . "' THEN 0 ELSE 1 END,
+                       filed_at DESC, id DESC
+              LIMIT 1";
+    $q = $db->prepare($sql);
+    $q->execute($args);
+    $row = $q->fetch(PDO::FETCH_ASSOC);
+    return $row === false ? null : $row;
+}
+
+/**
+ * Everything one session filed, folded for reading:
+ *
+ *   judgments  generation_id => {grade: ?float, axes: {axis_id: float},
+ *              notes: {axis_id|'grade': string}}
+ *   rankings   generation_id => {rank_pos: int, gap_after: ?int}
+ *   pairs      list of {gen_a, gen_b, score: int, source, method, shown_left}
+ *
+ * @return array{judgments:array,rankings:array,pairs:list<array>}
+ */
+function jd2_session_standing(PDO $db, string $sessionId): array
+{
+    $out = ['judgments' => [], 'rankings' => [], 'pairs' => []];
+
+    $q = $db->prepare('SELECT generation_id, kind, axis_id, value, note FROM jd2_judgments WHERE session_id = ? ORDER BY id');
+    $q->execute([$sessionId]);
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $gid = (string) $r['generation_id'];
+        $out['judgments'][$gid] ??= ['grade' => null, 'axes' => [], 'notes' => []];
+        $cell = $r['kind'] === 'grade' ? 'grade' : (string) $r['axis_id'];
+        if ($r['kind'] === 'grade') {
+            $out['judgments'][$gid]['grade'] = (float) $r['value'];
+        } else {
+            $out['judgments'][$gid]['axes'][$cell] = (float) $r['value'];
+        }
+        if ($r['note'] !== null && $r['note'] !== '') {
+            $out['judgments'][$gid]['notes'][$cell] = (string) $r['note'];
+        }
+    }
+
+    $q = $db->prepare('SELECT generation_id, rank_pos, gap_after FROM jd2_rankings WHERE session_id = ? ORDER BY rank_pos');
+    $q->execute([$sessionId]);
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $out['rankings'][(string) $r['generation_id']] = [
+            'rank_pos' => (int) $r['rank_pos'],
+            'gap_after' => $r['gap_after'] === null ? null : (int) $r['gap_after'],
+        ];
+    }
+
+    $q = $db->prepare('SELECT gen_a, gen_b, score, source, method, shown_left FROM jd2_pairs WHERE session_id = ? ORDER BY id');
+    $q->execute([$sessionId]);
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $out['pairs'][] = [
+            'gen_a' => (string) $r['gen_a'],
+            'gen_b' => (string) $r['gen_b'],
+            'score' => (int) $r['score'],
+            'source' => (string) $r['source'],
+            'method' => $r['method'],
+            'shown_left' => $r['shown_left'],
+        ];
+    }
+    return $out;
+}
+
+/**
+ * COMPLETE, from a session's standing and the drawings it must cover (the
+ * run's non-hidden ok generations). The cells come from the taxonomy handed
+ * in (jd2_required_cells: the live axes and the grade). A drawing the owner
+ * hid after the sitting simply drops out of $generationIds: the ranking need
+ * only place the ones left in distinct places, and only their pairs count.
+ *
+ * @param string[] $generationIds
+ */
+function jd2_is_complete(array $standing, array $generationIds, array $taxonomy): bool
+{
+    $ids = array_values(array_unique(array_map('strval', $generationIds)));
+    if ($ids === []) {
+        return false;
+    }
+    $axes = array_map('strval', array_keys(jd_live_axes($taxonomy)));
+    foreach ($ids as $gid) {
+        $j = $standing['judgments'][$gid] ?? null;
+        if ($j === null || $j['grade'] === null) {
+            return false;
+        }
+        foreach ($axes as $axis) {
+            if (!array_key_exists($axis, $j['axes'])) {
+                return false;
+            }
+        }
+    }
+    if (count($ids) === 1) {
+        return true;
+    }
+
+    $places = [];
+    foreach ($ids as $gid) {
+        $pos = $standing['rankings'][$gid]['rank_pos'] ?? null;
+        if ($pos === null || isset($places[$pos])) {
+            return false;
+        }
+        $places[$pos] = true;
+    }
+
+    $scored = [];
+    foreach ($standing['pairs'] as $p) {
+        $k = strcmp($p['gen_a'], $p['gen_b']) < 0 ? $p['gen_a'] . '|' . $p['gen_b'] : $p['gen_b'] . '|' . $p['gen_a'];
+        $scored[$k] = true;
+    }
+    $n = count($ids);
+    for ($i = 0; $i < $n; $i++) {
+        for ($j = $i + 1; $j < $n; $j++) {
+            $k = strcmp($ids[$i], $ids[$j]) < 0 ? $ids[$i] . '|' . $ids[$j] : $ids[$j] . '|' . $ids[$i];
+            if (!isset($scored[$k])) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * The session that stands for a run on display: the owner's current session
+ * when it is complete, else the visitor's current session when it is
+ * complete, else — only when $fallback — the current session owner-first,
+ * complete or not (the admin card of a prompt still being rated).
+ *
+ * @param string[] $generationIds  the run's non-hidden ok generations
+ * @return array{session:array,standing:array,complete:bool}|null
+ */
+function jd2_display_session(PDO $db, string $runId, array $generationIds, array $taxonomy, bool $fallback = false): ?array
+{
+    foreach ([JD2_ROLE_OWNER, JD2_ROLE_VISITOR] as $role) {
+        $s = jd2_current_session($db, $runId, $role);
+        if ($s === null) {
+            continue;
+        }
+        $standing = jd2_session_standing($db, (string) $s['id']);
+        if (jd2_is_complete($standing, $generationIds, $taxonomy)) {
+            return ['session' => $s, 'standing' => $standing, 'complete' => true];
+        }
+    }
+    if (!$fallback) {
+        return null;
+    }
+    $s = jd2_current_session($db, $runId);
+    if ($s === null) {
+        return null;
+    }
+    $standing = jd2_session_standing($db, (string) $s['id']);
+    return ['session' => $s, 'standing' => $standing,
+            'complete' => jd2_is_complete($standing, $generationIds, $taxonomy)];
+}
+
+/** A run's drawings that count — ok and not hidden — as rows (id, slot, …), in slot order. */
+function jd2_run_generations(PDO $db, string $runId, bool $countingOnly = true): array
+{
+    $sql = 'SELECT id, run_id, slot, model_id, api_model, provider, status, hidden,
+                   usage_json, cost_usd, priced, created
+              FROM jd2_generations WHERE run_id = ?';
+    if ($countingOnly) {
+        $sql .= " AND status = '" . JD2_GEN_OK . "' AND hidden = 0";
+    }
+    $q = $db->prepare($sql . ' ORDER BY slot');
+    $q->execute([$runId]);
+    return $q->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/** A rater's remark, trimmed and clipped to JD_NOTE_MAX_CHARS; null when empty or not a string. */
+function jd2_clean_note(mixed $note): ?string
+{
+    if (!is_string($note)) {
+        return null;
+    }
+    $note = trim($note);
+    return $note === '' ? null : mb_substr($note, 0, JD_NOTE_MAX_CHARS);
+}
+
+/**
+ * A database handle for the DRAWER's read, or null when there is none. The
+ * drawer must paint through an outage (an empty manifest, never a 500), and
+ * jd_db() cannot promise that on MySQL: it goes through api/database.php,
+ * whose connection failure EXITS with a 500 before any caller can catch it.
+ * So off the dev box this opens its own PDO with the DSN and options
+ * database.php uses (host localhost, utf8mb4 — keep the two in step) and
+ * answers null on any failure. In dev it is jd_db()'s SQLite file.
+ */
+function jd2_db_or_null(): ?PDO
+{
+    try {
+        if (JD_DEV_MODE) {
+            return jd_db();
+        }
+        $s = jd_secrets();
+        foreach (['db_name', 'db_user', 'db_pass'] as $k) {
+            if (!isset($s[$k])) {
+                return null;
+            }
+        }
+        return new PDO('mysql:host=localhost;dbname=' . $s['db_name'] . ';charset=utf8mb4', $s['db_user'], $s['db_pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+    } catch (Throwable $e) {
+        error_log('jd2_db_or_null: no database (' . $e->getMessage() . ')');
+        return null;
+    }
+}

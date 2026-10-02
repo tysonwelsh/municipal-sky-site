@@ -238,6 +238,79 @@ index), `idx_jd2pr_gen_a`, `idx_jd2pr_gen_b`.
 - **The rubric is `taxonomy.json`.** No axis id, grade label, gap label or
   model name is hard-coded in SQL or PHP.
 
+## Endpoints
+
+Phase 3b (2026-10-01). Every endpoint includes `api/jd2-config.php`, answers
+JSON (`jd_json_out`; failures in the `{ok:false, error:{code, message}}`
+envelope, with `run_id`/`prompt_id`/`gen_id`/`slot` when known), sits behind
+`jd-origin.php`'s allowlist (except `data.php`), and keeps no session or
+cookie. **Owner** = the request presents the bench key (`X-Bench-Key` or
+`?key=`) and it is right (`jd2_rater()`; a wrong key is 403, never a quiet
+visitor); everyone else is a **visitor** (`msky_visitor_hash()`, daily). A box
+with no key on file is open in dev, as in v1. A `submission_id` in a request
+or a response is a SHIM alias of `run_id` for the unchanged v1 turn card,
+removed when Phase 4 reads `run_id`.
+
+| endpoint | gate | request → response |
+| --- | --- | --- |
+| `POST api/jd2-generate.php` | origin; visitor needs consent; `profile`/`rerun_of`/`run_id` need the key | `{client_ref, slot, prompt, client, consent:{version}, device_ref?, website}` (owner also `profile` default `bench`, `rerun_of`, `run_id`) → `{ok, svg, gen_id, slot, run_id, prompt_id, submission_id}` |
+| `POST api/jd2-title.php` | origin; the `client_ref` must be a prompt filed in the last hour | `{client_ref, prompt}` → `{ok, title}` (advisory; nothing stored) |
+| `POST api/jd2-rate.php` | origin; visitor: one filed session per run, only on a run a visitor requested | `{run_id, client, device_ref?, title?, size?, suppress?, ratings:[{slot, kind, axis_id?, value, note?}], ranking:[{slot, rank, gap?}]\|null, pairs:[{slot_a, slot_b, score, shown_left?}]\|null, blind?}` → `{ok, session_id, run_id, prompt_id, complete, reveal:[{slot, model_id, label, vendor, status, tokens?, cost_usd?, priced?}]}` |
+| `POST api/jd2-curate.php` | origin + bench key | `{prompt_id, visibility?, shown_run_id?, pinned_generation_id?, title?, size_class?, size_scale?}` or `{generation_id, hidden}` → `{ok, prompt:{…}, runs:[{…, generations, sessions, display_session_id, complete}]}` |
+| `GET api/jd2-gen-svg.php?gen=<id>` | origin; public when the prompt is `live` and the drawing not hidden, else bench key; otherwise 404 | → `image/svg+xml`, `no-store` |
+| `GET art/junk-drawer/data.php` | public | → `{generated, count, taxonomy, items, errors:[]}`, ETag; `?item=<prompt_id>` any visibility (`hidden: true` unless live); `?slim=1` via `_slim.php`; a database outage answers an empty manifest |
+
+**jd2-generate.** The first request for a `client_ref` files the prompt
+(`visibility` `draft`) and its `initial` run in one transaction; the
+prompt's UNIQUE `client_ref` is where the parallel slot requests converge, so
+the owner's new prompts file their `client_ref` too (the other visitor fields
+stay NULL for them). The deal is drawn once there (`jd2_deal`), and each slot
+fills its generation with the dealt model under the run's profile (`web` for
+visitors, `bench` by default for the owner) — effort, harness, timeout —
+through the provider layer (the mock in dev), the sanitizer, and the price
+table (`cost_usd`, `priced` at write time). A slot is checked against the
+run's deal. A settled slot re-answers its stored verdict. A rerun files no
+prompt and so converges on its run id: the first slot request
+(`rerun_of`, no `run_id`) creates the `rerun` run and answers its `run_id`;
+the other slots send `rerun_of` + `run_id`. The global breaker counts
+`jd2_generations` since UTC midnight (`JD_LIMIT_GLOBAL_DAILY`).
+
+**jd2-rate.** Drawings are named by slot (a v1 `gen_id` of the same run is
+accepted as a shim; a `flag` rating is dropped as a shim). The ranking is
+strict 1..n over every ok, non-hidden drawing (a tie is a zero gap), with a
+gap 0..3 on every place but the last, or on none. One session, one method:
+sent `pairs` file as `direct` (re-signed into canonical order) and nothing is
+derived; otherwise a ranking with gaps derives the pairs (`derived`,
+`spaced-rank-v1`); with neither, the session files without pairs and is not
+complete. The session stamps role, hash, device, client, taxonomy and
+instrument versions, `blind` (0 only for the owner's `blind:false`),
+`seat_order` (slot → generation, as dealt), `started_at` = the run's created,
+`filed_at` = now. Filing also lands `title`, `size_class` and the keep-out
+(`suppress` → `hidden`, `hidden_by` = the rater's role) on the prompt, and a
+complete session on a `draft` prompt makes it `live` (`approved_at` is not
+written).
+
+**Every reader applies three rules** (`jd2_current_session`,
+`jd2_display_session`, `jd2_is_complete`):
+
+1. **Current session** — per (run, role) the latest `filed` session by
+   `filed_at`, then `id`. Sessions are never edited or deleted.
+2. **Owner over visitor** — where one session stands for the run, the
+   owner's current session outranks the visitor's. For display it must also
+   be complete: the owner's current session if complete, else the visitor's
+   current session if complete (an incomplete sitting never displaces a
+   complete one).
+3. **Complete** — every non-hidden ok drawing has a grade and every live axis
+   of the taxonomy; with more than one drawing, a ranking places them all in
+   distinct places and every unordered pair of them has a score (direct or
+   derived).
+
+The drawer's shown run is `shown_run_id`, else the newest run whose display
+session is complete; its `primary` is the pinned drawing when it is in the
+run, else 1st place. The item keeps v1's turn-item shape (rids `r1…` in place
+order) plus `run_id`, `prompt_id`, `origin`, each response's `gen_id`, and
+`pairs: [{a: rid, b: rid, score, source}]`.
+
 ## History
 
 - 2026-10-01 — the seven `jd2_*` tables (Phase 2 of PLAN-V2), with the
@@ -245,3 +318,6 @@ index), `idx_jd2pr_gen_a`, `idx_jd2pr_gen_b`.
   (`instrument` `v2.0`, `comparison`, `gaps`, the pool fields, `poolVersion`);
   the deploy runs the v2 runner after the v1 runner. No rows yet; the readers
   and writers are Phase 3.
+- 2026-10-01 — Phase 3b: the jd2 endpoints (generate, title, rate, curate,
+  gen-svg) and `data.php` on the jd2 tables; the "Endpoints" section above.
+  No schema change.
