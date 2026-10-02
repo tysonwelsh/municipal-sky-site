@@ -119,6 +119,13 @@ include '../includes/header.php';
           using D3.js, a JavaScript library for making bespoke data visualizations. I shared some of the other
           visualizations I've made to show what sets D3 apart from other tools, and Kamil liked what he saw. We met
           up again on a Sunday afternoon and built this dashboard using Claude Code.</p>
+        <p>The dashboard shows computer models of disordered carbon, such as amorphous carbon and graphite damaged by
+          radiation, as a 3D point cloud. Each dot in the cloud depicts a single atom, and the lines between the dots
+          are the chemical bonds linking neighboring atoms. The panels around the 3D cloud are interactive charts that
+          summarize how the atoms are connected, and clicking on them filters what the point cloud displays, such as
+          lighting up the rings (closed loops of bonded atoms) in the structure or isolating atoms by how many
+          neighbors they have. You can also switch on Fly mode and use the WASD keys to navigate through the cloud of
+          atoms yourself (like something out of <em>The Magic School Bus</em>!)</p>
         <p>To be honest, I don't fully understand the science behind these data. My interest in making it was
           primarily as an exercise in data storytelling, in addition to exploring how well Claude could handle
           processing and visualizing data used in actual frontier research. In other words, I wanted to make
