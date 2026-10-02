@@ -1149,3 +1149,146 @@ function jd2_shows(?string $pin, array $gens, ?array $standing): array
     asort($counting);
     return [(string) array_key_first($counting), count($counting) === 1 ? 'the one drawing' : 'no ranking — first by slot'];
 }
+
+// ===========================================================================
+// Intake (PLAN-INTAKE, 2026-10-02) — what the intake clerk and its readers share:
+//
+//  15. the facets of the classification, read from the taxonomy   (jd2_facets)
+//  16. checking and reading a prompt's tags                       (jd2_facet_problem,
+//                                                                   jd2_tags_check, jd2_tags_decode)
+//  17. the intake fields every owner-side reader carries          (jd2_intake_fields)
+//
+// The prompt, the schema and the call are api/jd2-intake-prompt.php; the
+// endpoint is api/jd2-intake.php.
+
+/**
+ * taxonomy.json `facets`, normalised: each {id, label, question, min, max,
+ * headings: [{id, label, scope}]}, in file order; a heading marked
+ * `defunct` is history and is left out (never offered, never accepted).
+ *
+ * @return list<array{id:string,label:string,question:string,min:int,max:int,headings:list<array{id:string,label:string,scope:string}>}>
+ */
+function jd2_facets(array $taxonomy): array
+{
+    $out = [];
+    foreach ($taxonomy['facets'] ?? [] as $f) {
+        if (!is_array($f) || !is_string($f['id'] ?? null) || $f['id'] === '') {
+            continue;
+        }
+        $headings = [];
+        foreach ($f['headings'] ?? [] as $h) {
+            if (is_array($h) && is_string($h['id'] ?? null) && $h['id'] !== '' && empty($h['defunct'])) {
+                $headings[] = ['id' => $h['id'], 'label' => (string) ($h['label'] ?? $h['id']),
+                               'scope' => (string) ($h['scope'] ?? '')];
+            }
+        }
+        $out[] = [
+            'id' => $f['id'],
+            'label' => (string) ($f['label'] ?? $f['id']),
+            'question' => (string) ($f['question'] ?? ''),
+            'min' => max(0, (int) ($f['min'] ?? 0)),
+            'max' => max(1, (int) ($f['max'] ?? count($headings))),
+            'headings' => $headings,
+        ];
+    }
+    return $out;
+}
+
+/** The intake prompt's version (taxonomy.json `intakeVersion`); a 500 envelope when absent. */
+function jd2_intake_version(array $taxonomy): string
+{
+    $v = $taxonomy['intakeVersion'] ?? null;
+    if (!is_string($v) || $v === '' || strlen($v) > 32) {
+        error_log('jd2_intake_version: taxonomy.json has no usable intakeVersion');
+        jd_fail(500, 'server_error', 'The intake is not configured in the taxonomy (intakeVersion).');
+    }
+    return $v;
+}
+
+/** Why $v is not a valid answer for facet $f (a list of its heading ids, no repeats, within min..max), or null. */
+function jd2_facet_problem(array $f, mixed $v): ?string
+{
+    if (!is_array($v) || !array_is_list($v)) {
+        return $f['id'] . ' is not a list';
+    }
+    $ids = array_column($f['headings'], 'id');
+    $seen = [];
+    foreach ($v as $x) {
+        if (!is_string($x) || !in_array($x, $ids, true)) {
+            return $f['id'] . ' names ' . json_encode($x) . ', not one of its headings';
+        }
+        if (isset($seen[$x])) {
+            return $f['id'] . ' names ' . $x . ' twice';
+        }
+        $seen[$x] = true;
+    }
+    if (count($v) < $f['min'] || count($v) > $f['max']) {
+        return $f['id'] . ' has ' . count($v) . ' headings (' . $f['min'] . '–' . $f['max'] . ')';
+    }
+    return null;
+}
+
+/**
+ * A tags object as filed (jd2_prompts.tags): every facet of the taxonomy
+ * present, each valid (jd2_facet_problem); nothing else.
+ *
+ * @return array{0:?array<string,list<string>>,1:?string}  [the clean object in facet order, null] or [null, the problem]
+ */
+function jd2_tags_check(mixed $tags, array $taxonomy): array
+{
+    if (!is_array($tags) || ($tags !== [] && array_is_list($tags))) {
+        return [null, 'tags must be an object keyed by facet'];
+    }
+    $facets = jd2_facets($taxonomy);
+    $known = array_column($facets, 'id');
+    foreach (array_keys($tags) as $k) {
+        if (!in_array((string) $k, $known, true)) {
+            return [null, 'tags names an unknown facet ' . json_encode($k)];
+        }
+    }
+    $clean = [];
+    foreach ($facets as $f) {
+        if (!array_key_exists($f['id'], $tags)) {
+            return [null, 'tags is missing the facet ' . $f['id']];
+        }
+        $problem = jd2_facet_problem($f, $tags[$f['id']]);
+        if ($problem !== null) {
+            return [null, $problem];
+        }
+        $clean[$f['id']] = array_values($tags[$f['id']]);
+    }
+    return [$clean, null];
+}
+
+/** jd2_prompts.tags as read: {facet: [ids]} or null (none, or unreadable). */
+function jd2_tags_decode(mixed $json): ?array
+{
+    $t = is_string($json) && $json !== '' ? json_decode($json, true) : null;
+    return is_array($t) && ($t === [] || !array_is_list($t)) ? $t : null;
+}
+
+/**
+ * The intake facts every owner-side reader (jd2-queue, jd2-ledger) carries
+ * for a prompt row that selected tags, size_by and the intake_* columns:
+ * tags (decoded), size_by, intake_version, intake_model, intake_at, the
+ * reasons from intake_json, and `intake_fallback` — true when intake was
+ * tried and failed (intake_json holds an error and intake_at is NULL), so
+ * the ledger can say so. intake_error carries that error's code.
+ */
+function jd2_intake_fields(array $p): array
+{
+    $rec = is_string($p['intake_json'] ?? null) ? json_decode((string) $p['intake_json'], true) : null;
+    $reasons = is_array($rec['answer']['reasons'] ?? null) ? $rec['answer']['reasons'] : null;
+    $failed = ($p['intake_at'] ?? null) === null && is_array($rec) && isset($rec['error']);
+    return [
+        'tags' => jd2_tags_decode($p['tags'] ?? null),
+        'size_by' => $p['size_by'] ?? null,
+        'intake_version' => $p['intake_version'] ?? null,
+        'intake_model' => $p['intake_model'] ?? null,
+        'intake_at' => $p['intake_at'] ?? null,
+        'intake_reasons' => $reasons === null ? null : [
+            'size' => (string) ($reasons['size'] ?? ''), 'classification' => (string) ($reasons['classification'] ?? '')],
+        'intake_fallback' => $failed,
+        'intake_error' => $failed ? (string) ($rec['error']['code'] ?? 'failed') : null,
+    ];
+}

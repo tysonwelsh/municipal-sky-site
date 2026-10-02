@@ -583,7 +583,7 @@
         {
           "id": "creature",
           "label": "Creature",
-          "scope": "Applies to animals, insects, monsters and imaginary beings. Does not apply to people or human body parts; see figure."
+          "scope": "Applies to animals, insects, monsters and imaginary beings. Does not apply to people or human body parts; see *figure*."
         },
         {
           "id": "figure",
@@ -593,7 +593,7 @@
         {
           "id": "plant",
           "label": "Plant",
-          "scope": "Applies to plants, flowers, fungi and produce still on the plant. For prepared food see food."
+          "scope": "Applies to plants, flowers, fungi and produce still on the plant. For prepared food see *food*."
         },
         {
           "id": "food",

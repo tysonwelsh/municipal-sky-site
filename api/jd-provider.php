@@ -38,7 +38,7 @@ function jd_provider_params(string $provider, string $profile = 'web'): string
 
 /**
  * One JSON POST over cURL — the single wire call every provider request
- * (and jd-title.php's small one) goes through. No reuse, one attempt.
+ * (and the intake clerk's, api/jd2-intake-prompt.php) goes through. No reuse, one attempt.
  *
  * @return array{http_code:int, body:string, error:?string}  error is the
  *   transport failure text, or null when a response (any status) came back
@@ -67,20 +67,53 @@ function jd_http_post_json(string $url, array $headers, array $payload, int $tim
 }
 
 // The owner's runbook adds the dedicated jd_* keys; the fallback keeps the
-// feature launchable on the existing ones.
-function jd_provider_key(string $provider): ?string
+// feature launchable on the existing ones. $use names a helper that has its
+// own key SLOT (jd_provider_key_slot below); without it, the provider's chain.
+function jd_provider_key(string $provider, ?string $use = null): ?string
 {
+    return jd_provider_key_slot($provider, $use)['key'];
+}
+
+/**
+ * The key slots in secrets.php, per provider and optionally per USE: a helper
+ * with its own key (owner, 2026-10-02: the intake clerk gets its own
+ * Anthropic key, `jd_intake_key`) reads its slot first and falls back to the
+ * provider's chain, so nothing breaks before the dedicated key is added.
+ *
+ * Returns the key and the NAME of the slot it came from — `jd_intake_key`, or
+ * `jd_claude_key (fallback)` when a use's own slot is empty — so a caller can
+ * record which slot answered. The name is all that may ever be recorded,
+ * logged or printed; never any part of the key.
+ *
+ * @return array{key:?string, slot:?string}  both null when no slot holds a key
+ */
+function jd_provider_key_slot(string $provider, ?string $use = null): array
+{
+    $chains = [
+        'anthropic' => ['jd_claude_key', 'claude_key'],
+        'kimi'      => ['jd_kimi_key', 'kimi_key'],
+        'google'    => ['jd_gemini_key', 'gemini_key'],
+        'openai'    => ['jd_openai_key', 'openai_key'],
+    ];
+    $useSlots = [
+        'anthropic' => ['intake' => 'jd_intake_key'],
+    ];
     $secrets = jd_secrets();
-    if ($provider === 'anthropic') {
-        $key = $secrets['jd_claude_key'] ?? $secrets['claude_key'] ?? null;
-    } elseif ($provider === 'kimi') {
-        $key = $secrets['jd_kimi_key'] ?? $secrets['kimi_key'] ?? null;
-    } elseif ($provider === 'google') {
-        $key = $secrets['jd_gemini_key'] ?? $secrets['gemini_key'] ?? null;
-    } else {
-        $key = $secrets['jd_openai_key'] ?? $secrets['openai_key'] ?? null;
+    $own = $use === null ? null : ($useSlots[$provider][$use] ?? null);
+    if ($own !== null && is_string($secrets[$own] ?? null) && $secrets[$own] !== '') {
+        return ['key' => $secrets[$own], 'slot' => $own];
     }
-    return (is_string($key) && $key !== '') ? $key : null;
+    // the provider's chain (an unknown slug rides OpenAI's, as before); a
+    // slot that is set but empty ends the chain, as the ?? chain always did
+    foreach ($chains[$provider] ?? $chains['openai'] as $slot) {
+        if (array_key_exists($slot, $secrets) && $secrets[$slot] !== null) {
+            $key = $secrets[$slot];
+            return (is_string($key) && $key !== '')
+                ? ['key' => $key, 'slot' => $slot . ($own !== null ? ' (fallback)' : '')]
+                : ['key' => null, 'slot' => null];
+        }
+    }
+    return ['key' => null, 'slot' => null];
 }
 
 /**

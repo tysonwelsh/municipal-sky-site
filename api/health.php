@@ -14,6 +14,7 @@ $secrets = include '/home1/tdrivemy/private_config/secrets.php';
 // Basic health check
 $health = [
     'claude' => !empty($secrets['claude_key']),
+    'intake' => !empty($secrets['jd_intake_key']),
     'gemini' => !empty($secrets['gemini_key']),
     'openai' => !empty($secrets['openai_key'])
 ];
