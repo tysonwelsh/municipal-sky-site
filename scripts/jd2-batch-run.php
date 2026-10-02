@@ -4,21 +4,27 @@
  * (PLAN-V2 §11, owner 2026-10-01). CLI only.
  *
  *   php scripts/jd2-batch-run.php prompts.csv --dry-run          # the plan, no drawing
- *   php scripts/jd2-batch-run.php prompts.csv                    # run it
+ *   php scripts/jd2-batch-run.php prompts.csv                    # run it (bench-medium)
+ *   php scripts/jd2-batch-run.php prompts.csv --profile bench-low   # the same rows, low effort
  *   php scripts/jd2-batch-run.php prompts.csv --resume           # carry on after a stop
  *   php scripts/jd2-batch-run.php --rate-url                     # where to rate what ran
  *
  * Options: --base URL (default https://municipalsky.com), --dry-run, --resume,
+ * --profile bench-medium|bench-low|bench-max (default bench-medium, the
+ * owner's default, JD2_OWNER_DEFAULT_PROFILE; `bench` means that default),
  * --rate-url (print the bench URLs at the end), --local (see below),
  * --state PATH (default local-dev/jd2-batch-state.json).
  *
  * WHAT IT DOES. The owner curates the campaign's prompts into a CSV. For each
  * row this files the prompt and draws it against the whole pool under the
- * `bench` effort profile (every model at its vendor's top setting) through the
+ * chosen effort profile (api/jd-config.php JD_EFFORT: every model at its
+ * vendor's low, medium or top rung) through the
  * ordinary owner path, POST api/jd2-generate.php with the bench key: ONE MODEL
  * PER REQUEST, the pool's slots a, b, c, d … IN SEQUENCE, never two drawings in
  * one call. Each request blocks until its model answers (a bench call may take
  * JD_BENCH_TIMEOUT seconds; curl waits that plus 30 s), so nothing is polled.
+ * The profile is sent explicitly on every request, so the run's profile and
+ * harness are the ones named here, whatever the server's default.
  * The owner runs it and walks away; the drawings land as `draft` prompts and
  * the bench's backlog (jd2-queue.php) offers each one as soon as its run has
  * settled. One line per drawing (row, slot, model, status, latency, cost) and
@@ -39,6 +45,16 @@
  *                instead of filing a new one (its stored text is what is
  *                sent; the row's prompt is only the state key and the label)
  *
+ * RERUNS BY PROFILE (2026-10-02). One prompt drawn under three settings is
+ * three RUNS of one prompt, not three prompts — that is what runs, the ledger
+ * and shown_run_id are for. So a row with no rerun_of whose text is EXACTLY
+ * an owner prompt already on file (any profile; the server's ledger is asked
+ * once, before anything is drawn; a hidden prompt does not count; the oldest
+ * wins) is filed as a rerun of that prompt (rerun_of: <its id>) instead of a
+ * new prompt. The decision is made once, when the row first starts, and kept
+ * in the state file, so a --resume never changes it. --dry-run prints, per
+ * row, `new prompt` or `rerun <id>` (with `same text, on file` when matched).
+ *
  * THE INTAKE. After a new row's first drawing lands (the prompt row exists
  * then), it asks api/jd2-intake.php for the clerk's heading, size tier and
  * classification (prompt_id with the key) and logs them; skipped when the
@@ -47,14 +63,22 @@
  * clerk's (the size as size_by 'owner').
  *
  * THE STATE FILE (local-dev/, gitignored) remembers, per base URL ('local' for
- * --local) and keyed by
- * prompt text, the client_ref minted for the row, the prompt and run ids and
- * each slot's outcome. It is written BEFORE the first request of a row and
- * after every answer, so a stop at any point resumes without filing anything
- * twice: jd2-generate.php is idempotent per (client_ref, slot) and a rerun is
- * rejoined by its run id. --resume skips the rows whose every slot has
- * settled and finishes the rest; without --resume a row already in the state
- * file is refused (pass --resume, or move the state file aside to start over).
+ * --local) and keyed by PROFILE AND prompt text (`[bench-medium] a tin robot`),
+ * the client_ref minted for the row, the profile, the prompt and run ids,
+ * rerun_of when the row is a rerun, and each slot's outcome. The same CSV can
+ * therefore run once per profile, each run its own row of state. It is
+ * written BEFORE the first request of a row and after every answer, so a stop
+ * at any point resumes without filing anything twice: jd2-generate.php is
+ * idempotent per (client_ref, slot), and a rerun is rejoined by its run id —
+ * and if the first request of a rerun was lost before its run id came back,
+ * --resume adopts the rerun that request made (the ledger's oldest unclaimed
+ * rerun of that prompt under this profile, filed after the request was sent)
+ * instead of making a second one. --resume skips the rows whose every slot
+ * has settled and finishes the rest; without --resume a row already in the
+ * state file for this profile is refused (pass --resume, or move the state
+ * file aside to start over). Entries written before the profile split (keyed
+ * by text alone, the retired `bench` profile) are never resumed; their
+ * prompts are on file, so those rows become reruns.
  *
  * THE SPEND GUARD. Before anything is drawn it asks the server how many
  * drawings today's global breaker has left (jd2-queue.php?count=1;
@@ -89,11 +113,11 @@ $root = realpath(__DIR__ . '/..');
 // --- arguments ------------------------------------------------------------
 $args = array_slice($argv, 1);
 $opt = ['base' => 'https://municipalsky.com', 'dry-run' => false, 'resume' => false, 'rate-url' => false,
-        'local' => false, 'state' => $root . '/local-dev/jd2-batch-state.json'];
+        'local' => false, 'state' => $root . '/local-dev/jd2-batch-state.json', 'profile' => JD2_OWNER_DEFAULT_PROFILE];
 $csvPath = null;
 for ($i = 0; $i < count($args); $i++) {
     $a = $args[$i];
-    if ($a === '--base' || $a === '--state') {
+    if ($a === '--base' || $a === '--state' || $a === '--profile') {
         $opt[substr($a, 2)] = $args[++$i] ?? bail("$a needs a value.");
     } elseif (in_array($a, ['--dry-run', '--resume', '--rate-url', '--local'], true)) {
         $opt[substr($a, 2)] = true;
@@ -104,7 +128,13 @@ for ($i = 0; $i < count($args); $i++) {
     }
 }
 if ($csvPath === null && !$opt['rate-url']) {
-    bail('Usage: php scripts/jd2-batch-run.php prompts.csv [--base URL] [--dry-run] [--resume] [--rate-url] [--local]');
+    bail('Usage: php scripts/jd2-batch-run.php prompts.csv [--profile bench-medium|bench-low|bench-max] [--base URL] [--dry-run] [--resume] [--rate-url] [--local]');
+}
+// the profile: one of the bench rungs (`bench` is the owner's default, named)
+$benchProfiles = array_values(array_filter(JD2_OWNER_PROFILES, fn ($p) => $p !== 'web'));
+$profile = jd2_owner_profile($opt['profile']);
+if (!in_array($profile, $benchProfiles, true)) {
+    bail("--profile must be one of: " . implode(', ', $benchProfiles) . ' (or bench, the default: ' . JD2_OWNER_DEFAULT_PROFILE . ').');
 }
 
 $taxonomy = jd_taxonomy();
@@ -113,7 +143,7 @@ if (!is_array($taxonomy)) {
 }
 $poolSize = count(jd2_pool($taxonomy));
 $slots = str_split(substr(JD2_SLOT_LETTERS, 0, $poolSize));
-$timeout = JD_BENCH_TIMEOUT + 30;
+$timeout = jd_profile_timeout($profile) + 30;
 
 // --- where, and with which key --------------------------------------------
 if ($opt['local']) {
@@ -150,11 +180,15 @@ if ($csvPath === null) {
 // --- the CSV, read and checked before anything is spent --------------------
 $rows = read_csv($csvPath, $taxonomy, $root);
 
+// rows that would start fresh without a rerun_of: is their text on file already?
+$fresh = array_filter($rows, fn ($r) => !isset($state[state_key($profile, $r['prompt'])]) && $r['rerun_of'] === '');
+$onFile = $fresh ? owner_prompts_by_text($base) : [];
+
 $plan = [];
 $refusedDone = [];
 $requests = 0;
 foreach ($rows as $n => $row) {
-    $entry = $state[$row['prompt']] ?? null;
+    $entry = $state[state_key($profile, $row['prompt'])] ?? null;
     $settled = $entry === null ? 0 : count(array_filter($entry['slots'] ?? [], fn ($s) => in_array($s, ['ok', 'failed', 'rejected', 'beyond'], true)));
     $want = $entry !== null && isset($entry['dealt']) ? (int) $entry['dealt'] : $poolSize;
     if ($entry !== null && !$opt['resume']) {
@@ -166,6 +200,12 @@ foreach ($rows as $n => $row) {
     }
     $plan[] = $n;
     $requests += $want - $settled;
+    // new prompt or rerun: an entry's own decision stands; a fresh row takes
+    // the CSV's rerun_of, else the oldest owner prompt on file with its text
+    $rows[$n]['plan_rerun_of'] = $entry !== null ? (string) ($entry['rerun_of'] ?? '')
+        : ($row['rerun_of'] !== '' ? $row['rerun_of'] : (string) ($onFile[$row['prompt']] ?? ''));
+    $rows[$n]['plan_matched'] = $entry !== null ? !empty($entry['auto_rerun'])
+        : ($row['rerun_of'] === '' && isset($onFile[$row['prompt']]));
 }
 if ($refusedDone) {
     bail(count($refusedDone) . " row(s) are already in the state file for $stateKey:\n  " . implode("\n  ", $refusedDone)
@@ -173,10 +213,12 @@ if ($refusedDone) {
 }
 
 echo "jd2-batch-run · $base · " . count($rows) . ' rows in ' . basename($csvPath) . ' · pool of ' . $poolSize
-    . ' (' . implode(', ', $slots) . ') · bench profile, one model per request' . "\n";
+    . ' (' . implode(', ', $slots) . ") · profile $profile (harness " . jd_harness($profile) . ', budget '
+    . jd_max_tokens($profile) . ' tokens, in this checkout) · one model per request' . "\n";
 foreach ($plan as $n) {
     $row = $rows[$n];
-    echo sprintf("  #%-3d %s  %s%s%s%s\n", $n + 1, $row['rerun_of'] !== '' ? 'rerun ' . $row['rerun_of'] : 'new prompt',
+    echo sprintf("  #%-3d %s  %s%s%s%s\n", $n + 1, $row['plan_rerun_of'] !== ''
+            ? 'rerun ' . $row['plan_rerun_of'] . ($row['plan_matched'] ? ' (same text, on file)' : '') : 'new prompt',
         '"' . clip($row['prompt']) . '"',
         $row['title'] !== '' ? ' · title "' . $row['title'] . '"' : '',
         ($row['size'] !== '' ? ' · size ' . $row['size'] : '') . ($row['category'] !== '' ? ' · ' . $row['category'] : ''),
@@ -209,7 +251,7 @@ if ($opt['dry-run']) {
     $first = $plan ? $rows[$plan[0]] : null;
     if ($first !== null) {
         echo 'first request: POST ' . $base . '/api/jd2-generate.php  X-Bench-Key: <redacted>  '
-            . json_encode(slot_body($first, ['client_ref' => '<minted per row>'], $slots[0])) . "\n";
+            . json_encode(slot_body($first, ['client_ref' => '<minted per row>', 'rerun_of' => $first['plan_rerun_of']], $slots[0], $profile)) . "\n";
     }
     echo "dry run: nothing drawn.\n";
     exit(0);
@@ -221,10 +263,14 @@ $tally = ['ok' => 0, 'failed' => 0, 'rejected' => 0, 'other' => 0];
 $ran = [];
 foreach ($plan as $k => $n) {
     $row = $rows[$n];
-    $entry = &$state[$row['prompt']];
-    $entry ??= ['client_ref' => jd_uuid4(), 'prompt_id' => $row['rerun_of'] !== '' ? $row['rerun_of'] : null,
+    $entry = &$state[state_key($profile, $row['prompt'])];
+    $entry ??= ['client_ref' => jd_uuid4(), 'profile' => $profile, 'prompt' => $row['prompt'],
+                'rerun_of' => $row['plan_rerun_of'] !== '' ? $row['plan_rerun_of'] : null,
+                'auto_rerun' => $row['plan_matched'],
+                'prompt_id' => $row['plan_rerun_of'] !== '' ? $row['plan_rerun_of'] : null,
                 'run_id' => null, 'slots' => [], 'started' => gmdate('Y-m-d H:i:s')];
     save_state($opt['state'], $stateAll);   // the client_ref is on disk before the first request
+    $isRerun = !empty($entry['rerun_of']);
 
     foreach ($slots as $slot) {
         if (isset($entry['dealt']) && array_search($slot, $slots, true) >= (int) $entry['dealt']) {
@@ -233,9 +279,21 @@ foreach ($plan as $k => $n) {
         if (in_array($entry['slots'][$slot] ?? null, ['ok', 'failed', 'rejected', 'beyond'], true)) {
             continue;
         }
+        if ($isRerun && empty($entry['run_id'])) {
+            // a rerun is rejoined by its run id; a first request whose answer
+            // was lost made one we can find, so adopt it rather than make two
+            if (!empty($entry['rerun_asked'])) {
+                $entry['run_id'] = find_lost_rerun($base, $entry, $profile, $stateAll);
+                if ($entry['run_id'] !== null) {
+                    echo sprintf("  #%-3d rejoining rerun %s (its first answer was lost)\n", $n + 1, $entry['run_id']);
+                }
+            }
+            $entry['rerun_asked'] = gmdate('Y-m-d H:i:s');
+            save_state($opt['state'], $stateAll);
+        }
         $started = microtime(true);
         $startedUtc = gmdate('Y-m-d H:i:s');
-        [$st, $res] = http('POST', $base . '/api/jd2-generate.php', slot_body($row, $entry, $slot), $timeout);
+        [$st, $res] = http('POST', $base . '/api/jd2-generate.php', slot_body($row, $entry, $slot, $profile), $timeout);
         $wall = microtime(true) - $started;
         $code = $res['error']['code'] ?? null;
 
@@ -272,10 +330,12 @@ foreach ($plan as $k => $n) {
             $why = $st === 0 ? 'no answer within ' . $timeout . ' s (the drawing may still land: --resume asks again)'
                 : $st . ' ' . ($code ?? '') . ' — ' . ($res['error']['message'] ?? 'no message');
             echo sprintf("  #%-3d %s  —  %s\n", $n + 1, $slot, $why);
-            if (in_array($code, ['drawer_resting', 'rate_limited', 'too_many_attempts', 'forbidden'], true)) {
+            $badProfile = $code === 'bad_request' && str_starts_with((string) ($res['error']['message'] ?? ''), 'profile must be');
+            if ($badProfile || in_array($code, ['drawer_resting', 'rate_limited', 'too_many_attempts', 'forbidden'], true)) {
                 echo "Stopped: " . ($code === 'drawer_resting'
                     ? "today's breaker tripped. Run again with --resume after 00:00 UTC.\n"
-                    : "the server refused the key or throttled it ($code). Nothing more was sent.\n");
+                    : ($badProfile ? "the server does not know the $profile profile (deploy the profile split first). Nothing more was sent.\n"
+                        : "the server refused the key or throttled it ($code). Nothing more was sent.\n"));
                 print_summary($tally, $spent, $ran, $base, $state, $opt['rate-url']);
                 exit(1);
             }
@@ -313,7 +373,7 @@ foreach ($plan as $k => $n) {
         // and when the CSV gave both a title and a size. The CSV's own title
         // and size are filed after the drawings (jd2-curate) and stand over
         // the clerk's: an owner's size is never overwritten by the model.
-        if (!empty($entry['prompt_id']) && empty($entry['intake']) && $row['rerun_of'] === ''
+        if (!empty($entry['prompt_id']) && empty($entry['intake']) && !$isRerun
             && !($row['title'] !== '' && $row['size'] !== '')) {
             run_intake($base, $n, $entry);
             save_state($opt['state'], $stateAll);
@@ -321,7 +381,7 @@ foreach ($plan as $k => $n) {
     }
 
     // the row's own facts, once its prompt exists: title, size, category
-    if (!empty($entry['prompt_id']) && empty($entry['curated']) && $row['rerun_of'] === ''
+    if (!empty($entry['prompt_id']) && empty($entry['curated']) && !$isRerun
         && ($row['title'] !== '' || $row['size'] !== '' || $row['category'] !== '')) {
         $body = ['prompt_id' => $entry['prompt_id']];
         if ($row['title'] !== '') {
@@ -410,7 +470,7 @@ function read_csv(string $path, array $taxonomy, string $root): array
             $errors[] = "line $line: the prompt is $len characters (at most " . JD_PROMPT_MAX_CHARS . ')';
         }
         if (isset($seen[$prompt])) {
-            $errors[] = "line $line: the same prompt text as line {$seen[$prompt]} (the state file keys rows by text; use rerun_of for a second run)";
+            $errors[] = "line $line: the same prompt text as line {$seen[$prompt]} (the state file keys rows by profile and text; run the CSV again with another --profile for a second run)";
         }
         $seen[$prompt] = $line;
         $row = ['prompt' => $prompt, 'title' => trim($r['title'] ?? ''), 'size' => trim($r['size'] ?? ''),
@@ -460,12 +520,12 @@ function v1_prompt_index(string $root): array
     return $out;
 }
 
-/** The jd2-generate body for one slot of a row. */
-function slot_body(array $row, array $entry, string $slot): array
+/** The jd2-generate body for one slot of a row (a rerun when the row's entry says so). */
+function slot_body(array $row, array $entry, string $slot, string $profile): array
 {
-    $b = ['client_ref' => $entry['client_ref'], 'slot' => $slot, 'client' => 'web', 'profile' => 'bench', 'website' => ''];
-    if ($row['rerun_of'] !== '') {
-        $b['rerun_of'] = $row['rerun_of'];
+    $b = ['client_ref' => $entry['client_ref'], 'slot' => $slot, 'client' => 'web', 'profile' => $profile, 'website' => ''];
+    if (!empty($entry['rerun_of'])) {
+        $b['rerun_of'] = $entry['rerun_of'];
         if (!empty($entry['run_id'])) {
             $b['run_id'] = $entry['run_id'];   // join the rerun the first slot made
         }
@@ -476,6 +536,72 @@ function slot_body(array $row, array $entry, string $slot): array
         $b['v1_item_id'] = $row['v1_item_id'];
     }
     return $b;
+}
+
+/** A row's state key: the profile and the prompt text (`[bench-medium] a tin robot`). */
+function state_key(string $profile, string $text): string
+{
+    return '[' . $profile . '] ' . $text;
+}
+
+/**
+ * The owner prompts on file, by exact text → the OLDEST one's id (ULIDs sort
+ * by filing time), hidden ones left out: what a fresh row is rerun against.
+ * One read of the ledger (jd2-ledger.php, with the key); bails when it cannot
+ * be read, because guessing "new" would file a duplicate prompt.
+ *
+ * @return array<string,string>
+ */
+function owner_prompts_by_text(string $base): array
+{
+    [$st, $led] = http('GET', $base . '/api/jd2-ledger.php', null, 120);
+    if ($st !== 200 || !isset($led['items']) || !is_array($led['items'])) {
+        bail('Could not read the ledger to find prompts already on file (' . $st . ' ' . ($led['error']['code'] ?? '') . ') — nothing was drawn.');
+    }
+    $out = [];
+    foreach ($led['items'] as $it) {
+        if (($it['origin'] ?? '') !== 'owner' || ($it['visibility'] ?? '') === 'hidden' || !isset($it['prompt'], $it['prompt_id'])) {
+            continue;
+        }
+        $text = (string) $it['prompt'];
+        $id = (string) $it['prompt_id'];
+        if (!isset($out[$text]) || strcmp($id, $out[$text]) < 0) {
+            $out[$text] = $id;
+        }
+    }
+    return $out;
+}
+
+/**
+ * The run a lost first rerun request made: the oldest rerun of the entry's
+ * prompt under this profile, filed by the owner no earlier than the request
+ * went out (less five minutes of clock skew), and claimed by no other state
+ * entry. Null when there is none (the request never reached the server).
+ */
+function find_lost_rerun(string $base, array $entry, string $profile, array $stateAll): ?string
+{
+    [$st, $led] = http('GET', $base . '/api/jd2-ledger.php?prompt=' . rawurlencode((string) $entry['rerun_of']), null, 60);
+    if ($st !== 200) {
+        return null;
+    }
+    $claimed = [];
+    foreach ($stateAll['bases'] ?? [] as $rows) {
+        foreach ((array) $rows as $e) {
+            if (!empty($e['run_id'])) {
+                $claimed[(string) $e['run_id']] = true;
+            }
+        }
+    }
+    $since = gmdate('Y-m-d H:i:s', strtotime($entry['rerun_asked'] . ' UTC') - 300);
+    $found = null;
+    foreach ($led['items'][0]['runs'] ?? [] as $r) {
+        if (($r['kind'] ?? '') === 'rerun' && ($r['profile'] ?? '') === $profile && ($r['requested_by'] ?? '') === 'owner'
+            && strcmp((string) $r['created'], $since) >= 0 && !isset($claimed[(string) $r['run_id']])
+            && ($found === null || strcmp((string) $r['run_id'], $found) < 0)) {
+            $found = (string) $r['run_id'];
+        }
+    }
+    return $found;
 }
 
 /** One intake call for a row's prompt (prompt_id, the bench key); logs what the clerk filed. */
@@ -537,11 +663,15 @@ function save_state(string $path, array $all): void
 function print_rate_urls(string $base, array $state, ?array $only): void
 {
     echo "rate on the bench: $base/art/junk-drawer/index.php?bench\n";
-    foreach ($state as $text => $e) {
-        if (empty($e['prompt_id']) || ($only !== null && !in_array($e['prompt_id'], $only, true))) {
+    $done = [];
+    foreach ($state as $key => $e) {
+        if (empty($e['prompt_id']) || isset($done[$e['prompt_id']]) || ($only !== null && !in_array($e['prompt_id'], $only, true))) {
             continue;
         }
-        echo '  ' . $base . '/art/junk-drawer/index.php?bench&prompt=' . $e['prompt_id'] . '  "' . clip((string) $text) . "\"\n";
+        $done[$e['prompt_id']] = true;
+        // a pre-split entry is keyed by its text alone
+        $text = (string) ($e['prompt'] ?? $key);
+        echo '  ' . $base . '/art/junk-drawer/index.php?bench&prompt=' . $e['prompt_id'] . '  "' . clip($text) . "\"\n";
     }
 }
 

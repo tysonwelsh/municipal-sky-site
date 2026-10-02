@@ -102,9 +102,9 @@ There are two ways in. Nothing enters by file.
 1. **The owner.** Use the bench's NEW PROMPT (`?bench`; `?bench&prompt=<id>`
    seats one prompt), or the CSV batch runner:
    `JD_BENCH_KEY=… php scripts/jd2-batch-run.php prompts.csv [--dry-run]
-   [--resume]`. The CSV columns are `prompt`, `title`, `size`, `category`,
-   `v1_item_id`, `rerun_of`. Owner runs use the `bench` profile: every model
-   at its vendor's top setting, one model per request. The prompt files as
+   [--resume] [--profile …]`. The CSV columns are `prompt`, `title`,
+   `size`, `category`, `v1_item_id`, `rerun_of`. Owner runs use an owner
+   effort profile (below), one model per request. The prompt files as
    `draft`. The owner then rates it on the bench, and the first complete
    owner session makes it `live`. A rerun is a new run of the same prompt
    (`rerun_of`). The drawer shows `shown_run_id`, else the newest run with a
@@ -114,6 +114,17 @@ There are two ways in. Nothing enters by file.
    rates on the same card, and a complete visitor session makes the prompt
    live unless they kept it out. Visitors get one session per run; the owner
    gets unlimited sessions.
+
+**Owner effort profiles (2026-10-02).** `bench-medium` (the default, owner's
+call: medium thinking), `bench-low` and `bench-max` set every vendor's
+low / medium / top thinking rung, each with a 64000-token budget (thinking
+counts against it) and its own harness id; the table is in
+`db/junk-drawer-v2-schema.md`. The wire word `bench` means the default, so
+the bench page follows it. The batch runner takes `--profile` (state keyed
+by profile and text), and a row whose text an owner prompt already has is
+filed as a RERUN of that prompt, so three settings make three runs of one
+prompt. `scripts/jd2-profile-probe.php` (`JD_PROFILE_LIVE=1`) checks that
+every model finishes an SVG under every profile.
 
 The bench and the visitor card are ONE instrument (`JD_turn.curate`). A
 layout or behaviour change to the rating flow is made once, in the shared

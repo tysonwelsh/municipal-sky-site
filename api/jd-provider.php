@@ -7,9 +7,10 @@
 // which is the one thing a harness exists to prevent. jd-generate.php is a
 // request handler and executes on include, so it could not simply be required.
 //
-// jd_provider_call() takes an effort PROFILE ('web' | 'bench'), defined in
-// jd-config.php's JD_EFFORT table. It defaults to 'web' so every pre-existing
-// call site is byte-identical.
+// jd_provider_call() takes an effort PROFILE ('web' | 'bench-max' |
+// 'bench-medium' | 'bench-low'), defined in jd-config.php's JD_EFFORT table,
+// with its output budget from JD_MAX_TOKENS_BY_PROFILE. It defaults to 'web'
+// so every pre-existing call site is byte-identical.
 
 require_once __DIR__ . '/jd-config.php';
 
@@ -20,12 +21,13 @@ require_once __DIR__ . '/jd-config.php';
 function jd_provider_params(string $provider, string $profile = 'web'): string
 {
     $effort = jd_effort($provider, $profile);
+    $maxTokens = jd_max_tokens($profile);
     $base = [
-        'anthropic' => ['max_tokens' => JD_MAX_TOKENS],
-        'kimi'      => ['max_tokens' => JD_MAX_TOKENS],
-        'google'    => ['max_output_tokens' => JD_MAX_TOKENS],
-        'openai'    => ['max_completion_tokens' => JD_MAX_TOKENS],
-    ][$provider] ?? ['max_tokens' => JD_MAX_TOKENS];
+        'anthropic' => ['max_tokens' => $maxTokens],
+        'kimi'      => ['max_tokens' => $maxTokens],
+        'google'    => ['max_output_tokens' => $maxTokens],
+        'openai'    => ['max_completion_tokens' => $maxTokens],
+    ][$provider] ?? ['max_tokens' => $maxTokens];
 
     return json_encode(array_merge($base, $effort, [
         // Forced, not chosen: Opus 5 rejects temperature outright, so
@@ -118,16 +120,24 @@ function jd_provider_key_slot(string $provider, ?string $use = null): array
 
 /**
  * C4.3. Returns the same shape as jd_mock_call() so that everything after the
- * call — extraction, sanitizer, storage — is identical in both modes.
+ * call — extraction, sanitizer, storage — is identical in both modes, plus
+ * `stop`: the provider's own stop/finish reason when one came back (Anthropic
+ * stop_reason, OpenAI/Kimi finish_reason, Gemini finishReason), else null.
+ * Nothing stores `stop` yet; scripts/jd2-profile-probe.php prints it.
  *
- * @return array{ok:bool,http_code:int,raw:string,usage:array,error:?string}
+ * @return array{ok:bool,http_code:int,raw:string,usage:array,error:?string,stop?:?string}
  */
 function jd_provider_call(string $provider, string $apiModel, string $prompt, string $profile = 'web'): array
 {
-    // The effort fragment for this profile. Defaulting to 'web' keeps every
-    // existing call site byte-identical — v3-web.1 must not drift because a
-    // benchmark profile was added beside it.
+    // The effort fragment and output budget for this profile. Defaulting to
+    // 'web' keeps every existing call site byte-identical — v3-web.1 must not
+    // drift because a benchmark profile was added beside it. An unknown
+    // profile is refused, never drawn under a silently empty effort fragment.
+    if (!jd_profile_known($profile)) {
+        return ['ok' => false, 'http_code' => 0, 'raw' => '', 'usage' => [], 'error' => 'unknown_profile'];
+    }
     $effort = jd_effort($provider, $profile);
+    $maxTokens = jd_max_tokens($profile);
     $key = jd_provider_key($provider);
     if ($key === null) {
         return ['ok' => false, 'http_code' => 0, 'raw' => '', 'usage' => [], 'error' => 'missing_api_key'];
@@ -144,14 +154,15 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt, st
         // parameters, and the provider default is the behaviour we record.
         $payload = [
             'model' => $apiModel,
-            'max_tokens' => JD_MAX_TOKENS,
+            'max_tokens' => $maxTokens,
             'system' => JD_SYSTEM_PROMPT,
             'messages' => [
                 ['role' => 'user', 'content' => $prompt],
             ],
         ];
-        // web: thinking disabled. bench: output_config.effort = max, and NO
-        // thinking key — Opus 5 rejects disabled thinking above effort high.
+        // web: thinking disabled. bench-*: output_config.effort, and NO
+        // thinking key — thinking stays on (Opus 5 rejects disabled thinking
+        // above effort high, and the bench profiles want it on at every rung).
         foreach ($effort as $k => $v) {
             $payload[$k] = $v;
         }
@@ -167,7 +178,7 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt, st
         ];
         $payload = [
             'model' => $apiModel,
-            'max_tokens' => JD_MAX_TOKENS,
+            'max_tokens' => $maxTokens,
             'messages' => [
                 ['role' => 'system', 'content' => JD_SYSTEM_PROMPT],
                 ['role' => 'user', 'content' => $prompt],
@@ -178,8 +189,9 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt, st
         }
     } elseif ($provider === 'google') {
         // Gemini's generateContent endpoint. The key rides in the
-        // x-goog-api-key header; thinkingLevel 'low' keeps the thinking
-        // model inside the shared hosting time budget (see JD_MODEL_POOL).
+        // x-goog-api-key header; thinkingLevel comes from the profile ('low'
+        // on web keeps the thinking model inside the shared hosting time
+        // budget, see JD_MODEL_POOL). maxOutputTokens counts its thoughts.
         $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
             . rawurlencode($apiModel) . ':generateContent';
         $headers = [
@@ -192,7 +204,7 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt, st
                 ['role' => 'user', 'parts' => [['text' => $prompt]]],
             ],
             'generationConfig' => [
-                'maxOutputTokens' => JD_MAX_TOKENS,
+                'maxOutputTokens' => $maxTokens,
             ],
         ];
         if (isset($effort['thinking_level'])) {
@@ -209,7 +221,7 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt, st
         // max_completion_tokens, not max_tokens (gpt-5 reasoning family).
         $payload = [
             'model' => $apiModel,
-            'max_completion_tokens' => JD_MAX_TOKENS,
+            'max_completion_tokens' => $maxTokens,
             'messages' => [
                 ['role' => 'system', 'content' => JD_SYSTEM_PROMPT],
                 ['role' => 'user', 'content' => $prompt],
@@ -220,8 +232,7 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt, st
         }
     }
 
-    $wire = jd_http_post_json($url, $headers, $payload,
-        $profile === 'bench' ? JD_BENCH_TIMEOUT : JD_PROVIDER_TIMEOUT);
+    $wire = jd_http_post_json($url, $headers, $payload, jd_profile_timeout($profile));
     $httpCode = $wire['http_code'];
     $response = $wire['body'];
 
@@ -244,6 +255,11 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt, st
         $usage = $data['usageMetadata'];
     }
 
+    $stop = $provider === 'anthropic' ? ($data['stop_reason'] ?? null)
+        : ($provider === 'google' ? ($data['candidates'][0]['finishReason'] ?? null)
+            : ($data['choices'][0]['finish_reason'] ?? null));
+    $stop = is_string($stop) ? $stop : null;
+
     if ($provider === 'anthropic') {
         $text = '';
         foreach ($data['content'] ?? [] as $block) {
@@ -263,8 +279,8 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt, st
     }
 
     if ($text === '') {
-        return ['ok' => false, 'http_code' => $httpCode, 'raw' => (string) $response, 'usage' => $usage, 'error' => 'empty_completion'];
+        return ['ok' => false, 'http_code' => $httpCode, 'raw' => (string) $response, 'usage' => $usage, 'error' => 'empty_completion', 'stop' => $stop];
     }
 
-    return ['ok' => true, 'http_code' => $httpCode, 'raw' => $text, 'usage' => $usage, 'error' => null];
+    return ['ok' => true, 'http_code' => $httpCode, 'raw' => $text, 'usage' => $usage, 'error' => null, 'stop' => $stop];
 }

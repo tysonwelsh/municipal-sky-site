@@ -71,51 +71,123 @@ JD_PROMPT;
 //
 // The visitor turn and a benchmark rerun want opposite things. A visitor is
 // watching a loading animation inside JD_PROVIDER_TIMEOUT, so the web profile
-// buys latency with thinking. A benchmark wants each model at its best and
-// does not care if that takes minutes. Both are legitimate; what is NOT
-// legitimate is pooling their results, so each profile carries its own
-// harness id and every generation records which one produced it.
+// buys latency with thinking. A benchmark wants each model thinking at a
+// chosen setting and does not care if that takes minutes. Both are
+// legitimate; what is NOT legitimate is pooling their results, so each
+// profile carries its own harness id and every generation records which one
+// produced it.
+//
+// THE OWNER'S PROFILES (2026-10-02). There are three, so the owner can compare
+// thinking settings on the same prompts:
+//   bench-low     every vendor's low setting
+//   bench-medium  every vendor's medium setting — THE OWNER'S DEFAULT
+//                 (owner, 2026-10-02: "not all the way to the bottom, but we
+//                 don't need high either — goldilocks"); jd2-config.php's
+//                 JD2_OWNER_DEFAULT_PROFILE
+//   bench-max     every vendor's top documented setting (the old `bench`)
+// The bare word `bench` is no longer a profile. On the wire (jd2-generate's
+// `profile`, from an older client) it means "the server's default owner
+// profile"; in jd2_runs it is the retired pre-split profile, stored on the
+// runs filed before 2026-10-02 under harness v4-bench.3 (max effort, the
+// 12000-token budget that starved two of the four models — below).
+//
+// The vendor values, verified against each vendor's docs on 2026-10-02:
+//   Anthropic Opus 5   output_config.effort low|medium|high|xhigh|max; thinking
+//                      on by default (adaptive), so no `thinking` key is sent
+//                      on any bench profile — it stays on.
+//   OpenAI gpt-5.1     reasoning_effort none (default)|low|medium|high
+//                      (developers.openai.com/api/docs/models/gpt-5.1)
+//   Moonshot kimi-k3   reasoning_effort low|high|max, default max
+//                      (platform.kimi.ai/docs/api/chat). There is NO medium:
+//                      bench-medium sends `high`, the middle rung of K3's
+//                      three, and bench-max sends `max` (the pre-split bench
+//                      sent `high`, which was not K3's top).
+//   Google 3.1 Pro     thinkingLevel low|medium|high, default high (no
+//                      minimal on 3.1 Pro; ai.google.dev/gemini-api/docs/thinking)
 //
 // APPLES TO APPLES, HONESTLY: these knobs are NOT calibrated against each
 // other. Anthropic's effort, OpenAI's and Moonshot's reasoning_effort, and
 // Google's thinkingLevel are vendor-defined ordinals over different
-// mechanisms — "high" on one is not "high" on another, and no published
-// mapping exists. The bench profile therefore does not claim equal compute.
-// It claims a uniform CONDITION — every model at its vendor's top documented
-// setting — and relies on jd-usage.php's reasoning-token normalisation to
-// make the actual spend visible per generation, so the asymmetry lands in the
-// data instead of hiding in this file.
+// mechanisms — "medium" on one is not "medium" on another, and no published
+// mapping exists. A bench profile therefore does not claim equal compute. It
+// claims a uniform CONDITION — every model at the named rung of its vendor's
+// documented ladder — and relies on jd-usage.php's reasoning-token
+// normalisation to make the actual spend visible per generation, so the
+// asymmetry lands in the data instead of hiding in this file.
 //
 // What IS genuinely equalised across the four: the system prompt (byte
-// identical), the user prompt, JD_MAX_TOKENS, provider-default sampling
-// (forced — Opus 5 rejects temperature outright), and pair_order slot
-// randomisation.
+// identical), the user prompt, the profile's output budget
+// (JD_MAX_TOKENS_BY_PROFILE), provider-default sampling (forced — Opus 5
+// rejects temperature outright), and pair_order slot randomisation.
 //
 // KNOWN FLAW IN THE WEB PROFILE, left deliberately: openai sends no reasoning
-// parameter, so GPT-5.1 runs at its vendor default while the other three are
-// explicitly throttled. Fixing it would change visitor behaviour and make
-// v3-web.1 data non-comparable with itself, so it stays until the web harness
-// is next bumped. The bench profile does not inherit the flaw.
+// parameter, so GPT-5.1 runs at its vendor default (none) while the other
+// three are explicitly throttled. Fixing it would change visitor behaviour and
+// make v3-web.1 data non-comparable with itself, so it stays until the web
+// harness is next bumped. No bench profile inherits the flaw.
 const JD_EFFORT = [
     'web' => [
         // Opus 5 thinks by default; disabled is accepted at effort high or
         // below. NOTE: with thinking off, Opus 5 can leak <thinking> tags
         // into visible output — a plausible source of recorded disobedience
-        // on this profile, and another reason the bench profile leaves
+        // on this profile, and another reason the bench profiles leave
         // thinking on.
         'anthropic' => ['thinking' => ['type' => 'disabled']],
         'openai'    => [],
         'kimi'      => ['reasoning_effort' => 'low'],
         'google'    => ['thinking_level' => 'low'],
     ],
-    'bench' => [
-        // budget_tokens is REMOVED on Opus 5 (400). Effort is output_config,
-        // and 'max' requires thinking left on — so no thinking key here.
+    // budget_tokens is REMOVED on Opus 5 (400). Effort is output_config, and
+    // 'max' requires thinking left on — so no thinking key on any bench row.
+    'bench-max' => [
         'anthropic' => ['output_config' => ['effort' => 'max']],
         'openai'    => ['reasoning_effort' => 'high'],
-        'kimi'      => ['reasoning_effort' => 'high'],
+        'kimi'      => ['reasoning_effort' => 'max'],
         'google'    => ['thinking_level' => 'high'],
     ],
+    'bench-medium' => [
+        'anthropic' => ['output_config' => ['effort' => 'medium']],
+        'openai'    => ['reasoning_effort' => 'medium'],
+        'kimi'      => ['reasoning_effort' => 'high'],   // K3 has no medium: its middle rung
+        'google'    => ['thinking_level' => 'medium'],
+    ],
+    'bench-low' => [
+        'anthropic' => ['output_config' => ['effort' => 'low']],
+        'openai'    => ['reasoning_effort' => 'low'],
+        'kimi'      => ['reasoning_effort' => 'low'],
+        'google'    => ['thinking_level' => 'low'],
+    ],
+];
+
+// THE OUTPUT BUDGET, per profile (2026-10-02). On every provider in the pool
+// the one output cap covers thinking AND the answer: Anthropic's max_tokens
+// is "a hard cap on thinking plus response text"; OpenAI bills reasoning as
+// output inside max_completion_tokens; Gemini's maxOutputTokens "includes
+// thought tokens"; Kimi's completion count carries its reasoning. The first
+// live batch at the pre-split bench profile (12000 for everything) proved
+// it: Opus 5 at effort max stopped at max_tokens with 12000 output tokens,
+// every one of them thinking, and no text; Gemini 3.1 Pro at thinking_level
+// high was cut off ~1.3 KB into its SVG. A budget a thinking model can spend
+// before it starts drawing is a budget that fails correlated with the model
+// under study.
+//
+// So the bench profiles get 64000: the largest single number every pool
+// model accepts. The binding cap is Gemini 3.1 Pro's 65,536 output tokens
+// (ai.google.dev/gemini-api/docs/models/gemini-3.1-pro-preview); Opus 5 and
+// GPT-5.1 allow 128,000, Kimi K3 far more. The whole pool gets the same
+// number, deliberately (same argument as JD_PROVIDER_TIMEOUT). OpenAI's own
+// guidance is to reserve at least 25,000 for reasoning and output. The budget
+// is a ceiling, not a target: it is spent only when a model thinks that long,
+// and jd-usage.php prices what was actually spent.
+//
+// web stays 12000 — visitor behaviour unchanged (and the web profile thinks
+// little or not at all). JD_MAX_TOKENS is kept as its alias for every
+// pre-existing reader (scripts/jd-cost-probe.php, v1).
+const JD_MAX_TOKENS_BY_PROFILE = [
+    'web'          => 12000,
+    'bench-max'    => 64000,
+    'bench-medium' => 64000,
+    'bench-low'    => 64000,
 ];
 
 // Prompt generation v4 (2026-08-21): the figure-not-ground clause. Revision .2
@@ -123,7 +195,7 @@ const JD_EFFORT = [
 // style (flat, simplified, mid-90s) into drawings whose style is supposed to
 // come from the brief alone. Same requirement, stated as purpose and
 // prohibition instead of as a category (owner catch, 2026-08-21).
-// The system prompt is shared by both profiles, so a prompt edit moves BOTH.
+// The system prompt is shared by every profile, so a prompt edit moves ALL.
 // Everything generated before this stays under v3-web.1 and is permanently
 // distinguishable — those 77 responses were drawn to a different brief.
 // v4-*.3 (owner catch, 2026-08-30): "draw the figure, never the ground" was
@@ -131,19 +203,38 @@ const JD_EFFORT = [
 // the card's own face left blank, its printed scene mistaken for background.
 // The prompt now says where the object's edge is: everything inside it is
 // the subject, and the ground is only what lies outside.
+// v4-bench.4 (2026-10-02): the max-effort profile, renamed bench-max, with
+// the 64000 budget (was 12000) and Kimi at reasoning_effort max (was high).
+// Its bytes and parameters changed, so runs under v4-bench.3 (the retired
+// `bench`) and v4-bench.4 are NOT pooled. v4-benchmed.1 and v4-benchlow.1 are
+// the medium and low profiles, new the same day; the three bench harnesses
+// are never pooled with each other either — comparing them is the point.
 const JD_HARNESS_BY_PROFILE = [
-    'web'   => 'v4-web.3',
-    'bench' => 'v4-bench.3',
+    'web'          => 'v4-web.3',
+    'bench-max'    => 'v4-bench.4',
+    'bench-medium' => 'v4-benchmed.1',
+    'bench-low'    => 'v4-benchlow.1',
 ];
 
 // The harness id jd-generate.php stamps on every visitor turn's generations —
 // the web profile's, so the two can never disagree.
 const JD_HARNESS = JD_HARNESS_BY_PROFILE['web'];
 
+// The web profile's output budget, for every reader that predates the
+// per-profile table (jd_max_tokens() is the per-profile reader).
+const JD_MAX_TOKENS = JD_MAX_TOKENS_BY_PROFILE['web'];
+
 // A benchmark run is not on a visitor's clock. CLI has no max_execution_time,
 // so this is the only ceiling — generous enough for a thinking model at max
-// effort (kimi at DEFAULT effort was observed past 280s).
+// effort (kimi at DEFAULT effort was observed past 280s). Every bench-*
+// profile gets it (jd_profile_timeout).
 const JD_BENCH_TIMEOUT = 900;
+
+/** Is $profile one the provider layer can draw under (a JD_EFFORT key)? */
+function jd_profile_known(string $profile): bool
+{
+    return isset(JD_EFFORT[$profile]);
+}
 
 function jd_effort(string $provider, string $profile): array
 {
@@ -153,6 +244,18 @@ function jd_effort(string $provider, string $profile): array
 function jd_harness(string $profile): string
 {
     return JD_HARNESS_BY_PROFILE[$profile] ?? JD_HARNESS;
+}
+
+/** The profile's output budget (thinking + answer); the web budget for an unknown one. */
+function jd_max_tokens(string $profile): int
+{
+    return JD_MAX_TOKENS_BY_PROFILE[$profile] ?? JD_MAX_TOKENS;
+}
+
+/** The wire timeout: a visitor's clock on web, the bench ceiling on every bench-* profile. */
+function jd_profile_timeout(string $profile): int
+{
+    return $profile === 'web' ? JD_PROVIDER_TIMEOUT : JD_BENCH_TIMEOUT;
 }
 
 // C4.2 — all four pool entries draw every turn: the slot→model assignment
@@ -209,7 +312,6 @@ const JD_DRAW_PERMS = [
     [3, 1, 0, 2], [3, 1, 2, 0], [3, 2, 0, 1], [3, 2, 1, 0],
 ];
 
-const JD_MAX_TOKENS = 12000;
 // 150 since 2026-08-30 (owner call, raised from 90): Kimi K3 has repeatedly
 // missed the old budget — the subway-rat rerun timed out at 90.0s with zero
 // bytes received, and the owner has seen the same before — and a failed slot

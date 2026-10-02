@@ -146,15 +146,16 @@ The drawer is **empty on purpose**. It fills through the campaign below.
    each vendor; verify wire ids and prices against the providers' current
    lists; edit `taxonomy.json` `models[]` (`pool`, `provider`, `api_model`)
    and `api/jd-prices.json`; bump `poolVersion`; bump the consent version
-   if the provider list changes (privacy.php §4 must match). Also reassess
-   the effort settings: owner runs use the `bench` profile (each model at
-   its vendor's top setting); visitors use `web` (thinking turned down for
-   wait time) — the owner wants that trade-off revisited later.
+   if the provider list changes (privacy.php §4 must match). The owner's
+   effort setting is decided (2026-10-02): owner runs use `bench-medium`
+   (each model at its vendor's medium rung; `bench-low` and `bench-max`
+   for an optional comparison); visitors use `web` (thinking turned down
+   for wait time) — the owner wants that trade-off revisited later.
 2. **The prompt set**: the owner curates ~100 prompts into a CSV
    (`prompt`, optional `title`, `category`, `v1_item_id`), probably reusing
    many v1 prompts. Consider categories.
-3. **Batch generation** with `scripts/jd2-batch-run.php` (bench profile,
-   one model per request, four per prompt, resumable, spend-guarded).
+3. **Batch generation** with `scripts/jd2-batch-run.php` (`--profile`,
+   default `bench-medium`, one model per request, four per prompt, resumable, spend-guarded).
 4. **The rating campaign** on `?bench`: grades, axes, podium, pairs, size,
    note, per prompt. Definitions get sharpened as the owner works; they
    must be solid before the piece is shared. Includes the benefit-of-the-

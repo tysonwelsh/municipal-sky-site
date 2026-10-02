@@ -113,7 +113,9 @@ function jd_build_stamp(): array
         'version'  => $short !== '' ? $short : 'dev',
         'build'    => substr(md5(implode('', $hashes)), 0, 6),
         'deployed' => $mtime ? gmdate('Y-m-d H:i', $mtime) . ' UTC' : '',
-        'harness'  => ['web' => jd_harness('web'), 'bench' => jd_harness('bench')],
+        // every profile's harness id (JD_HARNESS_BY_PROFILE: web, bench-max,
+        // bench-medium, bench-low)
+        'harness'  => JD_HARNESS_BY_PROFILE,
         'taxonomy' => is_array($taxonomy) ? jd_taxonomy_version($taxonomy) : 0,
     ];
 }

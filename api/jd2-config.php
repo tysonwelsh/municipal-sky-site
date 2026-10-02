@@ -42,8 +42,40 @@ const JD2_RUN_KIND = ['initial', 'rerun'];
 /** jd2_runs.requested_by — who asked for the run. */
 const JD2_REQUESTED_BY = ['owner', 'visitor'];
 
-/** jd2_runs.profile — the effort profile (JD_HARNESS_BY_PROFILE keys). */
-const JD2_PROFILE = ['web', 'bench'];
+/**
+ * jd2_runs.profile — the effort profile a run was filed under: a
+ * JD_HARNESS_BY_PROFILE key (web, bench-max, bench-medium, bench-low), plus
+ * `bench`, the retired pre-split profile (max effort, a 12000-token budget,
+ * harness v4-bench.3) still stored on the runs filed before 2026-10-02. No new
+ * run is filed under `bench`; jd2-generate refuses to draw into one.
+ */
+const JD2_PROFILE = ['web', 'bench', 'bench-max', 'bench-medium', 'bench-low'];
+
+/** The profiles a NEW owner run may be filed under (jd2-generate's `profile`). */
+const JD2_OWNER_PROFILES = ['bench-medium', 'bench-low', 'bench-max', 'web'];
+
+/**
+ * The owner's default profile (owner, 2026-10-02: medium — "not all the way to
+ * the bottom, but we don't need high either"). jd2-generate files an owner run
+ * under it when no `profile` is sent, AND when the bare word `bench` is sent:
+ * on the wire `bench` means "the server's default owner profile", so the
+ * bench page and older clients follow this constant without an edit. The
+ * batch runner's --profile defaults to it too.
+ */
+const JD2_OWNER_DEFAULT_PROFILE = 'bench-medium';
+
+/** The retired stored profile (see JD2_PROFILE). */
+const JD2_PROFILE_RETIRED = 'bench';
+
+/**
+ * An owner's requested profile as it will be filed: null or the wire alias
+ * `bench` → JD2_OWNER_DEFAULT_PROFILE; anything else as sent (the caller
+ * checks it against JD2_OWNER_PROFILES).
+ */
+function jd2_owner_profile(?string $requested): string
+{
+    return ($requested === null || $requested === JD2_PROFILE_RETIRED) ? JD2_OWNER_DEFAULT_PROFILE : $requested;
+}
 
 /** jd2_runs.status */
 const JD2_RUN_STATUS = ['pending', 'generated', 'failed'];

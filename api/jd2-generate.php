@@ -16,8 +16,13 @@
 //   { client_ref: <UUID>, slot: 'a'.., prompt, client, consent: {version},
 //     device_ref?: <UUID>, website: '' (honeypot) }
 // With the bench key (the owner), also:
-//   { profile?: 'bench'|'web' }        default 'bench' — owner runs are the
-//                                      benchmark condition (owner, 2026-10-01)
+//   { profile?: 'bench-medium'|'bench-low'|'bench-max'|'web'|'bench' }
+//                                      a NEW run's effort profile; default
+//                                      JD2_OWNER_DEFAULT_PROFILE (bench-medium,
+//                                      owner 2026-10-02). The bare word 'bench'
+//                                      is a wire alias for that default, so the
+//                                      bench page and older clients follow it;
+//                                      max effort is the explicit 'bench-max'.
 //   { rerun_of: <prompt_id> }          a NEW run of an existing prompt; no new
 //                                      prompt row; prompt text is the stored one
 //   { run_id: <run id> }               fill a slot of an existing run
@@ -98,11 +103,15 @@ if ($joinRunId !== null && !jd_is_ulid($joinRunId)) {
     jd2_fail(400, 'bad_request', 'run_id must be a run id.', ['slot' => $slot]);
 }
 // A new run's effort profile. Visitors are always on 'web'; the owner's runs
-// default to 'bench' — every model at its vendor's top documented setting.
-// A slot that joins an existing run uses THAT run's profile, whatever is sent.
-$profile = $isOwner ? ($profileIn ?? 'bench') : 'web';
-if (!in_array($profile, JD2_PROFILE, true)) {
-    jd2_fail(400, 'bad_request', 'profile must be one of: ' . implode(', ', JD2_PROFILE) . '.', ['slot' => $slot]);
+// default to JD2_OWNER_DEFAULT_PROFILE (bench-medium), which is also what the
+// wire alias 'bench' means (jd2_owner_profile). A slot that joins an existing
+// run uses THAT run's profile, whatever is sent.
+if ($profileIn !== null && !is_string($profileIn)) {
+    jd2_fail(400, 'bad_request', 'profile must be one of: ' . implode(', ', JD2_OWNER_PROFILES) . ' (or bench, the default).', ['slot' => $slot]);
+}
+$profile = $isOwner ? jd2_owner_profile($profileIn) : 'web';
+if (!in_array($profile, JD2_OWNER_PROFILES, true)) {
+    jd2_fail(400, 'bad_request', 'profile must be one of: ' . implode(', ', JD2_OWNER_PROFILES) . ' (or bench, the default).', ['slot' => $slot]);
 }
 
 // --- 4. Prompt: validated on the trimmed text, stored byte-exact ----------
@@ -201,9 +210,9 @@ try {
     // the text the prompt row froze, whatever a later caller re-posted.
     $prompt = (string) $run['text'];
     $profile = (string) $run['profile'];
-    if ($profile === 'bench') {
-        // a bench call may take JD_BENCH_TIMEOUT on the wire; give PHP the same
-        @set_time_limit(JD_BENCH_TIMEOUT + 60);
+    if ($profile !== 'web') {
+        // a bench-* call may take JD_BENCH_TIMEOUT on the wire; give PHP the same
+        @set_time_limit(jd_profile_timeout($profile) + 60);
     }
 
     // --- 8. The slot is checked against the deal, not a fixed list ---------
@@ -216,6 +225,15 @@ try {
     $existing = jd2_load_generation($db, $runId, $slot);
     if ($existing !== null) {
         jd2_respond_for_generation($existing, $ctx);
+    }
+
+    if (!jd_profile_known($profile)) {
+        // the retired pre-split 'bench' (harness v4-bench.3): its condition no
+        // longer exists here, so an unfilled slot of such a run (a settled
+        // one re-answered above) is not drawn under a different one — the
+        // owner reruns the prompt instead
+        jd2_fail(409, 'retired_profile', 'That run was filed under a retired effort profile (' . $profile
+            . '); draw a new run of the prompt instead.', $ctx);
     }
 
     // --- 10. Model routing + pending row before the provider call ----------
