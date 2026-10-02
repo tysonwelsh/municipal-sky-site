@@ -521,19 +521,19 @@
     "note": "Listed in display order. value is +3 (the first much better) to -3 (the second much better); filed as jd2_pairs.score, where positive means gen_a, the canonically first drawing, is preferred.",
     "values": [
       {
-        "id": "a_much_better",
+        "id": "a-much-better",
         "value": 3,
         "label": "First much better",
         "description": "The first drawing is much better than the second; it is not a close call."
       },
       {
-        "id": "a_better",
+        "id": "a-better",
         "value": 2,
         "label": "First better",
         "description": "The first drawing is clearly better than the second."
       },
       {
-        "id": "a_slightly_better",
+        "id": "a-slightly-better",
         "value": 1,
         "label": "First slightly better",
         "description": "The first drawing is a little better than the second, but only just."
@@ -545,19 +545,19 @@
         "description": "Neither drawing is better than the other in a way that matters."
       },
       {
-        "id": "b_slightly_better",
+        "id": "b-slightly-better",
         "value": -1,
         "label": "Second slightly better",
         "description": "The second drawing is a little better than the first, but only just."
       },
       {
-        "id": "b_better",
+        "id": "b-better",
         "value": -2,
         "label": "Second better",
         "description": "The second drawing is clearly better than the first."
       },
       {
-        "id": "b_much_better",
+        "id": "b-much-better",
         "value": -3,
         "label": "Second much better",
         "description": "The second drawing is much better than the first; it is not a close call."
@@ -577,7 +577,7 @@
         "placeholder": true
       },
       {
-        "id": "slightly_better",
+        "id": "slightly-better",
         "value": 1,
         "label": "Slightly better",
         "description": "The higher place is a little better than the one below it.",
@@ -591,7 +591,7 @@
         "placeholder": true
       },
       {
-        "id": "much_better",
+        "id": "much-better",
         "value": 3,
         "label": "Much better",
         "description": "The higher place is much better than the one below it.",
@@ -728,7 +728,7 @@
     {
       "date": "2026-10-01",
       "version": 26,
-      "note": "The dataset v2 instrument baseline (PLAN-V2 §4, §6). Additive only; nothing existing is renamed, removed or reworded. New top-level keys: `instrument` (\"v2.0\") and `instrumentNote`, the instrument version every v2 sitting stamps beside this version; `comparison`, the 7-point head-to-head scale (+3 the first much better … 0 about the same … -3 the second much better, the sign of jd2_pairs.score, positive = gen_a preferred); `gaps`, the 0..3 margin between adjacent podium places that spaced ranking asks after the podium (labels are PLACEHOLDERS, marked `placeholder`, for the owner to reword; the values are permanent); and `poolVersion` (\"pool-2026-08-14\", the day the four-chair pool formed), which every v2 run records. The four current pool members (claude-opus-5, gpt-5-1, kimi-k3, gemini-3-1-pro) gain `pool: true`, `provider` and `api_model`, copied from JD_MODEL_POOL in api/jd-config.php, so the pool can be read as data; JD_MODEL_POOL itself is unchanged and v1 keeps reading it. v1 instruments (the turn card, the bench, data.php, the validator) ignore every new key; grades, axes and their ranks are as at v25."
+      "note": "The dataset v2 instrument baseline (PLAN-V2 §4, §6). Additive only; nothing existing is renamed, removed or reworded. New top-level keys: `instrument` (\"v2.0\") and `instrumentNote`, the instrument version every v2 sitting stamps beside this version; `comparison`, the 7-point head-to-head scale (+3 the first much better … 0 about the same … -3 the second much better, the sign of jd2_pairs.score, positive = gen_a preferred); `gaps`, the 0..3 margin between adjacent podium places that spaced ranking asks after the podium (labels are PLACEHOLDERS, marked `placeholder`, for the owner to reword; the values are permanent); and `poolVersion` (\"pool-2026-08-14\", the day the four-chair pool formed), which every v2 run records. The four current pool members (claude-opus-5, gpt-5-1, kimi-k3, gemini-3-1-pro) gain `pool: true`, `provider` and `api_model`, copied from JD_MODEL_POOL in api/jd-config.php, so the pool can be read as data; JD_MODEL_POOL itself is unchanged and v1 keeps reading it. v1 instruments (the turn card, the bench, data.php, the validator) ignore every new key; grades, axes and their ranks are as at v25. Ids of the comparison and gap values are kebab-case like every other id in this file (same day, before anything referenced them)."
     }
   ]
 }
