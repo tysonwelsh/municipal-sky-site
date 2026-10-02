@@ -71,7 +71,9 @@
 //                 every 300 ms, a frame every 1/60 s; the report gives the
 //                 digest of everything drawn, so two builds of the page fed
 //                 the same meeting are held to the same drawing, frame by
-//                 frame (KOLOB_DIR=<the other build> for the other side)
+//                 frame (KOLOB_DIR=<the other build> for the other side);
+//                 with KOLOB_STAFF_TRACE=<file> every call is also written
+//                 there (gzip), each frame marked, for tools/tracediff.js
 //   cost[=<file>] what the audio graph cost, charged to the work that did it
 //                 (THE COST, below): every node built, automation call and
 //                 disconnect counted to the clock lane whose cue made it — on
@@ -842,10 +844,21 @@ K.setNoteListener = function (fn) {
 // runs on, and hands it the same); a frame every 1/60 s. The digest
 // of everything drawn is told minute by minute and whole. The analyser the
 // facade reads is the mock's, which hears nothing: the organ stands at rest.
+// KOLOB_STAFF_TRACE=<file>: every call the digest takes in is also written
+// to that file, gzip'd a few megabytes at a time (each piece a gzip member
+// of its own: gunzip reads them as one), with `#F <n>` before frame n's
+// calls — what tools/tracediff.js reads, two builds frame by frame.
 // ----------------------------------------------------------------------------
-const staff = OPT.staff ? { files: [], frames: 0, rec: null, minutes: [], error: null } : null;
+const staff = OPT.staff ? { files: [], frames: 0, rec: null, minutes: [], error: null, trace: null } : null;
+if (staff && process.env.KOLOB_STAFF_TRACE) {
+  const zlib = require("zlib"), fd = fs.openSync(process.env.KOLOB_STAFF_TRACE, "w");
+  let parts = [], size = 0;
+  const flush = () => { if (size) fs.writeSync(fd, zlib.gzipSync(parts.join(""))); parts = []; size = 0; };
+  staff.trace = { fd, flush, write(line) { parts.push(line); size += line.length; if (size > (4 << 20)) flush(); } };
+  process.on("exit", () => { flush(); fs.closeSync(fd); });
+}
 if (staff) {
-  const REC = require(path.join(__dirname, "tools", "lib", "canvas.js")).recorder();
+  const REC = require(path.join(__dirname, "tools", "lib", "canvas.js")).recorder(staff.trace ? { trace: staff.trace.write } : null);
   staff.rec = REC;
   global.Path2D = REC.Path2D;
   global.devicePixelRatio = OPT.staff.w === 390 ? 3 : 2;
@@ -870,7 +883,7 @@ if (staff) {
     return;
   }
   const raf = global.requestAnimationFrame;
-  global.requestAnimationFrame = function (fn) { return raf(function (ts) { staff.frames++; fn(ts); }); };
+  global.requestAnimationFrame = function (fn) { return raf(function (ts) { staff.frames++; REC.mark("F " + staff.frames); fn(ts); }); };
   const phone = OPT.staff.w === 390;
   global.KolobViz.init(REC.canvas(phone ? 316 : 687, phone ? 196 : 240), REC.canvas(phone ? 316 : 687, phone ? 150 : 200));
   setInterval(function () {

@@ -7,9 +7,9 @@
 // the Eye; PLAN-COMPOSITION §2.6 "an engraving smoke test"; §12 "Budget").
 //
 //   node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390]
-//        [--section hymn] [--freeze] [--text] [--fps-secs 20] [--idle-secs 0] [--throttle 4]
-//        [--full] [--ives] [--latin] [--root <dir>] [--port 8113] [--chrome-port 9423]
-//        [--profile <dir>] [--out <dir>]
+//        [--section hymn] [--freeze] [--text] [--wheel] [--held [5]] [--fps-secs 20]
+//        [--idle-secs 0] [--throttle 4] [--full] [--ives] [--latin] [--root <dir>]
+//        [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 //
 // Times are seconds of the meeting (the audio clock, from the moment PLAY was
 // pressed); with --section, from the moment the meeting was jumped there.
@@ -47,6 +47,30 @@
 // another tree (a commit unpacked from `git archive`), so this file measures
 // a build older than its options.
 //
+// --wheel shoots the wheel's canvas beside the staff at each capture
+// (wheel-<width>-t<secs>.png). The wheel reads two things live that no
+// freeze holds: the organ facade is the master bus's spectrum, and the arc
+// (the hand) fills with the console's report of how far the section has
+// gone, a poll on its own clock; so with --wheel the page is handed a
+// fixed figure for both from its load — every AnalyserNode answers a fixed
+// spectrum, and the conductor's report says each section half gone — and
+// the wheel is one picture in every run, its seat, its turn, its labels,
+// the hand and the pipes drawn as the page draws them (PLAN-REFACTOR §4.2:
+// the wheel's own drawing compared by pixel). Choose moments some seconds
+// clear of a section's start (the wheel turns for up to 3 s, and the hand
+// then fills from nothing) and of its end. The hold is the tool's, not the
+// page's: the console's text is unchanged by it, but a --wheel run's facade
+// and arc are not the live sound's.
+//
+// --held [secs] adds two shots of a page standing still, after the last
+// capture: held by PAUSE (paused-<width>.png, and paused-wheel-<width>.png
+// with --wheel) — with --freeze, pressed while the page is held at its
+// last moment, then the freeze let go, so the page stands at that moment
+// because the meeting is paused — shot after <secs> (default 5), the
+// frames the page painted while paused counted and timed; and STOPPED
+// (stopped-<width>.png), shot after the frame timing, once the ink has
+// drained from the plate (15 s after STOP).
+//
 // Headless Chrome may pace requestAnimationFrame slowly (~1 fps on some
 // machines), so frames are judged by what each one costs, not by how many came.
 // What a frame costs also rises with what else the machine is doing (other
@@ -66,6 +90,8 @@ const HELP = `screens.js — muted headless screenshots of the staff + frame tim
   --section <type>       jump there first (dev jump: prelude invocation hymn testimony sacrament doxology postlude)
   --freeze               frame-exact captures: the page held and painted at each time, counted from the downbeat (KolobViz.freezeAt)
   --text                 the console's text at each capture, held, let go and stopped (text-<width>.json)
+  --wheel                the wheel's canvas shot too, its facade and arc handed a fixed figure (wheel-<width>-t<secs>.png)
+  --held [5]             a shot held by PAUSE (after <secs>, its frames counted) and one after STOP (paused-, stopped-<width>.png)
   --fps-secs 20          seconds of frame timing under throttle (default 20; 0 to skip)
   --idle-secs 0          seconds after STOP whose timers are timed (default 0: none)
   --throttle 4           CPU throttling rate for the frame timing (default 4)
@@ -107,7 +133,20 @@ const INSTRUMENT = (o) => `(function(){
     var orig = window[k];
     window[k] = function (fn) { var a = Array.prototype.slice.call(arguments); if (typeof fn === "function") a[0] = timed(fn); return orig.apply(window, a); };
   });
+  // (--wheel: the facade's spectrum a fixed figure, the same in every run)
+  if (${o.wheel ? "true" : "false"} && window.AnalyserNode) {
+    window.AnalyserNode.prototype.getByteFrequencyData = function (arr) {
+      for (var i = 0; i < arr.length; i++) arr[i] = Math.round(255 * (0.3 + 0.6 * Math.abs(Math.sin(i * 0.37))));
+    };
+  }
 })();`;
+// (--wheel: the conductor's report says each section half gone, so the arc
+// is drawn at a fixed figure; the rest of the report is the engine's)
+const HOLD_HAND = `(function(){
+  var K = window.KolobAudio, get = K.getConductor;
+  K.getConductor = function () { var c = get.apply(K, arguments); if (c) c.local = 0.5; return c; };
+  return 1;
+})()`;
 
 // what the console prints (--text)
 const TEXT = `(function(){
@@ -130,13 +169,14 @@ const VIEW = {
 };
 
 (async () => {
-  const a = U.parseArgs(process.argv.slice(2), ["help", "full", "ives", "latin", "freeze", "text"]);
+  const a = U.parseArgs(process.argv.slice(2), ["help", "full", "ives", "latin", "freeze", "text", "wheel"]);
   if (a.help) { console.log(HELP); return; }
   const seed = +a.seed || 1847;
   const times = U.parseList(a.times, ["20", "60", "120"], Number).sort((x, y) => x - y);
   const widths = U.parseList(a.widths, ["860", "390"], Number);
   const fpsSecs = a["fps-secs"] != null ? +a["fps-secs"] : 20, throttle = +a.throttle || 4, idleSecs = +a["idle-secs"] || 0;
   const out = a.out ? U.outDir(a) : U.outDir({}, "screens-" + seed);
+  const held = a.held ? (a.held === true ? 5 : +a.held) : 0;
 
   const root = a.root ? path.resolve(String(a.root)) : C.REPO;
   const server = await C.ensureServer({ port: +a.port || C.DEFAULT_HTTP_PORT, root });
@@ -144,7 +184,7 @@ const VIEW = {
   C.cleanupOnExit([b, server.proc]);
   const logs = C.collectConsole(b);
   await C.prepare(b);
-  await b.send("Page.addScriptToEvaluateOnNewDocument", { source: INSTRUMENT({ ives: !!a.ives, latin: !!a.latin }) });
+  await b.send("Page.addScriptToEvaluateOnNewDocument", { source: INSTRUMENT({ ives: !!a.ives, latin: !!a.latin, wheel: !!a.wheel }) });
 
   const freeze = !!a.freeze;
   // (frozen: the first capture's second is asked on the address — before a
@@ -160,6 +200,7 @@ const VIEW = {
     await C.waitFor(b, "document.readyState === 'complete' && !!window.KolobAudio && !!document.getElementById('kolob-play')", 30000);
     await b.send("Emulation.setDeviceMetricsOverride", view);
     await C.sleep(800);
+    if (a.wheel) await b.evalJS(HOLD_HAND);
     if (freeze) await b.evalJS("window.__jumps = [], KolobAudio.setEventListener(function (ev) { if (ev && ev.type === 'section-start') window.__jumps.push(ev); }), 1");
     const press = await b.evalJS("(function(){var t0=performance.now();document.getElementById('kolob-play').click();return {at:t0,ms:performance.now()-t0}})()");
     await C.waitFor(b, "KolobAudio.isPlaying() && KolobAudio.getAudioTime() > 0", 10000, 50);
@@ -178,6 +219,16 @@ const VIEW = {
       else { t0 = await b.evalJS("KolobAudio.getAudioTime()"); jumped = a.section; }
     }
     const shots = [], text = {};
+    let lastClip = null, pausedAt = null;
+    // (a canvas shot where it stands in the viewport when it is all there)
+    const shoot = async (file, clip, inView) => {
+      const s = await b.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: !inView, clip });
+      fs.writeFileSync(path.join(out, file), Buffer.from(s.data, "base64"));
+    };
+    const wheelShot = async (file) => {
+      const r = await b.evalJS("(function(){var r=document.getElementById('kolob-wheel').getBoundingClientRect();return {x:r.x,y:r.y+scrollY,w:r.width,h:r.height,top:r.y,ih:innerHeight}})()");
+      await shoot(file, { x: r.x, y: r.y, width: r.w, height: r.h, scale: 1 }, freeze && r.top >= 0 && r.top + r.h <= r.ih);
+    };
     for (const T of times) {
       const target = t0 + origin + T;
       if (freeze && (a.section || T !== times[0])) await b.evalJS("KolobViz.freezeAt(" + (origin + T) + "), 1");
@@ -202,8 +253,10 @@ const VIEW = {
       // at 860 px, and the held page is painted again at that width)
       const clip = held && held.plate ? { x: st.x, y: st.y + held.plate[0], width: st.w, height: held.plate[1] - held.plate[0], scale: 1 } : { x: st.x, y: st.y, width: st.w, height: st.h, scale: 1 };
       const beyond = !(freeze && st.top >= 0 && st.top + st.h <= st.ih);
-      const s = await b.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: beyond, clip });
-      fs.writeFileSync(path.join(out, file), Buffer.from(s.data, "base64"));
+      await shoot(file, clip, !beyond);
+      lastClip = { clip, inView: !beyond };
+      let wheelFile = null;
+      if (a.wheel) { wheelFile = "wheel-" + w + "-t" + String(Math.round(T)).padStart(3, "0") + ".png"; await wheelShot(wheelFile); }
       let full = null;
       if (a.full) {
         full = "page-" + w + "-t" + String(Math.round(T)).padStart(3, "0") + ".png";
@@ -211,8 +264,23 @@ const VIEW = {
         fs.writeFileSync(path.join(out, full), Buffer.from(f.data, "base64"));
       }
       if (Math.abs(st.t - t0 - origin - T) > 2) throw new Error("shot at " + T + " s was taken at " + (st.t - t0 - origin).toFixed(1) + " s");
-      shots.push({ T, at: st.t - t0 - origin, section: st.section, meeting: st.meeting, file, full, size: Math.round(clip.width) + "×" + Math.round(clip.height) });
+      shots.push({ T, at: st.t - t0 - origin, section: st.section, meeting: st.meeting, file, wheel: wheelFile, full, size: Math.round(clip.width) + "×" + Math.round(clip.height) });
       process.stderr.write(w + "px @" + T + "s ");
+    }
+    if (held && lastClip) {                    // held by PAUSE (frozen: at the last capture's moment), its frames counted, and let go again
+      await b.evalJS("document.getElementById('kolob-pause').click(), 1");
+      await C.waitFor(b, "KolobAudio.isPaused()", 5000, 50);
+      await C.sleep(1000);
+      if (freeze) await b.evalJS("KolobViz.freezeAt(null), 1");
+      await b.evalJS("window.__frames.cb.length = 0, window.__frames.on = true, 1");
+      await C.sleep(held * 1000);
+      const fr = JSON.parse(await b.evalJS("(window.__frames.on = false, JSON.stringify(window.__frames.cb))"));
+      const ft = fr.map(([, d]) => d), end = fr.length ? fr[fr.length - 1][0] : 0, last = fr.filter(([ts]) => ts >= end - held * 500);
+      pausedAt = { secs: held, frames: fr.length, lastHalf: last.length, p50: U.quantile(ft, 0.5), file: "paused-" + w + ".png" };
+      await shoot(pausedAt.file, lastClip.clip, lastClip.inView);
+      if (a.wheel) { pausedAt.wheel = "paused-wheel-" + w + ".png"; await wheelShot(pausedAt.wheel); }
+      await b.evalJS("document.getElementById('kolob-pause').click(), 1");
+      await C.sleep(1000);
     }
     if (a.text) {                              // held, and let go again
       await b.evalJS("document.getElementById('kolob-pause').click(), 1");
@@ -258,9 +326,16 @@ const VIEW = {
       await C.sleep(idleSecs * 1000);
       idle = timersOf(JSON.parse(await b.evalJS("(window.__timers.on = false, JSON.stringify(window.__timers.by))")));
     }
+    let stoppedAt = null;
+    if (held && lastClip) {                    // stopped, once the ink has drained from the plate
+      await C.sleep(Math.max(0, 15 - idleSecs - (a.text || idleSecs ? 1 : 0.3)) * 1000);
+      stoppedAt = { file: "stopped-" + w + ".png" };
+      await shoot(stoppedAt.file, lastClip.clip, lastClip.inView);
+      if (a.wheel) { stoppedAt.wheel = "stopped-wheel-" + w + ".png"; await wheelShot(stoppedAt.wheel); }
+    }
     // the PLAY press: the click's own time, and the long tasks begun in the second after it
     press.long = JSON.parse(await b.evalJS("JSON.stringify(window.__longAt)")).filter(([st]) => st >= press.at - 50 && st < press.at + 1000).map(([, d]) => d);
-    results.push({ w, view, shots, fps, idle, press, jumped, errors: logs.slice(errs0) });
+    results.push({ w, view, shots, fps, idle, press, jumped, pausedAt, stoppedAt, errors: logs.slice(errs0) });
     process.stderr.write("\n");
   }
 
@@ -268,7 +343,7 @@ const VIEW = {
   const L = [];
   L.push("# Screens — seed " + seed);
   L.push("");
-  L.push("- " + url.replace(server.base, "") + (root !== C.REPO ? " · the tree " + root : "") + (a.ives ? " · Ives switch armed" : "") + (a.latin ? " · Latin" : "") + (a.section ? " · jumped to " + a.section : "") + (freeze ? " · frozen: each capture the page held at its second (from the " + (a.section ? "jump's section-start" : "downbeat") + ") and painted there, frame-exact" : "") + " · muted headless Chrome (" + b.args.filter((x) => /mute|headless/.test(x)).join(" ") + ") · " + new Date().toISOString().slice(0, 16).replace("T", " "));
+  L.push("- " + url.replace(server.base, "") + (root !== C.REPO ? " · the tree " + root : "") + (a.ives ? " · Ives switch armed" : "") + (a.latin ? " · Latin" : "") + (a.section ? " · jumped to " + a.section : "") + (freeze ? " · frozen: each capture the page held at its second (from the " + (a.section ? "jump's section-start" : "downbeat") + ") and painted there, frame-exact" : "") + (a.wheel ? " · the wheel shot too, its facade and arc handed a fixed figure" : "") + " · muted headless Chrome (" + b.args.filter((x) => /mute|headless/.test(x)).join(" ") + ") · " + new Date().toISOString().slice(0, 16).replace("T", " "));
   let version = "";
   try { version = fs.readFileSync(path.join(root, "art/kolob/VERSION"), "utf8").trim().split(" — ")[0]; } catch (e) { /* no VERSION: the report names none */ }
   L.push("- build " + version + " · served by " + (server.reused ? "an existing" : "a fresh") + " php -S on " + server.base);
@@ -312,6 +387,17 @@ const VIEW = {
     L.push(U.table(["width", "window", "callbacks (ms)", "the console's poll", "costliest (ms)"], tr));
     L.push("");
   }
+  const hr = results.filter((r) => r.pausedAt);
+  if (hr.length) {
+    L.push("## Held by PAUSE, and stopped");
+    L.push("");
+    L.push("The page held by PAUSE" + (freeze ? " at the last capture's moment (pressed while the page was held there, then the freeze let go)" : "") + ", its frames counted while it stood (requestAnimationFrame callbacks, unthrottled), then shot; and shot again 15 s after STOP, the ink drained.");
+    L.push("");
+    L.push(U.table(["width", "paused for", "frames (last half)", "frames a second", "p50 ms", "held", "stopped"], hr.map((r) => [r.w + " px", r.pausedAt.secs + " s", r.pausedAt.frames + " (" + r.pausedAt.lastHalf + ")",
+      U.fmt(r.pausedAt.frames / r.pausedAt.secs, 1), U.fmt(r.pausedAt.p50, 2), "`" + r.pausedAt.file + "`" + (r.pausedAt.wheel ? " · `" + r.pausedAt.wheel + "`" : ""),
+      r.stoppedAt ? "`" + r.stoppedAt.file + "`" + (r.stoppedAt.wheel ? " · `" + r.stoppedAt.wheel + "`" : "") : "—"])));
+    L.push("");
+  }
   L.push("## The PLAY press");
   L.push("");
   L.push("The click's own time (its handlers, run at once: the house built, the meeting called), and the long tasks (over 50 ms) begun in the second after it.");
@@ -321,7 +407,7 @@ const VIEW = {
   results.forEach((r) => {
     L.push("## " + r.w + " px (" + r.view.width + "×" + r.view.height + ", DPR " + r.view.deviceScaleFactor + (r.view.mobile ? ", phone" : "") + ")");
     L.push("");
-    L.push(U.table(["meeting time", "section", "staff", "file"], r.shots.map((s) => [s.at.toFixed(1) + " s", s.section, s.size + " CSS px", "`" + s.file + "`" + (s.full ? " · `" + s.full + "`" : "")])));
+    L.push(U.table(["meeting time", "section", "staff", "file"], r.shots.map((s) => [s.at.toFixed(1) + " s", s.section, s.size + " CSS px", "`" + s.file + "`" + (s.wheel ? " · `" + s.wheel + "`" : "") + (s.full ? " · `" + s.full + "`" : "")])));
     L.push("");
     r.shots.forEach((s) => L.push("![" + r.w + " px at " + Math.round(s.T) + " s, " + s.section + "](" + s.file + ")"));
     L.push("");

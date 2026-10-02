@@ -22,7 +22,8 @@ harness's cost sidecars; three drive a **muted** headless Chrome.
 | `repetition.js` | How often does a meeting say the same thing twice, and which shapes turn up in every meeting? | the dump | ~2 s for 20 meetings |
 | `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds read; A/B of 20 seeds at 1200 s, rendered four at a time, ~70 s |
 | `cost.js` | What does the audio graph cost, work by work (a lane, a guest, a press), and did a change move it (A/B)? | the harness's cost sidecars | ~20 s for two builds, four seeds each |
-| `screens.js` | What does the staff look like at 860 and 390 px, what does the console print, and what do a frame, the timers and the PLAY press cost (at 4× CPU throttling)? | the page, muted | real time: ~2.5 min per width |
+| `screens.js` | What does the staff look like at 860 and 390 px — and the wheel, and the page held by PAUSE and stopped — what does the console print, and what do a frame, the timers and the PLAY press cost (at 4× CPU throttling)? | the page, muted | real time: ~2.5 min per width |
+| `tracediff.js` | Two builds of the page fed the same meeting: which calls does one draw that the other does not, frame by frame? | the harness's staff= traces | ~1 min for 300 s of meeting |
 | `pageload.js` | What does PHP spend on the page, how soon is it parsed and loaded, and does the load guard still keep PLAY disabled when a room is missing? | the page, muted | ~10 s |
 | `capture.js` | What does a seeded meeting sound like, as a WAV, a spectrogram, loudness (LUFS) and peak? | the page, muted | real time: 4 min for a 4-min window |
 | `render.js` | Renders a dump set to keep, or to read twice. | the harness | ~1 s per seed |
@@ -54,6 +55,8 @@ node tools/cost.js --a git:HEAD --b worktree     # …before and after, work by 
 node tools/screens.js --seed 1847                # staff at 20/60/120 s, 860 + 390 px, frames at 4×
 node tools/screens.js --seed 22 --freeze         # the same, frame-exact: two runs compare by pixel (AE 0)
 node tools/screens.js --seed 22 --freeze --text --root <git archive of HEAD>   # another build's page, its console's text beside it (diff the text-*.json)
+node tools/screens.js --seed 22 --freeze --wheel --held   # the wheel shot too, and the page held by PAUSE and stopped
+node tools/tracediff.js --a git:HEAD --b worktree --seed 22   # what the page draws, call by call: the calls one build makes and the other does not
 node tools/pageload.js                           # the page's load: PHP's time, the browser's, and the guard with a room missing
 node tools/capture.js --seed 1847 --to 240       # four minutes, recorded
 ```
@@ -302,7 +305,8 @@ staff` for the other side (the engine is read from there too). Seed 22, 60 s:
 3,796 frames, 5,686,403 calls, digest `8c18ec81a4ba069c`, the same twice, and
 the same on the page before and after it was cut into six files; with the ink
 one step bluer, another. About 20 s of the machine for a minute of meeting at
-860 px.
+860 px. `KOLOB_STAFF_TRACE=<file>` writes the calls themselves as well (gzip,
+`#F <n>` before frame n's), for `tools/tracediff.js` — about 90 MB for 300 s.
 
 **The cost (`cost`, PLAN-REFACTOR §4.0(b)).** `cost` charges every node the
 mock builds, every automation call and every disconnect to the work that did
@@ -817,8 +821,9 @@ difference is the harness or the flags, not the engine).
 ## screens.js
 
 ```sh
-node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--freeze] [--text] [--fps-secs 20] [--idle-secs 0] [--throttle 4]
-                      [--full] [--ives] [--latin] [--root <dir>] [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
+node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--freeze] [--text] [--wheel] [--held [5]]
+                      [--fps-secs 20] [--idle-secs 0] [--throttle 4] [--full] [--ives] [--latin] [--root <dir>] [--port 8113]
+                      [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 ```
 
 It loads `?seed=N` in muted headless Chrome and presses PLAY. At each time in
@@ -861,6 +866,33 @@ a row written in the moment before the read may land on either side of it).
 `--root <dir>` serves another tree — a commit unpacked with `git archive` —
 so the A side of a comparison is measured by this file's own options.
 
+**The wheel (`--wheel`, PLAN-REFACTOR §4.2).** At each capture the wheel's
+canvas is shot too (`wheel-<width>-t<secs>.png`). The freeze holds the
+staff; the wheel reads two things live that no freeze holds — its organ
+facade is the master bus's spectrum, its arc (the hand) fills with the
+console's report of how far the section has gone, read by a poll on its own
+clock — so with `--wheel` the tool hands the page a fixed figure for both from
+its load: every `AnalyserNode` answers one fixed spectrum, and the
+conductor's report says each section half gone (`local` 0.5). The wheel is
+then one picture in every run, its seat, its turn, its labels, the hand and
+the pipes drawn as the page draws them. The hold is the tool's, not the
+page's (the console's text is untouched by it), and a `--wheel` run's facade
+and arc are not the live sound's. Choose moments some seconds clear of a
+section's start — the wheel turns for up to 3 s, and the hand then fills
+from nothing, smoothly, for some seconds more — and of its end.
+
+**Held and stopped (`--held [secs]`, PLAN-REFACTOR §4.2).** After the last
+capture the page is held by PAUSE — with `--freeze`, pressed while the page
+stands at that capture's moment, and the freeze then let go, so the page
+stands there because the meeting is paused — and shot after `secs` (default
+5; `paused-<width>.png`, and the wheel's beside it with `--wheel`), the frames
+it painted meanwhile counted and timed (unthrottled): how often a held page
+paints, and what each frame costs. Then, after the frame timing and STOP, a
+last shot once the ink has drained from the plate (15 s after STOP,
+`stopped-<width>.png`). Two runs of one build give the same held and stopped
+shots, the wheel's too (seed 22 at 30 and 75 s, both widths: AE 0 on all
+eight).
+
 **Frame time.** After the shots, the CPU is throttled `--throttle`× for
 `--fps-secs` (0 to skip). Every requestAnimationFrame callback is timed, and
 callbacks sharing a frame are summed. The report gives p50/p90/p99/max per
@@ -886,8 +918,39 @@ called — and the long tasks begun in the second after it (§4.5).
 **The report** (`report.md`, each PNG embedded): the frame-time table (width,
 frames, p50, p90, p99, max, rAF interval, long tasks, section, load avg) with
 its notes on pacing and load; the timers; the PLAY press; per width, a table of shots (meeting time,
-section, staff size in CSS px, file `staff-<width>-t<secs>.png`); console
-errors and warnings from each width.
+section, staff size in CSS px, file `staff-<width>-t<secs>.png`, and the
+wheel's); with `--held`, the frames a held page painted and its two shots;
+console errors and warnings from each width.
+
+## tracediff.js
+
+```sh
+node tools/tracediff.js <a.gz> <b.gz> [--inline <canvas>] [--show 12]
+node tools/tracediff.js --a git:HEAD --b worktree [--seed 22] [--secs 300] [--width 860] [--inline <canvas>] [--out <dir>]
+```
+
+The harness's `staff=` digest says whether two builds of the page drew the
+same thing — every call, every argument, every frame. A change meant to draw
+the same pixels by other calls (a gradient made once instead of every frame,
+a drawing kept on a canvas of its own and laid down whole) changes the digest
+by design; this says how. Fed two traces (`KOLOB_STAFF_TRACE`, The harness),
+or rendering them itself (this worktree's harness, each build's own page:
+`git:<ref>` unpacked as `lib/run.js` does, or a directory), it reads them a
+frame at a time and gives the frames that are the same call for call, and for
+the others the calls one side made and the other did not (a shortest edit,
+after the frames' common head and tail), grouped by kind: in all, and by the
+kinds of difference a frame shows, each with the frames that show it, the
+first, and its calls in full. A call that differs in one argument shows as
+one taken out and one put in. The names are read again first, since a canvas
+added on one side shifts every name after it: a canvas by its first size and
+its place among those first sized so (`C1374x400#1`, the second 1374 × 400
+canvas made), a path by its place among the paths, a gradient as `G` (its
+stops follow it). `--inline <canvas>` takes a canvas of B's that is drawn
+once and laid down whole (a cache) at its word: each `drawImage` of it is read
+as the calls drawn on it since it was last cleared, on the canvas it is laid
+on, and its own calls leave the compare — so a frame that laid down an
+out-of-date drawing shows as a frame whose calls differ. Seed 22, 300 s,
+about a minute a pair. PLAN-REFACTOR §4.2 is proved with it.
 
 ## pageload.js
 
@@ -1158,14 +1221,15 @@ tools/
   repetition.js      phrase shapes heard before
   tally.js           counts, plan checks, A/B
   cost.js            the audio graph's cost per work (the harness's cost sidecars), A/B
-  screens.js         staff screenshots + frame time (muted Chrome)
+  screens.js         staff (and wheel) screenshots + frame time (muted Chrome)
+  tracediff.js       two builds' traced drawing (staff= with KOLOB_STAFF_TRACE), call by call, frame by frame
   pageload.js        the page's load: PHP's time a request, cold loads timed, the load guard with a room missing (muted Chrome)
   capture.js         WAV + spectrogram + LUFS/peak (muted Chrome)
   selftest.js        the instruments, checked
   lib/dump.js        the dump reader: both event vocabularies, meetings, sections, voices, phrases
   lib/run.js         rendering through the harness: worktree, directory or git:<ref>; the witness's verdict; the pool of harness processes
   lib/engine.js      the engine loaded headless: the one list, the page's list (_viz.php), the page's mock, the roll call, a lab's list (loadcheck, golden)
-  lib/canvas.js      a canvas that records instead of painting, every call folded into one digest (the harness's staff=, loadcheck)
+  lib/canvas.js      a canvas that records instead of painting, every call folded into one digest, and traced on request (the harness's staff=, loadcheck)
   lib/witness.js     preloaded into every harness run: which engine files it actually read
   lib/chrome.js      php -S + muted headless Chrome over CDP
   lib/audio.js       WAV, BS.1770 loudness, true peak, FFT, spectrogram
