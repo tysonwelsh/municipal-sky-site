@@ -1,18 +1,20 @@
 # The staff — the rules of the page
 
-*The binding rules of the shape-note staff that `kolob-viz.js` engraves under the wheel:
+*The binding rules of the shape-note staff that the page's drawing engraves under the wheel
+(`kolob-viz.js` and its five pieces, `_viz.php`; THE SIX FILES in `kolob-viz.js`):
 what prints and what never does, the layers and their sizes, the look, the collision rules
 and the checks. Consolidated 2026-10-01 at v0.36.2 from `archive/plans/PLAN-ENGRAVING.md` (Direction A and
 the owner's amendments after v0.31), `handoff/drone-wave-handoff.md` §4,
 `handoff/r3c-engrave-2.md` and the header of `kolob-viz.js`. Every reference was checked
-against the code that day. A bare `:NNN` is a line of `kolob-viz.js`.*
+against the code that day; the names below are the code's, in whichever of the six files holds
+them.*
 
 ## What it is
 
 A grand staff on a canvas (`#kolob-viz`, the plate 240 px tall, 196 on a phone:
 `kolob.css`), two staves a normal grand-staff gap (5 spaces) apart with a brace
 and baked clefs. Middle C, the meeting's keynote, sits at q = 10 on a diatonic lattice; bass
-rules at q = 0…8, treble at 12…20 (`kolob-viz.js`, `Q_MID`). A note is engraved at
+rules at q = 0…8, treble at 12…20 (`kolob-viz-intake.js`, `Q_MID`). A note is engraved at
 the burin near the right edge when it sounds, then travels left at **60 px/s**
 (`SCROLL_PX_S`), dries and dissolves before the clefs. The drying runs 31× in the
 sacrament and 6× in the postlude: in the sacrament the page dries almost blank.
@@ -138,5 +140,10 @@ standing late where densest).
   two captures of one seed are the same staff pixel for pixel (`compare -metric AE` says 0)
   and two builds compare by pixel. Exact where the ink dries at its own rate; in the
   sacrament and the postlude a shade may differ. A page that does not ask is not touched.
+- **The staff traced** (`node art/kolob/_harness.js <secs> <seed> staff[=390]`): the page's
+  drawing plays along with a headless meeting on canvases that record every call, and the report
+  gives a digest of everything drawn, frame by frame; two builds fed the same meeting draw the same
+  page exactly when the digests agree (`KOLOB_DIR=<the other build>`). The cut into six files was
+  proved so, and by `tools/samecode.js --split` (every statement moved whole).
 
-Authority: kolob-viz.js
+Authority: kolob-viz.js and its five pieces (`_viz.php`)

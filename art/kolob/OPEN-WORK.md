@@ -7,7 +7,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2 and §3.4 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a) and §3.5 built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
@@ -22,9 +22,13 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   scaffold under every guest room (`KOLOB.GuestRoom`, `kolob-guest-room.js`, commit 5f366f8) and one
   host for the guests the glue plays (`kolob-guests.js`, commit 7a3bc81), and §3.4, the planner out
   of the conductor (`KOLOB.Plan`, `kolob-plan.js`, commits f48e06d and 728aa87: the day and the
-  seating, pure; the golden runs them with the house shut).
-  What remains is §3 (one place for each thing: the staff in pieces) and §4 (the page's load and
-  frame, the minutes' poll, the audio graph with the owner), in §6's order.
+  seating, pure; the golden runs them with the house shut), and §4.0(a), the frame-exact capture
+  (`KolobViz.freezeAt`, `screens.js --freeze`, commit e06bfee), and §3.5, the staff in pieces
+  (`kolob-viz.js` and five files behind one `KolobViz`, `_viz.php`'s list, commits 4ca4631 and 1478f2d:
+  every statement moved whole, held by `samecode.js --split`; everything the page draws traced
+  headless by the harness's `staff=`, the same before and after).
+  What remains is §3.5's tail (the composer's steps in order) and §4 (the tools' (b) and (c), the
+  page's load and frame, the minutes' poll, the audio graph with the owner), in §6's order.
   The §2 builders' follow-ups, not done:
   - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
   - a cue's fault that repeats is now logged at each of the net's retries (every 5 s for a layer), not once (§2.1);
@@ -40,11 +44,14 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     meeting after the first, and the switches (ives, force=, cumulative, razz, exp=) — but for the
     plan's two halves, which §3.4 runs on 21 settings of the switches, twice each, against no baseline.
   The §3.1 builder's follow-ups, not done:
-  - the page's own copies in `kolob-viz.js` (`COLLECTIONS`, `clamp`, `monzoCents`, `unitsOf`, `spanBeats`)
-    fold into `KOLOB.Pitch`, `KOLOB.Num` and `KOLOB.Score` with the screens, in §3.5;
+  - the page's own copies (`COLLECTIONS` in `kolob-viz-intake.js`, `clamp` in `kolob-viz-atlas.js`,
+    `monzoCents`, `unitsOf` and `spanBeats` in `kolob-viz-hymnal.js`) fold into `KOLOB.Pitch`,
+    `KOLOB.Num` and `KOLOB.Score` — not in §3.5, which moved code and changed none; a fold changes
+    which function computes, and the harness's `staff=` can now hold it to the same drawing, frame by
+    frame;
   - the labs keep their own (`earth-tunes-lab.js`, `guests3b-lab.js`, `hymn-lab.js`, `organist-lab.js`
     ratio; the guests labs' `mod`); `DO_OF` is typed beside `KOLOB.Composer.doOf` by the staff
-    (`kolob-viz.js`, page code) and the guests labs (`guests-lab.js`, `guests3a-lab.js`) — the singing
+    (`kolob-viz-hymnal.js`, page code) and the guests labs (`guests-lab.js`, `guests3a-lab.js`) — the singing
     school's was folded in §3.3; the far ward's and the tongues' `pickWith` over `pickW` belong to
     the pickW variants; the composer's inline span at its round differs from `Score.spanBeats` (no
     "stands later" test) and was left.
@@ -105,6 +112,37 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     the cast and the organist are read off `KOLOB` at call time): pure given the rooms loaded;
   - `handoff/r3c-integrate-1.md` still names `kolob-meeting.js` for the guest budget (a handoff,
     left as written).
+  The §4.0(a) and §3.5 builder's follow-ups, not done:
+  - `kolob-viz.js` keeps 2,025 lines: the engraving (the drawing helpers, the hymn's signs, the
+    static layer, about 800 lines) and the ward's page could each leave it, but they read the page's
+    state most (`dpr` at 58 sites, `G`, `PT`, `FRAME`, the proof sheet), so a cut would read about fifty
+    more names through `VS`; the harness's `staff=` would prove it in minutes;
+  - the page's six files answer no roll call: a missing piece is found by `tools/loadcheck.js`, and on
+    the page only when a frame first calls into it ("VS.x is not a function"); a guard like the
+    engine's (`KOLOB._broken`) could name it at load;
+  - the hot path now crosses files: the atlas's `headSprite`, `drawGlyph`, `rgba`, `clamp`,
+    `shapeKey` and `anchorOf` are called through one-line wrappers from `kolob-viz.js`, and the atlas
+    reads `VS.dpr` through a getter, per head per frame — measured, nothing the screens can see
+    (seed 22 at 860 px, 4× throttled, 60 s from 90 s, builds alternated twice: p50 16.7 and 14.2 ms
+    before, 17.0 and 16.7 after); §4.2 is the place to weigh it closer;
+  - the frame-exact capture holds the staff only: the wheel's organ is the live spectrum and its arc
+    the console's last poll, and the console and the broadside run on, so a `--full` page is not
+    comparable by pixel (the staff's rows in it are); in the sacrament and the postlude the drying
+    follows the section the console last reported, so a page there can differ by a shade; and the
+    harness's `staff=` does not exercise the hook (`?kolobFreeze` is proved in Chrome only);
+  - the visiting band's emission moves from run to run in the browser (the one the captures found): its
+    march is sliced for laying by `Math.floor` over absolute audio times (`kolob-guest-bands.js`
+    `perform`, `slices`), whose downbeat is wherever the context stood at PLAY, so a note on a
+    slice's edge is written by one cue or the next, and the band's barlines (their shade follows how
+    far the march is written, `takeBand`'s `tp1`) differ by a shade; slicing on the march's own time
+    would make it the harness's every time (an engine change, for the tally);
+  - the composer's numbered steps, the other half of §3.5's text, are still in the order 1, 3, 2, 3b,
+    4, 4b, 7, 6, 5 (`kolob-composer.js`): left, as lower value than the risk of a two-thousand-line
+    move the same day. Found for whoever takes it: nothing in those sections is read at load (the
+    closure's only load-time reads are its top tables — SEMIS, MODES, K — and the exports at its
+    foot; `JOHNSTON7 = mzCents(…)` calls a function of the top section), so the sections can move
+    whole; `samecode.js --split` with one new file and its order check relaxed would hold every
+    statement to its old tokens, and the golden (hymns, 40 of 40) and the tally prove the rest.
 
 ## Ideas approved, not built
 
@@ -112,7 +150,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   (handoff/drone-wave-handoff.md §6): "a wavelength line that drifts across the bottom of
   the staff … positioned where the drone should be, given the note that it's playing …
   actually visualizing the data of the drone." Nothing draws the `"drone"` layer
-  (`kolob-viz.js` `MELODIC` has no drone; the ground reports it,
+  (`kolob-viz-intake.js` `MELODIC` has no drone; the ground reports it,
   `kolob-voices-ground.js` `droneCycle`/`droneTurn`). *It would take:* a tap on the
   drone's bus (an `AnalyserNode` behind a `KolobAudio` method), the wave drawn at the
   drone's staff position and sliding with each reckoning glide, green, no text; the
@@ -166,7 +204,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   (`kolob-core.js`). *It would take:* baking the ward's first inhale at the press
   as the company's warm does.
 - **The re-barred dances carry no `beat`, so they print with no bars** (r3c-engrave-2,
-  request 3, open since round 1; `kolob-viz.js`). *It would take:* the
+  request 3, open since round 1; `kolob-viz-guests.js` `takeVariations`). *It would take:* the
   organ crew giving the dance's notes a beat in the dance's own bar.
 - **The in-page engraving checker as a standing tool** (r3c-engrave-2, request 2):
   `crit.js`, `incheck.js`, `tone.py` live only in a scratchpad; `tools/` has `screens.js`
@@ -174,8 +212,8 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   would take:* porting the checker under `tools/`, with `captureBeyondViewport: false` and
   curves keyed by `q1`.
 - **The band's sliding layer** (r3c-engrave-2, request 1): the owner's call — the band's
-  notes slide across our ink at the band's own rate (`kolob-viz.js` `r`
-  `drawBand`); scrolling it with the page would stop the crossings.
+  notes slide across our ink at the band's own rate (`kolob-viz-intake.js` `takeBand`'s `r`,
+  `kolob-viz.js` `drawBand`); scrolling it with the page would stop the crossings.
 - **The silent A/B packet of the hiss sources** recommended in PLAN-COMPOSITION §15 ("with
   and without each source, so he can confirm by ear which one he heard"): no such packet
   in `handoff/`.
