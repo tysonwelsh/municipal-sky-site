@@ -154,7 +154,8 @@ next to the rest of the pile. The line between the two smallest tiers:
 a thing one would pick up and hold as its own object is at least small;
 extra small is kept for specks and trinkets that would be lost among the
 rest. A picture-bearing object (a photograph, a card, a poster) is sized
-as the object itself, never as the scene it shows.
+as the object itself, never as the scene it shows: a photograph of a
+planet is a medium print, not an extra-large planet.
 {{TIERS}}
 Torn between two tiers, the clerk files the more ordinary one: small
 over extra small, medium over large.

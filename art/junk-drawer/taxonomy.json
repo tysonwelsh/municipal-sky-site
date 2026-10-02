@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "version": 30,
+  "version": 31,
   "updated": "2026-10-02",
   "instrument": "v2.0",
   "instrumentNote": "The dataset v2 instrument: this rubric plus the comparison and gaps scales below and the rules of a sitting; every v2 session stamps it beside the taxonomy version. v1 instruments ignore it.",
   "poolVersion": "pool-2026-08-14",
-  "intakeVersion": "intake-v3",
+  "intakeVersion": "intake-v4",
   "intakeVersionNote": "The intake prompt's version (api/jd2-intake-prompt.php: the system prompt's bytes with the facets and the size tiers rendered in). Stamped on every prompt intake answers (jd2_prompts.intake_version). Bump it whenever those bytes change — the prompt prose, a facet, a heading, a scope note, a tier description or example — as harness ids are bumped: answers under different intake prompts are not pooled.",
   "utility": {
     "title": {
@@ -503,7 +503,7 @@
       "id": "xs",
       "label": "Extra small",
       "box": 6,
-      "description": "a speck or trinket, easily lost in the drawer",
+      "description": "a speck with no parts to speak of, lost among the rest of the drawer",
       "examples": [
         "shirt button",
         "paperclip",
@@ -516,11 +516,13 @@
       "id": "s",
       "label": "Small",
       "box": 9,
-      "description": "a handheld curio that fits the drawer but reads as its own thing",
+      "description": "a handheld thing with parts of its own, small but its own object",
       "examples": [
         "pencil stub",
         "skeleton key",
-        "rubber band",
+        "loose cigarette",
+        "broken crayon",
+        "earring",
         "wrist watch",
         "playing card",
         "dandelion"
@@ -970,6 +972,11 @@
       "date": "2026-10-02",
       "version": 30,
       "note": "Intake, owner's two corrections after reading intake-v2: the probe heading `transparency` now also covers see-through OPENINGS in the object itself (an open window, a hole, a lattice's gaps) that must show nothing behind them — those test the same capability as glass — while still excluding the transparent background every drawing has; and the clerk's heading-length rules became ADVICE: a long or oddly shaped heading is filed as written and noted in intake_json.warnings, never refused (the retry fires only on a genuinely invalid answer, which structured output makes rare). The scope note's bytes changed, so intakeVersion is intake-v3. No grade, axis, scale or pool change."
+    },
+    {
+      "date": "2026-10-02",
+      "version": 31,
+      "note": "Intake, second live check (67/67 answered, 60% exact, 90% within one tier): ten of the owner's 23 smalls still came back extra small (cigarette, crayon, earring, pin, popsicle stick…), and the word 'trinket' in the xs tier fit those exactly. xs is now 'a speck with no parts to speak of, lost among the rest of the drawer' and s 'a handheld thing with parts of its own, small but its own object', with the owner's own smalls (loose cigarette, broken crayon, earring) among s's examples; the picture-bearing-object rule now says a photograph of a planet is sized as a photograph. intakeVersion intake-v4. No grade, axis, scale or pool change."
     }
   ]
 }
