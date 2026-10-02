@@ -87,7 +87,7 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
   (`kolob-voices-ground.js`).
 - **The Hosanna is audio-only and unlogged** (round 3c, overriding §8.12): nothing in the minutes, on the
   board or on the staff (`kolob-guest-hosanna.js` `LOGGED`, `ENGRAVE_HYMN`;
-  `kolob-plan.js`; `kolob-meeting.js`; `kolob-viz.js`).
+  `kolob-plan.js`; `kolob-meeting.js`; `kolob-viz-intake.js` `onNote`).
 - **The reckoning's A/B is the drone alone:** `?exp=-reckoning` holds the drone home and changes nothing
   else (`kolob-calendar.js`; `kolob-plan.js`; `kolob-meeting.js`). **Round 2's re-base was owner-approved:**
   labelled streams and clock cues; seeds play differently from v0.32 on (`kolob-core.js`).
@@ -105,9 +105,9 @@ Quotations are the owner's words. The record is `archive/plans/PLAN-COMPOSITION.
 ## The staff and the page
 
 - **2026-09-26 — Direction A, "The Colony Tunebook,"** from three mockups; B and C not pursued
-  (`kolob-viz.js`; `mockups/engraving-a-tunebook.html`). Scroll 60 px/s (`SCROLL_PX_S`).
+  (`kolob-viz.js` and its five pieces, `_viz.php`; `mockups/engraving-a-tunebook.html`). Scroll 60 px/s (`SCROLL_PX_S`, `kolob-viz.js`).
   **2026-09-26 — No rubrics (no vermilion), no words between the staves, no drone on the page, no decoded
-  word on the telegraph** (PLAN-ENGRAVING top; `kolob-viz.js`; no `drone` in `MELODIC`).
+  word on the telegraph** (PLAN-ENGRAVING top; `kolob-viz*.js`; no `drone` in `MELODIC`, `kolob-viz-intake.js`).
 - **2026-09-27 (for v0.32) — Green ink only:** no gilt strike, no cooling, no glow; only the drying fades a
   note (`C_INK`). **2026-09-27 — No text on the staff:** no 8va/15ma, no captions, no time
   figures for the band; out-of-range notes take the ledger room, then fold silently by octaves
@@ -187,11 +187,11 @@ ear" notes. None has been heard: rounds 3b and 3c were measured, not listened to
   `kolob-guest-farward.js`). **The testimony:** whether a speaking voice without words reads as a
   person bearing testimony.
 - **The band's sliding layer:** at the band's own pace across our ink, or scrolled with the page
-  (r3c-engrave-2, Requests 1; `kolob-viz.js`).
+  (r3c-engrave-2, Requests 1; `kolob-viz-intake.js` `takeBand`, `kolob-viz.js` `drawBand`).
 - **The drone's landing** rubs in about half the turns (53 %); the lever is to land the glide on the next
   rite's first chord; `RECKON_CANDIDATES` (`kolob-calendar.js`, 24) sets how many Sundays reckon. **The
   Tabernacle's men's verses** come out mostly in unison (listen-r3b).
-- **Johnston's tuning marks** (`kolob-viz.js`); **the sparer staff** (§15, "may come back later").
+- **Johnston's tuning marks** (`kolob-viz.js` `TUNING_MARKS`); **the sparer staff** (§15, "may come back later").
   **The house organ is retired** (2026-10-01, "let's ditch the old organ"): the pipes play every
   chord. **The house choir is retired** (2026-10-01, "Retire the old house choir"): the ward sings
   everything; `organPartLine` remains only as the ward's fallback for a hymn without the organist.

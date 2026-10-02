@@ -91,8 +91,11 @@ Today, in order:
 | the performers | `kolob-cast.js`, `kolob-hymnal.js`, `kolob-guest-room.js` (the guest rooms' scaffold), `kolob-guest-trombones.js`, `kolob-guest-handbells.js`, `kolob-guest-singingschool.js`, `kolob-guest-bands.js`, `kolob-guest-handcart.js`, `kolob-guest-gulls.js`, `kolob-guest-variations.js`, `kolob-guest-changes.js`, `kolob-guest-tongues.js`, `kolob-guest-farward.js`, `kolob-guest-hosanna.js`, `kolob-guest-socialhall.js`, `kolob-testimony.js`, `kolob-guests.js`, `kolob-plan.js` (the meeting's plan, pure), `kolob-meeting.js` (the meeting conducted) |
 | the facade | `kolob-core.js` |
 
-The page then loads `kolob-text.js`, `kolob-viz.js`, `kolob-ui.js`, which are
-not engine rooms. Every served asset is in `index.php`'s fingerprint. **The
+The page then loads `kolob-text.js`, the page's drawing (`_viz.php`'s list:
+`kolob-viz-atlas.js`, `kolob-viz-intake.js`, `kolob-viz-guests.js`,
+`kolob-viz-hymnal.js`, `kolob-viz-wheel.js`, then `kolob-viz.js`, which raises
+`KolobViz` over them) and `kolob-ui.js`, which are not engine rooms. Every
+served asset is in `index.php`'s fingerprint. **The
 substrate is read-only**: `art/prosperos-jukebox-v2/*` is shared by relative
 path and never edited from Kolob work.
 
@@ -177,7 +180,7 @@ differ in the last bit (cents by `Math.log` over `LN2`, the calendar's sum of
 logs that reads a key without its seventh) or that must load alone (the
 Earth tunes' lattice, built as `kolob-tunes.js` loads in its lab; the ward's
 voice in `voices-lab`) stays where it is, with a comment saying why. The
-page (`kolob-viz.js`) keeps its own copies.
+page (`kolob-viz*.js`) keeps its own copies.
 
 **Frequency.** `Hz = keynoteHz × ratio(keyMonzo) × ratio(monzo)`.
 - The **keynote** is `F0 × ROOT_MULT` (4). `F0` is drawn once a meeting on
@@ -565,7 +568,7 @@ hymnId`, `?` nullable; a nested object is a payload of its own);
 
 **`logged: false`** on a note or an event means the page must neither print
 it in the minutes nor engrave it on the staff nor name it on the board; the
-staff (`kolob-viz.js onNote/onEvent`) and the console (`kolob-ui.js`) drop
+staff (`kolob-viz-intake.js onNote/onEvent`) and the console (`kolob-ui.js`) drop
 such a note or event at the door. The Hosanna sends `guest-start`,
 `guest-end` and `house-lets-go` with `logged: false` and nothing else (no
 `guest` stage, no `hymn-announced`, no `verse-start`, never in
@@ -592,7 +595,7 @@ browser */`, the page's `/* a private window: … */`); ESLint's `no-empty`
 fails one that says nothing. The harness fails a run on any `console.error`,
 so a fault told on a clean run fails CI.
 
-**The staff's intake** (`kolob-viz.js onNote`): a note on `band`, `telegraph`
+**The staff's intake** (`kolob-viz-intake.js onNote`): a note on `band`, `telegraph`
 (with marks), a spoken `voice`, the new guest layers (`fiddle`, `handcart`,
 `gulls`, `tower`, `farward`) and the melodic layers (`clarinet`, `choir`,
 `bells`, `harmonium`, `strings`, `trombones`, `oldtune`, `organ`,
@@ -607,11 +610,11 @@ by" or "the bands cross"), is the stage's typed `both`. `tools/lib/dump.js`
 reads every live type by its fields (`typedEvent`) and keeps `legacyEvent`
 for dumps of builds older than 2026-09-27; `tools/capture.js` prints a type
 and its fields where it printed a label; `_harness.js` keeps its no-`type`
-fallbacks for those old builds. `kolob-viz.js` never read them.
+fallbacks for those old builds. The page's drawing (`kolob-viz*.js`) never read them.
 
 Authority: `kolob-score.js` (`EVENTS`), `kolob-core.js` (`emitNote`,
 `emitEvent`), `kolob-meeting.js` (`UNLOGGED`), `kolob-guests.js`
-(`guestNote`), `kolob-viz.js`, `kolob-ui.js`, `tools/lib/dump.js`.
+(`guestNote`), `kolob-viz-intake.js`, `kolob-ui.js`, `tools/lib/dump.js`.
 
 ---
 
