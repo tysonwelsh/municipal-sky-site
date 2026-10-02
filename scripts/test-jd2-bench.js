@@ -25,7 +25,9 @@
 //   direct ?bench&prompt=<id> seats the closed prompt with its prefill
 //          (opens on the podium, every scale answered); ?bench&item= too
 //   scrap  hides it (visibility hidden) and the bench moves on
-//   hidden HIDDEN ITEMS lists it from the ledger; SHOW returns it live
+//   hidden HIDDEN ITEMS lists it from the ledger; SHOW returns it live — and
+//          a jd2-curate answer naming another build (the response rewritten
+//          in flight) trips the strip's "a deploy landed" line
 //   new    NEW PROMPT draws under the bench profile through the darkroom with
 //          the mock provider, files title and category, and seats the new
 //          run for rating
@@ -242,6 +244,9 @@ async function main() {
     await seated(page, P1.prompt_id);
     const bar2 = await barText(page);
     check('DONE advances the queue to the other prompt ("1 to go")', /1 to go/.test(bar2), bar2);
+    // jd2-rate answers `build`; the same deploy as the queue's is not stale
+    const filedBuild = await page.evaluate(() => !document.querySelector('.jd-bench-build.is-stale'));
+    check("the filing's build matches the queue's (no stale-deploy line)", filedBuild);
 
     const sess = q('SELECT s.id, s.rater_role, s.blind, s.note, s.status FROM jd2_sessions s WHERE s.run_id = ?', [P2.run_id]);
     check('SQLite: one owner session on the run, blind, filed', sess.length === 1 && sess[0].rater_role === 'owner' &&
@@ -289,10 +294,22 @@ async function main() {
     const to = await page.$eval('.jd-bench-sheet [data-show="' + P2.prompt_id + '"]', (b) => b.getAttribute('data-to'));
     await shot(page, '7-hidden-items');
     check('HIDDEN ITEMS lists it from the ledger, to come back live', to === 'live', to);
+    // the SHOW's jd2-curate answer is rewritten in flight to name another
+    // build, as if a deploy had landed under the page
+    await page.route('**/api/jd2-curate.php', async (route) => {
+      const resp = await route.fetch();
+      const j = await resp.json();
+      if (j && j.ok) j.build = 'zzzzzz';
+      await route.fulfill({ response: resp, json: j });
+    });
     await page.click('.jd-bench-sheet [data-show="' + P2.prompt_id + '"]');
     await page.waitForFunction((id) => !document.querySelector('.jd-bench-sheet [data-show="' + id + '"]'), P2.prompt_id, { timeout: 10000 });
     const vis2 = q('SELECT visibility, hidden_by FROM jd2_prompts WHERE id = ?', [P2.prompt_id])[0];
     check('SHOW returns it live', vis2.visibility === 'live' && vis2.hidden_by === null, JSON.stringify(vis2));
+    await page.waitForSelector('.jd-bench-build.is-stale', { timeout: 5000 }).catch(() => {});
+    const staleText = await page.$eval('.jd-bench-build.is-stale', (e) => e.textContent).catch(() => '');
+    check('a jd2-curate answer naming another build trips "a deploy landed"', /a deploy landed/.test(staleText), staleText);
+    await page.unroute('**/api/jd2-curate.php');
 
     // --- new ------------------------------------------------------------------
     const NEWTEXT = 'a cracked porcelain doorknob, white with a gold rim (bench new prompt ' + stamp + ')';

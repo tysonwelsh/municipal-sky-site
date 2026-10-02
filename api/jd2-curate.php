@@ -27,12 +27,15 @@
 // shown run must be one of the prompt's runs, a pin one of its runs' drawings.
 // Nothing here deletes anything.
 //
-// Response: { ok, prompt: {...}, runs: [ {id, kind, requested_by, profile,
-// status, created, generations: [...], sessions: [...], display_session_id,
-// complete} ] } — the prompt's standing, as the drawer would read it.
+// Response: { ok, build, prompt: {...}, runs: [ {id, kind, requested_by,
+// profile, status, created, generations: [...], sessions: [...],
+// display_session_id, complete} ] } — the prompt's standing, as the drawer
+// would read it. `build` is the tooling fingerprint (jd_build_stamp()['build']),
+// as v1's writers answered it, for the bench's stale-deploy check.
 
 require_once __DIR__ . '/jd2-config.php';
 require_once __DIR__ . '/jd-origin.php';
+require_once __DIR__ . '/jd-build.php';   // the build the answer names
 
 jd_curator_post();
 
@@ -186,7 +189,7 @@ try {
         throw $e;
     }
 
-    jd_json_out(200, ['ok' => true] + jd2_prompt_standing($db, $promptId, $taxonomy));
+    jd_json_out(200, ['ok' => true, 'build' => jd_build_stamp()['build']] + jd2_prompt_standing($db, $promptId, $taxonomy));
 } catch (PDOException $e) {
     error_log('jd2-curate: ' . $e->getMessage());
     jd_fail(500, 'server_error', 'The decision could not be filed.');

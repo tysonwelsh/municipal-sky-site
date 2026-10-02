@@ -151,8 +151,11 @@
     }).then(function (j) {
       if (!j || !j.ok) throw ((j && j.error) || { code: 'network' });
       /* a write endpoint that names its build — a mismatch means a deploy
-         landed under this page, and the rubric could have moved */
-      if (j.build && Q && Q.build && j.build.build && j.build.build !== Q.build.build) stale = true;
+         landed under this page, and the rubric could have moved. The
+         writers (jd2-rate, jd2-curate) answer the fingerprint string, as
+         v1's did; the queue carries the whole stamp, {version, build, …} */
+      var jb = j.build && (typeof j.build === 'string' ? j.build : j.build.build);
+      if (jb && Q && Q.build && Q.build.build && jb !== Q.build.build) stale = true;
       return j;
     });
   }

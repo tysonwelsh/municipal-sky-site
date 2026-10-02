@@ -257,8 +257,8 @@ removed when Phase 4 reads `run_id`.
 | --- | --- | --- |
 | `POST api/jd2-generate.php` | origin; visitor needs consent; `profile`/`rerun_of`/`run_id` need the key | `{client_ref, slot, prompt, client, consent:{version}, device_ref?, website}` (owner also `profile` default `bench`, `rerun_of`, `run_id`) → `{ok, svg, gen_id, slot, run_id, prompt_id, submission_id}` |
 | `POST api/jd2-title.php` | origin; the `client_ref` must be a prompt filed in the last hour | `{client_ref, prompt}` → `{ok, title}` (advisory; nothing stored) |
-| `POST api/jd2-rate.php` | origin; visitor: only their own turn — a run a visitor requested whose prompt's `client_ref` the request carries (missing or wrong → 403 `not_yours`) — and one filed session per run (409 `already_rated`); owner: the bench key, no `client_ref` | `{run_id, client_ref (visitor), client, device_ref?, title?, size?, suppress?, ratings:[{slot, kind, axis_id?, value, note?}], ranking:[{slot, rank, gap?}]\|null, pairs:[{slot_a, slot_b, score, shown_left?}]\|null, blind?}` → `{ok, session_id, run_id, prompt_id, complete, reveal:[{slot, model_id, label, vendor, status, tokens?, cost_usd?, priced?}]}` |
-| `POST api/jd2-curate.php` | origin + bench key | `{prompt_id, visibility?, shown_run_id?, pinned_generation_id?, title?, size_class?, size_scale?}` or `{generation_id, hidden}` → `{ok, prompt:{…}, runs:[{…, generations, sessions, display_session_id, complete}]}` |
+| `POST api/jd2-rate.php` | origin; visitor: only their own turn — a run a visitor requested whose prompt's `client_ref` the request carries (missing or wrong → 403 `not_yours`) — and one filed session per run (409 `already_rated`); owner: the bench key, no `client_ref` | `{run_id, client_ref (visitor), client, device_ref?, title?, size?, suppress?, ratings:[{slot, kind, axis_id?, value, note?}], ranking:[{slot, rank, gap?}]\|null, pairs:[{slot_a, slot_b, score, shown_left?}]\|null, blind?}` → `{ok, build, session_id, run_id, prompt_id, complete, reveal:[{slot, model_id, label, vendor, status, tokens?, cost_usd?, priced?}]}` |
+| `POST api/jd2-curate.php` | origin + bench key | `{prompt_id, visibility?, shown_run_id?, pinned_generation_id?, title?, size_class?, size_scale?}` or `{generation_id, hidden}` → `{ok, build, prompt:{…}, runs:[{…, generations, sessions, display_session_id, complete}]}` |
 | `GET api/jd2-gen-svg.php?gen=<id>` | origin; public when the prompt is `live` and the drawing not hidden, else bench key; otherwise 404 | → `image/svg+xml`, `no-store` |
 | `GET art/junk-drawer/data.php` | public | → `{generated, count, taxonomy, items, errors:[]}`, ETag; `?item=<prompt_id>` any visibility (`hidden: true` unless live); `?slim=1` via `_slim.php`; a database outage answers an empty manifest |
 
@@ -299,6 +299,11 @@ instrument versions, `blind` (0 only for the owner's `blind:false`),
 (`suppress` → `hidden`, `hidden_by` = the rater's role) on the prompt, and a
 complete session on a `draft` prompt makes it `live` (`approved_at` is not
 written).
+
+Both writers answer `build`, the tooling fingerprint
+(`jd_build_stamp()['build']`, `api/jd-build.php`, whose file list spans every
+v2 surface), as v1's writers did: the bench compares it with the queue's and
+says "a deploy landed" when they differ.
 
 **Every reader applies three rules** (`jd2_current_session`,
 `jd2_display_session`, `jd2_is_complete`):

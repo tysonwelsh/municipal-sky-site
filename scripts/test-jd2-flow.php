@@ -290,6 +290,9 @@ check('…and neither filed a sitting nor touched the prompt (title, visibility)
 $session1 = $j['session_id'] ?? null;
 check('with the right client_ref: filed, 200, complete, a session id', $st === 200 && ($j['ok'] ?? false) && $j['complete'] === true && jd_is_ulid($session1),
       $st . ' ' . json_encode($j));
+require_once $root . '/api/jd-build.php';
+check("the filing answers `build`, the tooling fingerprint (as v1's writers did)", ($j['build'] ?? null) === jd_build_stamp()['build'],
+      json_encode($j['build'] ?? null));
 $reveal = $j['reveal'] ?? [];
 $revealOk = count($reveal) === 4;
 foreach ($reveal as $r) {
@@ -464,8 +467,8 @@ check('with shown_run_id NULL the drawer shows the newest complete run (the reru
       (manifest()[1]['items'][0]['run_id'] ?? null) === $run2
       && one($db, 'SELECT shown_run_id FROM jd2_prompts WHERE id = ?', [$prompt1]) === null);
 [$st, $j] = req('POST', '/api/jd2-curate.php', ['prompt_id' => $prompt1, 'shown_run_id' => $run1], true);
-check('jd2-curate sets shown_run_id; the drawer goes back to the first run',
-      $st === 200 && $j['prompt']['shown_run_id'] === $run1 && (manifest()[1]['items'][0]['run_id'] ?? null) === $run1, json_encode($j));
+check('jd2-curate sets shown_run_id (answering `build`); the drawer goes back to the first run',
+      $st === 200 && ($j['build'] ?? null) === jd_build_stamp()['build'] && $j['prompt']['shown_run_id'] === $run1 && (manifest()[1]['items'][0]['run_id'] ?? null) === $run1, json_encode($j));
 [$st, $j] = req('POST', '/api/jd2-curate.php', ['prompt_id' => $prompt1, 'pinned_generation_id' => $slotGen1['d']], true);
 $it = manifest()[1]['items'][0] ?? [];
 $ridD = null;

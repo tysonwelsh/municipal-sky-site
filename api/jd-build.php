@@ -16,7 +16,13 @@
 // the rerun harvest, the curated sync, the drawing server, this file and the
 // version reader joined the list — each had been able to change without
 // moving the stamp; at the v2 cutover the retired rating-bench.html and
-// jd-bench-run.php left it with their files.) It deliberately spans art/ and api/, because "am I running
+// jd-bench-run.php left it with their files. Later the same day every v2
+// surface joined: the api/jd2-*.php endpoints, data.php, the seven page
+// modules, and the shared helpers the v2 writers lean on — the sanitizer,
+// the origin gate, the usage pricer and the price table. The v1 files stay
+// listed while they are still on disk: the frozen writers answer 410 and the
+// readers serve legacy/, and a change to either is still a deploy.) It
+// deliberately spans art/ and api/, because "am I running
 // the updated code?" is a question about the page AND the endpoints behind it —
 // a bench page from the right deploy talking to a stale endpoint is exactly the
 // confusion this exists to make impossible.
@@ -30,6 +36,30 @@ function jd_build_files(): array
         $root . '/art/junk-drawer/ledger.html',
         $root . '/art/junk-drawer/taxonomy.json',
         $root . '/art/junk-drawer/_version.php',
+        // dataset v2: the drawer's read, the seven page modules, every jd2 endpoint
+        $root . '/art/junk-drawer/data.php',
+        $root . '/art/junk-drawer/jd-core.js',
+        $root . '/art/junk-drawer/jd-filmstrip.js',
+        $root . '/art/junk-drawer/jd-furniture.js',
+        $root . '/art/junk-drawer/jd-record.js',
+        $root . '/art/junk-drawer/jd-darkroom.js',
+        $root . '/art/junk-drawer/jd-turn.js',
+        $root . '/art/junk-drawer/jd-bench.js',
+        $root . '/api/jd2-config.php',
+        $root . '/api/jd2-generate.php',
+        $root . '/api/jd2-title.php',
+        $root . '/api/jd2-rate.php',
+        $root . '/api/jd2-curate.php',
+        $root . '/api/jd2-gen-svg.php',
+        $root . '/api/jd2-queue.php',
+        $root . '/api/jd2-ledger.php',
+        $root . '/api/jd2-analytics.php',
+        // the shared helpers the v2 writers include
+        $root . '/api/jd-svg-sanitizer.php',
+        $root . '/api/jd-origin.php',
+        $root . '/api/jd-usage.php',
+        $root . '/api/jd-prices.json',
+        // v1, still on disk: the frozen writers (410) and legacy/'s readers
         $root . '/api/jd-bench-queue.php',
         $root . '/api/jd-item-rate.php',
         $root . '/api/jd-curate.php',

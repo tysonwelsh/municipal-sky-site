@@ -58,13 +58,17 @@
 // turn joins the drawer, v1's rule (approval is the roadmap's; approved_at is
 // left alone).
 //
-// Response: { ok, session_id, run_id, prompt_id, complete, reveal: [ {slot,
-// model_id, label, vendor, status, tokens?, cost_usd?, priced?} ] } — v1's
-// reveal shape; cost is the snapshot taken when the drawing was made.
+// Response: { ok, build, session_id, run_id, prompt_id, complete, reveal: [
+// {slot, model_id, label, vendor, status, tokens?, cost_usd?, priced?} ] } —
+// v1's reveal shape; cost is the snapshot taken when the drawing was made.
+// `build` is the tooling fingerprint (jd_build_stamp()['build']), as v1's
+// writers answered it: the bench compares it with the queue's and says a
+// deploy landed under the page.
 
 require_once __DIR__ . '/jd2-config.php';
 require_once __DIR__ . '/jd-origin.php';
 require_once __DIR__ . '/jd-usage.php';   // the reveal's token summary
+require_once __DIR__ . '/jd-build.php';   // the build the filing answers with
 
 jd_require_allowed_origin();
 jd_require_post();
@@ -388,6 +392,7 @@ try {
     // --- 7. The reveal ---------------------------------------------------------
     jd_json_out(200, [
         'ok' => true,
+        'build' => jd_build_stamp()['build'],
         'session_id' => $sessionId,
         'run_id' => $runId,
         'prompt_id' => $promptId,
