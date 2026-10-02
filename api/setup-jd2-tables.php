@@ -147,6 +147,27 @@ jd2_ensure_column($db, 'jd2_prompts', 'intake_json', 'TEXT NULL AFTER intake_mod
 jd2_ensure_column($db, 'jd2_prompts', 'intake_cost_usd', 'DECIMAL(10,6) NULL AFTER intake_json', 'DECIMAL(10,6) NULL');
 jd2_ensure_column($db, 'jd2_prompts', 'intake_at', 'DATETIME NULL AFTER intake_cost_usd', 'TEXT NULL');
 
+// The effort profiles split on 2026-10-02 (bench → bench-max, bench-medium,
+// bench-low). MySQL needs nothing (VARCHAR, no CHECK); a dev SQLite file made
+// before then carries the old profile CHECK and would refuse every new owner
+// run, so it is named here instead of failing later in a test.
+if ($sqlite) {
+    try {
+        $ddl = (string) $db->query("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'jd2_runs'")->fetchColumn();
+        $missingWords = array_values(array_filter(JD2_PROFILE, fn ($w) => !str_contains($ddl, "'" . $w . "'")));
+        if ($missingWords) {
+            $failed++;
+            jd_setup_line('jd2_runs.profile', 'STALE CHECK (no ' . implode(', ', $missingWords)
+                . '): delete local-dev/jd-dev.sqlite and re-run both runners');
+        } else {
+            jd_setup_line('jd2_runs.profile', 'CHECK has every JD2_PROFILE word');
+        }
+    } catch (PDOException $e) {
+        $failed++;
+        jd_setup_line('jd2_runs.profile', 'FAILED: ' . $e->getMessage());
+    }
+}
+
 // --- the ground truth: are all seven there? ---------------------------------
 $jd2Tables = ['jd2_prompts', 'jd2_runs', 'jd2_generations', 'jd2_sessions',
               'jd2_judgments', 'jd2_rankings', 'jd2_pairs'];

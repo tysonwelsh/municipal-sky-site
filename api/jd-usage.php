@@ -16,7 +16,9 @@ declare(strict_types=1);
  * the inclusion rules right is the whole correctness of this file:
  *
  *   Anthropic /v1/messages — input_tokens EXCLUDES both cache figures, so the
- *     three input buckets simply add up.
+ *     three input buckets simply add up. output_tokens INCLUDES thinking;
+ *     output_tokens_details.thinking_tokens (seen on Opus 5, 2026-10-02) is
+ *     that part, kept in `reasoning` for visibility and never added on top.
  *   OpenAI /v1/chat/completions — prompt_tokens INCLUDES cached_tokens, so the
  *     cached part must be subtracted out to avoid billing it twice at the full
  *     rate; and completion_tokens ALREADY INCLUDES reasoning_tokens, so
@@ -44,7 +46,7 @@ function jd_normalize_usage(string $provider, array $u): array
             'cache_write'=> (int) ($u['cache_creation_input_tokens'] ?? 0),
             'cache_read' => (int) ($u['cache_read_input_tokens'] ?? 0),
             'output'     => (int) ($u['output_tokens'] ?? 0),
-            'reasoning'  => 0,
+            'reasoning'  => (int) ($u['output_tokens_details']['thinking_tokens'] ?? 0),
         ];
     }
     if ($provider === 'google') {

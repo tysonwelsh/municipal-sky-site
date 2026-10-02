@@ -453,7 +453,7 @@ check("data.php now shows the owner's sitting: r1 = a, every grade 5, pairs dire
       && array_unique(array_column($item['pairs'], 'source')) === ['direct'], json_encode($item));
 
 // ============================================================================
-section('(f) the owner reruns the prompt under the bench profile');
+section('(f) the owner reruns the prompt (the wire word `bench` = the default owner profile)');
 [$st, $j] = gen(['client_ref' => jd_uuid4(), 'slot' => 'a', 'rerun_of' => $prompt1, 'website' => '']);
 check('a rerun without the bench key is 403', $st === 403, json_encode($j));
 $ref = jd_uuid4();
@@ -467,10 +467,12 @@ foreach (['b', 'c', 'd'] as $slot) {
 check('slot a makes the rerun, slots b–d join it by run_id', $rerunOk, json_encode($j));
 $r2row = rows($db, 'SELECT * FROM jd2_runs WHERE id = ?', [$run2])[0] ?? [];
 $params = json_decode((string) one($db, "SELECT params FROM jd2_generations WHERE run_id = ? AND slot = 'a'", [$run2]), true);
-check('second run on the same prompt: rerun, owner, bench profile and harness; no new prompt',
-      ($r2row['kind'] ?? '') === 'rerun' && $r2row['requested_by'] === 'owner' && $r2row['profile'] === 'bench'
-      && $r2row['harness'] === jd_harness('bench') && $r2row['status'] === 'generated'
-      && ($params['effort_profile'] ?? '') === 'bench'
+check('second run on the same prompt: rerun, owner, `bench` filed as ' . JD2_OWNER_DEFAULT_PROFILE . ' with its harness and budget; no new prompt',
+      ($r2row['kind'] ?? '') === 'rerun' && $r2row['requested_by'] === 'owner' && $r2row['profile'] === JD2_OWNER_DEFAULT_PROFILE
+      && JD2_OWNER_DEFAULT_PROFILE === 'bench-medium'
+      && $r2row['harness'] === jd_harness(JD2_OWNER_DEFAULT_PROFILE) && $r2row['harness'] === 'v4-benchmed.1' && $r2row['status'] === 'generated'
+      && ($params['effort_profile'] ?? '') === JD2_OWNER_DEFAULT_PROFILE && ($params['harness'] ?? '') === 'v4-benchmed.1'
+      && ($params['max_tokens'] ?? $params['max_completion_tokens'] ?? $params['max_output_tokens'] ?? null) === 64000
       && (int) one($db, 'SELECT COUNT(*) FROM jd2_prompts') === 1
       && (int) one($db, 'SELECT COUNT(*) FROM jd2_runs WHERE prompt_id = ?', [$prompt1]) === 2, json_encode($r2row));
 check('shown_run_id is untouched and data.php still shows the first run (the rerun is unrated)',
@@ -733,6 +735,51 @@ $runO = $jo['run_id'] ?? '';
 check('an owner sitting that files a size writes size_by owner', $st === 200
       && one($db, 'SELECT size_class FROM jd2_prompts WHERE id = ?', [$promptO]) === 'l'
       && one($db, 'SELECT size_by FROM jd2_prompts WHERE id = ?', [$promptO]) === 'owner', json_encode($j));
+
+// ============================================================================
+section('(k) the effort profiles: default, explicit, refused, retired');
+$profPrompt = 'a brass compass with a cracked glass';
+$runsBy = [];
+foreach ([null, 'bench-low', 'bench-medium', 'bench-max'] as $pf) {
+    $refP = jd_uuid4();
+    $body = ['client_ref' => $refP, 'slot' => 'a', 'prompt' => $profPrompt . ' ' . ($pf ?? 'default'), 'website' => ''];
+    if ($pf !== null) {
+        $body['profile'] = $pf;
+    }
+    [$st, $j] = gen($body, true);
+    $runsBy[$pf ?? 'default'] = [$st, $j['run_id'] ?? null];
+}
+$prof = [];
+foreach ($runsBy as $k => [$st, $rid]) {
+    $r = rows($db, 'SELECT profile, harness FROM jd2_runs WHERE id = ?', [(string) $rid])[0] ?? [];
+    $pp = json_decode((string) one($db, "SELECT params FROM jd2_generations WHERE run_id = ? AND slot = 'a'", [(string) $rid]), true) ?: [];
+    $prof[$k] = [$st, $r['profile'] ?? null, $r['harness'] ?? null, $pp['effort_profile'] ?? null,
+                 $pp['max_tokens'] ?? $pp['max_completion_tokens'] ?? $pp['max_output_tokens'] ?? null];
+}
+check('no profile sent: the owner run is filed under bench-medium (v4-benchmed.1, 64000)',
+      $prof['default'] === [200, 'bench-medium', 'v4-benchmed.1', 'bench-medium', 64000], json_encode($prof['default']));
+check('bench-low / bench-medium / bench-max filed as sent, each with its own harness and the 64000 budget',
+      $prof['bench-low'] === [200, 'bench-low', 'v4-benchlow.1', 'bench-low', 64000]
+      && $prof['bench-medium'] === [200, 'bench-medium', 'v4-benchmed.1', 'bench-medium', 64000]
+      && $prof['bench-max'] === [200, 'bench-max', 'v4-bench.4', 'bench-max', 64000], json_encode($prof));
+$webParams = json_decode((string) one($db, "SELECT g.params FROM jd2_generations g JOIN jd2_runs r ON r.id = g.run_id WHERE r.profile = 'web' LIMIT 1"), true) ?: [];
+check('a visitor turn stays on web: v4-web.3 and the 12000 budget (JD_MAX_TOKENS)',
+      ($webParams['harness'] ?? '') === 'v4-web.3' && JD_MAX_TOKENS === 12000
+      && ($webParams['max_tokens'] ?? $webParams['max_completion_tokens'] ?? $webParams['max_output_tokens'] ?? null) === 12000, json_encode($webParams));
+foreach (['bench-ultra' => 'an unknown word', 'bench' . "\u{00A0}" => 'a near miss'] as $badP => $what) {
+    [$st, $j] = gen(['client_ref' => jd_uuid4(), 'slot' => 'a', 'prompt' => 'x', 'profile' => $badP, 'website' => ''], true);
+    check("an owner profile that is $what → 400, nothing filed", $st === 400 && ($j['error']['code'] ?? '') === 'bad_request'
+          && str_contains($j['error']['message'] ?? '', 'bench-medium'), json_encode($j));
+}
+// a run filed before the split, under the retired `bench` (harness v4-bench.3)
+$oldRun = jd_ulid();
+$db->prepare("INSERT INTO jd2_runs (id, prompt_id, kind, requested_by, profile, harness, pool_version, deal, status, created)
+              VALUES (?, ?, 'rerun', 'owner', 'bench', 'v4-bench.3', ?, ?, 'pending', ?)")
+   ->execute([$oldRun, $promptO, jd2_pool_version($taxonomy), json_encode(jd2_deal(jd2_pool($taxonomy))), jd_now()]);
+[$st, $j] = gen(['client_ref' => jd_uuid4(), 'slot' => 'a', 'rerun_of' => $promptO, 'run_id' => $oldRun, 'website' => ''], true);
+check('a slot of a run under the retired `bench` profile is refused (409 retired_profile), nothing drawn',
+      $st === 409 && ($j['error']['code'] ?? '') === 'retired_profile'
+      && (int) one($db, 'SELECT COUNT(*) FROM jd2_generations WHERE run_id = ?', [$oldRun]) === 0, json_encode($j));
 
 printf("\n%d passed, %d failed\n", $passed, $failed);
 if ($failed > 0) {

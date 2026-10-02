@@ -226,7 +226,7 @@ async function main() {
       P2intake.ok && !P2intake.fallback && P2intake.size_class === P2tier && P2intake.size_by === 'model' &&
       !!(P2intake.tags && P2intake.tags.subject && P2intake.tags.subject.length), JSON.stringify(P2intake));
     check('seed: two owner prompts, bench profile, four drawings each',
-      q("SELECT COUNT(*) AS n FROM jd2_runs WHERE profile = 'bench' AND requested_by = 'owner'")[0].n == 2 &&
+      q("SELECT COUNT(*) AS n FROM jd2_runs WHERE profile = 'bench-medium' AND requested_by = 'owner'")[0].n == 2 &&
       q("SELECT COUNT(*) AS n FROM jd2_generations WHERE status = 'ok'")[0].n == 8);
 
     // --- rate --------------------------------------------------------------
@@ -352,7 +352,7 @@ async function main() {
     check('NEW PROMPT filed an owner prompt with its title and category', np.length === 1 && np[0].origin === 'owner' &&
       np[0].title === 'Porcelain Doorknob' && np[0].category === 'hardware' && np[0].visibility === 'draft', JSON.stringify(np));
     check('…as one bench-profile run of four ok drawings (mock provider)', nr.length === 1 && nr[0].kind === 'initial' &&
-      nr[0].requested_by === 'owner' && nr[0].profile === 'bench' && Number(ng) === 4, JSON.stringify(nr) + ' ok=' + ng);
+      nr[0].requested_by === 'owner' && nr[0].profile === 'bench-medium' && Number(ng) === 4, JSON.stringify(nr) + ' ok=' + ng);
     check('NEW PROMPT ran the intake clerk: the owner\'s title stands, the clerk\'s tier and headings are filed',
       np.length === 1 && np[0].title === 'Porcelain Doorknob' && np[0].size_by === 'model' && !!np[0].size_class &&
       np[0].intake_model === 'mock' && !!np[0].intake_at && /"subject":\["object"\]/.test(String(np[0].tags)), JSON.stringify(np[0]));
@@ -376,7 +376,7 @@ async function main() {
     const runs = q('SELECT id, kind, profile, requested_by FROM jd2_runs WHERE prompt_id = ? ORDER BY created DESC, id DESC', [np[0].id]);
     const seatedRun = await page.evaluate((id) => window.JD_bench.queue().items.filter((x) => x.prompt_id === id)[0].run_id, np[0].id);
     check('RERUN draws a new bench run of the prompt and seats it', runs.length === 2 && runs[0].kind === 'rerun' &&
-      runs[0].profile === 'bench' && runs[0].requested_by === 'owner' && seatedRun === runs[0].id, JSON.stringify(runs) + ' seated ' + seatedRun);
+      runs[0].profile === 'bench-medium' && runs[0].requested_by === 'owner' && seatedRun === runs[0].id, JSON.stringify(runs) + ' seated ' + seatedRun);
 
     // --- the ?item= alias --------------------------------------------------------
     await page.goto(BASE + '/art/junk-drawer/?bench&item=' + P1.prompt_id, { waitUntil: 'load' });
@@ -392,7 +392,7 @@ async function main() {
     const p2runs = q('SELECT id, kind, profile, requested_by FROM jd2_runs WHERE prompt_id = ? ORDER BY created DESC, id DESC', [P2.prompt_id]);
     const p2seated = await page.evaluate((id) => window.JD_bench.queue().items.filter((x) => x.prompt_id === id)[0].run_id, P2.prompt_id);
     check('?rerun=<id> draws an owner bench rerun and lands on the bench seated on it', p2runs.length === 2 &&
-      p2runs[0].kind === 'rerun' && p2runs[0].profile === 'bench' && p2runs[0].requested_by === 'owner' &&
+      p2runs[0].kind === 'rerun' && p2runs[0].profile === 'bench-medium' && p2runs[0].requested_by === 'owner' &&
       p2seated === p2runs[0].id, JSON.stringify(p2runs));
 
     // --- gate ---------------------------------------------------------------------

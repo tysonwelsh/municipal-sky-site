@@ -17,7 +17,7 @@
 // The fixture, filed through the endpoints:
 //   P1  a visitor turn, rated complete by the visitor (ranking + gaps, so the
 //       pairs are DERIVED); later an incomplete owner sitting on it
-//   P2  the owner's prompt (bench profile), rated complete with DIRECT pairs;
+//   P2  the owner's prompt (the default owner profile), rated complete with DIRECT pairs;
 //       then a rerun, first unrated, then an incomplete owner sitting, then
 //       a complete one with direct pairs
 //   P3  a visitor turn rated complete with SUPPRESS (hidden by the visitor)
@@ -395,7 +395,7 @@ check('P2: shown from its newest complete run (the rerun), shows its 1st place d
     && $L2['bench']['state'] === 'done' && $L2['bench']['needs'] === [], json_encode([$L2['drawer'], $L2['bench']]));
 check("P2: two runs, newest first; the rerun's history keeps both owner sessions (incomplete → superseded, complete → current)",
     count($L2['runs']) === 2 && $L2['runs'][0]['run_id'] === $run2b && $L2['runs'][0]['kind'] === 'rerun'
-    && $L2['runs'][0]['profile'] === 'bench' && count($L2['runs'][0]['sessions']) === 2
+    && $L2['runs'][0]['profile'] === JD2_OWNER_DEFAULT_PROFILE && count($L2['runs'][0]['sessions']) === 2
     && $L2['runs'][0]['sessions'][0]['current'] === false && $L2['runs'][0]['sessions'][0]['complete'] === false
     && $L2['runs'][0]['sessions'][1]['current'] === true && $L2['runs'][0]['sessions'][1]['complete'] === true
     && $L2['runs'][0]['display']['pairs'][0]['source'] === 'direct', json_encode($L2['runs'][0]['sessions']));
@@ -645,9 +645,9 @@ $robot = $new[0] ?? [];
 $okLines = preg_match_all('/^\s+#\d+\s+[a-d]\s+\S+\s+ok\s/m', $o);
 check('the run: exit 0, twelve "ok" lines with model and cost, a running total, the bench URLs',
     $rc === 0 && $okLines === 12 && str_contains($o, 'total $') && str_contains($o, 'index.php?bench&prompt='), $o);
-check('two new owner prompts, each one run under the bench profile with four ok drawings',
+check('two new owner prompts, each one run under the default profile (bench-medium) with four ok drawings',
     count($new) === 2 && $robot['origin'] === 'owner'
-    && (int) one($db, "SELECT COUNT(*) FROM jd2_runs r WHERE r.prompt_id IN (?, ?) AND r.profile = 'bench' AND r.requested_by = 'owner'", [$new[0]['id'], $new[1]['id']]) === 2
+    && (int) one($db, "SELECT COUNT(*) FROM jd2_runs r WHERE r.prompt_id IN (?, ?) AND r.profile = 'bench-medium' AND r.requested_by = 'owner'", [$new[0]['id'], $new[1]['id']]) === 2
     && (int) one($db, "SELECT COUNT(*) FROM jd2_generations g JOIN jd2_runs r ON r.id = g.run_id WHERE r.prompt_id IN (?, ?) AND g.status = 'ok'", [$new[0]['id'], $new[1]['id']]) === 8,
     json_encode($new));
 check('v1_item_id recorded: the CSV column, and the legacy match by text', $robot['v1_item_id'] === '2026-07-26-button'
@@ -662,8 +662,8 @@ check('the batch: intake after the first drawing when the CSV left the title ope
     ($ri[1]['intake_at'] ?? null) !== null && $ri[1]['tags'] !== null && $ri[1]['size_class'] === 'xs' && $ri[1]['size_by'] === 'owner'
     && $ri[1]['title'] !== null && preg_match('/^\s+#2\s+intake: ".+" · size \S+ \((model|owner)\) · subject: object/m', $o) === 1
     && substr_count($o, 'intake:') === 1, json_encode($ri[1] ?? null) . "\n" . $o);
-check('the rerun row made a second run of P4 (rerun, bench), four drawings',
-    (int) one($db, "SELECT COUNT(*) FROM jd2_runs WHERE prompt_id = ? AND kind = 'rerun' AND profile = 'bench'", [$p4]) === 1
+check('the rerun row made a second run of P4 (rerun, bench-medium), four drawings',
+    (int) one($db, "SELECT COUNT(*) FROM jd2_runs WHERE prompt_id = ? AND kind = 'rerun' AND profile = 'bench-medium'", [$p4]) === 1
     && (int) one($db, "SELECT COUNT(*) FROM jd2_generations g JOIN jd2_runs r ON r.id = g.run_id WHERE r.prompt_id = ? AND r.kind = 'rerun'", [$p4]) === 4);
 $after = (int) one($db, 'SELECT COUNT(*) FROM jd2_generations');
 [$rc, $o] = batch(escapeshellarg($csv) . ' --local --resume --state ' . escapeshellarg($state));
@@ -672,15 +672,15 @@ check('--resume with everything done: 0 rows, 0 requests, nothing drawn', $rc ==
 // a stop mid-row: forget slots c and d of the robot and of the rerun, as if the runner died
 $S = json_decode((string) file_get_contents($state), true);
 $sb = array_key_first($S['bases']);
-unset($S['bases'][$sb]['a wind-up tin robot']['slots']['c'], $S['bases'][$sb]['a wind-up tin robot']['slots']['d']);
-unset($S['bases'][$sb]['a rubber band ball (rerun)']['slots']['d']);
+unset($S['bases'][$sb]['[bench-medium] a wind-up tin robot']['slots']['c'], $S['bases'][$sb]['[bench-medium] a wind-up tin robot']['slots']['d']);
+unset($S['bases'][$sb]['[bench-medium] a rubber band ball (rerun)']['slots']['d']);
 file_put_contents($state, json_encode($S));
 [$rc, $o] = batch(escapeshellarg($csv) . ' --local --resume --state ' . escapeshellarg($state));
 check('--resume after a stop re-asks only the unsettled slots (3) and files nothing twice',
     $rc === 0 && str_contains($o, '2 row(s) to draw, 1 already done · 3 request(s)')
     && (int) one($db, 'SELECT COUNT(*) FROM jd2_generations') === $after
     && (int) one($db, 'SELECT COUNT(*) FROM jd2_runs WHERE prompt_id = ?', [$p4]) === 2
-    && count(json_decode((string) file_get_contents($state), true)['bases'][$sb]['a wind-up tin robot']['slots']) === 4, $o);
+    && count(json_decode((string) file_get_contents($state), true)['bases'][$sb]['[bench-medium] a wind-up tin robot']['slots']) === 4, $o);
 [$rc, $o] = batch(escapeshellarg($csv) . ' --local --state ' . escapeshellarg($state));
 check('without --resume, rows already in the state file are refused (exit 2)', $rc === 2 && str_contains($o, 'Pass --resume'), $o);
 // the spend guard: a CSV bigger than what is left of today's breaker
@@ -761,6 +761,98 @@ foreach (['subject' => 'no heading', 'mood:happy' => 'an unknown facet', 'subjec
     [$st, $j] = req('GET', '/api/jd2-analytics.php?tag=' . rawurlencode($bad));
     check("?tag= with $what → 400", $st === 400 && ($j['error']['code'] ?? '') === 'bad_request', $st . ' ' . json_encode($j));
 }
+
+// ============================================================================
+section('(g) the batch runner by profile: --profile, reruns of prompts already on file, a lost rerun rejoined');
+$robotId = (string) one($db, "SELECT id FROM jd2_prompts WHERE text = 'a wind-up tin robot'");
+$p1Text = (string) one($db, 'SELECT text FROM jd2_prompts WHERE id = ?', [$p1]);
+$csvP = "$scratch/profiles.csv";
+$fh = fopen($csvP, 'w');
+fputcsv($fh, ['prompt', 'title', 'size', 'category', 'v1_item_id', 'rerun_of'], ',', '"', '');
+fputcsv($fh, ['a wind-up tin robot', 'Tin Robot', 'm', 'toys', '', ''], ',', '"', '');
+fputcsv($fh, ['a tin watering can', 'Watering Can', 's', '', '', ''], ',', '"', '');
+fputcsv($fh, ['a rubber band ball (rerun)', '', '', '', '', $p4], ',', '"', '');
+fclose($fh);
+$stateP = "$scratch/state-profiles.json";
+// a pre-split entry (keyed by text alone, the retired `bench`): never resumed, never refused
+file_put_contents($stateP, json_encode(['version' => 1, 'bases' => ['local' => [
+    'a wind-up tin robot' => ['client_ref' => jd_uuid4(), 'prompt_id' => $robotId, 'run_id' => null, 'slots' => ['a' => 'ok']]]]]));
+$gensBefore = (int) one($db, 'SELECT COUNT(*) FROM jd2_generations');
+[$rc, $o] = batch(escapeshellarg($csvP) . ' --local --dry-run --profile bench-low --state ' . escapeshellarg($stateP));
+check('--dry-run --profile bench-low: names the profile and harness; the robot (on file) is a rerun of its prompt, the watering can is new, the P4 row a rerun; nothing drawn',
+    $rc === 0 && str_contains($o, 'profile bench-low (harness v4-benchlow.1, budget 64000 tokens')
+    && preg_match('/#1\s+rerun ' . $robotId . ' \(same text, on file\)/', $o) === 1
+    && preg_match('/#2\s+new prompt/', $o) === 1 && preg_match('/#3\s+rerun ' . $p4 . '  /', $o) === 1
+    && str_contains($o, '"profile":"bench-low"') && str_contains($o, '"rerun_of":"' . $robotId . '"')
+    && str_contains($o, '3 row(s) to draw, 0 already done · 12 request(s)')
+    && (int) one($db, 'SELECT COUNT(*) FROM jd2_generations') === $gensBefore, $o);
+[$rc, $o] = batch(escapeshellarg($csvP) . ' --local --profile bench-low --state ' . escapeshellarg($stateP));
+$canId = (string) one($db, "SELECT id FROM jd2_prompts WHERE text = 'a tin watering can'");
+$byProfile = fn (string $pid) => array_map(fn ($r) => $r['kind'] . ':' . $r['profile'] . ':' . $r['harness'],
+    rows($db, 'SELECT kind, profile, harness FROM jd2_runs WHERE prompt_id = ? ORDER BY id', [$pid]));
+check('the bench-low run: the robot gets a RERUN (one prompt with that text), the watering can a new prompt, P4 a third run; all bench-low',
+    $rc === 0 && (int) one($db, "SELECT COUNT(*) FROM jd2_prompts WHERE text = 'a wind-up tin robot'") === 1
+    && $byProfile($robotId) === ['initial:bench-medium:v4-benchmed.1', 'rerun:bench-low:v4-benchlow.1']
+    && $canId !== '' && $byProfile($canId) === ['initial:bench-low:v4-benchlow.1']
+    && in_array('rerun:bench-low:v4-benchlow.1', $byProfile($p4), true)
+    && (int) one($db, 'SELECT COUNT(*) FROM jd2_generations') === $gensBefore + 12, json_encode([$byProfile($robotId), $byProfile($canId), $byProfile($p4)]) . "\n" . $o);
+$SP = json_decode((string) file_get_contents($stateP), true)['bases']['local'];
+check('the state keys each row by profile and text, records the rerun decision, and leaves the pre-split entry alone',
+    isset($SP['[bench-low] a wind-up tin robot'], $SP['[bench-low] a tin watering can'], $SP['a wind-up tin robot'])
+    && $SP['[bench-low] a wind-up tin robot']['rerun_of'] === $robotId && $SP['[bench-low] a wind-up tin robot']['auto_rerun'] === true
+    && $SP['[bench-low] a tin watering can']['rerun_of'] === null && $SP['[bench-low] a tin watering can']['profile'] === 'bench-low'
+    && $SP['a wind-up tin robot']['slots'] === ['a' => 'ok'], json_encode(array_keys($SP)));
+check('a rerun row files no intake and no curate (the prompt keeps its own title and size); the new row does',
+    one($db, 'SELECT title FROM jd2_prompts WHERE id = ?', [$robotId]) === 'Tin Robot'
+    && one($db, 'SELECT title FROM jd2_prompts WHERE id = ?', [$canId]) === 'Watering Can'
+    && empty($SP['[bench-low] a wind-up tin robot']['curated']) && !empty($SP['[bench-low] a tin watering can']['curated']));
+[$rc, $o] = batch(escapeshellarg($csvP) . ' --local --profile bench-max --state ' . escapeshellarg($stateP));
+check('the same CSV at bench-max: three more runs, no new prompt — the watering can (filed at bench-low) is now a rerun too',
+    $rc === 0 && preg_match('/#2\s+rerun ' . $canId . ' \(same text, on file\)/', $o) === 1
+    && (int) one($db, "SELECT COUNT(*) FROM jd2_prompts WHERE text = 'a tin watering can'") === 1
+    && $byProfile($canId) === ['initial:bench-low:v4-benchlow.1', 'rerun:bench-max:v4-bench.4']
+    && $byProfile($robotId) === ['initial:bench-medium:v4-benchmed.1', 'rerun:bench-low:v4-benchlow.1', 'rerun:bench-max:v4-bench.4'],
+    json_encode([$byProfile($robotId), $byProfile($canId)]) . "\n" . $o);
+[$rc, $o] = batch(escapeshellarg($csvP) . ' --local --resume --profile bench-max --state ' . escapeshellarg($stateP));
+check('--resume at bench-max with everything done: nothing drawn (each profile resumes only its own rows)',
+    $rc === 0 && str_contains($o, '0 row(s) to draw, 3 already done · 0 request(s)'), $o);
+[$rc, $o] = batch(escapeshellarg($csvP) . ' --local --profile bench-low --state ' . escapeshellarg($stateP));
+check('without --resume, a profile\'s rows already in the state are refused (exit 2)', $rc === 2 && str_contains($o, 'Pass --resume'), $o);
+[$rc, $o] = batch(escapeshellarg($csvP) . ' --local --dry-run --profile bench --state ' . escapeshellarg("$scratch/state-alias.json"));
+check('--profile bench is the owner\'s default, named: bench-medium', $rc === 0 && str_contains($o, 'profile bench-medium (harness v4-benchmed.1'), $o);
+[$rc, $o] = batch(escapeshellarg($csvP) . ' --local --dry-run --profile bench-ultra --state ' . escapeshellarg("$scratch/state-alias.json"));
+check('an unknown --profile is refused before anything is asked (exit 2)', $rc === 2 && str_contains($o, '--profile must be one of'), $o);
+$visCsv = "$scratch/visitor-text.csv";
+$fh = fopen($visCsv, 'w');
+fputcsv($fh, ['prompt'], ',', '"', '');
+fputcsv($fh, [$p1Text], ',', '"', '');
+fclose($fh);
+[$rc, $o] = batch(escapeshellarg($visCsv) . ' --local --dry-run --state ' . escapeshellarg("$scratch/state-alias.json"));
+check('a visitor\'s prompt with the same text is not the owner\'s to rerun: a new prompt', $rc === 0 && preg_match('/#1\s+new prompt/', $o) === 1, $o);
+// a lost first answer: the rerun's first request reached the server, its run id never came back
+$lostCsv = "$scratch/lost.csv";
+$fh = fopen($lostCsv, 'w');
+fputcsv($fh, ['prompt'], ',', '"', '');
+fputcsv($fh, ['a tin watering can'], ',', '"', '');
+fclose($fh);
+$lostState = "$scratch/state-lost.json";
+$asked = gmdate('Y-m-d H:i:s');
+[$st, $j] = req('POST', '/api/jd2-generate.php', ['client_ref' => jd_uuid4(), 'slot' => 'a', 'rerun_of' => $canId,
+    'profile' => 'bench-medium', 'client' => 'web', 'website' => ''], true);
+$lostRun = (string) ($j['run_id'] ?? '');
+file_put_contents($lostState, json_encode(['version' => 1, 'bases' => ['local' => [
+    '[bench-medium] a tin watering can' => ['client_ref' => jd_uuid4(), 'profile' => 'bench-medium', 'prompt' => 'a tin watering can',
+        'rerun_of' => $canId, 'auto_rerun' => true, 'prompt_id' => $canId, 'run_id' => null, 'slots' => [],
+        'started' => $asked, 'rerun_asked' => $asked]]]]));
+[$rc, $o] = batch(escapeshellarg($lostCsv) . ' --local --resume --state ' . escapeshellarg($lostState));
+check('--resume after a lost first rerun answer rejoins that rerun (no second run), filling its other slots',
+    $rc === 0 && $st === 200 && str_contains($o, 'rejoining rerun ' . $lostRun)
+    && (int) one($db, "SELECT COUNT(*) FROM jd2_runs WHERE prompt_id = ? AND profile = 'bench-medium'", [$canId]) === 1
+    && (int) one($db, 'SELECT COUNT(*) FROM jd2_generations WHERE run_id = ?', [$lostRun]) === 4
+    && json_decode((string) file_get_contents($lostState), true)['bases']['local']['[bench-medium] a tin watering can']['run_id'] === $lostRun, $o);
+[$rc, $o] = batch('--local --rate-url --state ' . escapeshellarg($stateP));
+check('--rate-url lists each prompt once, pre-split entries included', $rc === 0
+    && substr_count($o, 'index.php?bench&prompt=' . $robotId) === 1 && substr_count($o, 'index.php?bench&prompt=' . $canId) === 1, $o);
 
 printf("\n%d passed, %d failed\n", $passed, $failed);
 if ($failed > 0) {
