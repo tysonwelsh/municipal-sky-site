@@ -1312,33 +1312,15 @@
     }
   }
   /* gen_id → slot for the entry's shown run. jd2-rate names drawings by
-     SLOT, and data.php's responses carry gen_id and place but no slot, so
-     the map comes from a response's own `slot` when the payload has one
-     (a future data.php, or a visitor's local record) and otherwise from
-     jd2-curate.php's standing — read with the one request that changes
-     nothing: re-stating a SHOWN drawing as not hidden (every drawing on
-     the card is, or data.php would not serve it). Cached on the entry.
-     Resolves the map, or a string error code. */
+     SLOT, and data.php serves every response's `slot` (the blind letter the
+     run dealt it), so the map is read straight off the payload. Returns the
+     map, or null when a response has no slot (nothing to file against). */
   function slotMap(entry) {
-    if (entry._slots) return Promise.resolve(entry._slots);
     var map = {}, all = true;
     entry.responses.forEach(function (r) {
       if (r.gen_id && r.slot) map[r.gen_id] = r.slot; else all = false;
     });
-    if (all) { entry._slots = map; return Promise.resolve(map); }
-    var probe = entry.responses[0];
-    return adminPost('/api/jd2-curate.php', { generation_id: probe.gen_id, hidden: false })
-      .then(function (j) {
-        if (!j || !j.ok) return (((j || {}).error || {}).code || 'network');
-        (j.runs || []).forEach(function (run) {
-          if (run.id !== entry.run_id) return;
-          (run.generations || []).forEach(function (g) { map[g.id] = g.slot; });
-        });
-        var missing = entry.responses.some(function (r) { return !map[r.gen_id]; });
-        if (missing) return 'slots_unknown';
-        entry._slots = map;
-        return map;
-      }, function () { return 'network'; });
+    return all ? map : null;
   }
   /* one drawing's filed cells as jd2-rate takes them: the grade, and every
      axis with its remark when it carries one */
@@ -1379,10 +1361,11 @@
       setStatus('⚠ not saved (this sitting’s head-to-head was derived — re-rate it on the bench)');
       return;
     }
+    var slots = slotMap(entry);
+    if (!slots) { setStatus('⚠ not saved (slots_unknown)'); return; }
     saving = true;
     setStatus('saving…');
-    slotMap(entry).then(function (slots) {
-      if (typeof slots === 'string') return { ok: false, error: { code: slots } };
+    Promise.resolve().then(function () {
       var ratings = [];
       entry.responses.forEach(function (r) {
         var mine = r === resp;
