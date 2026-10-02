@@ -91,6 +91,7 @@ Every primary key is an app-generated ULID (`CHAR(26)`, time-ordered), so
 | `shown_run_id` | the run the drawer shows; NULL = the latest complete run |
 | `pinned_generation_id` | explicit display pin; NULL = the current session's 1st place |
 | `v1_item_id` | lineage: the archived v1 item this prompt descends from |
+| `category` | the owner's prompt-set category, a free word (ROADMAP, 2026-10-01); NULL for visitor prompts |
 | `visitor_hash`, `device_ref`, `consent_version`, `consent_at`, `client_ref` | the visitor fields, as in v1; NULL for owner prompts. `client_ref` is `UNIQUE`, so a retried POST cannot file twice |
 
 Keys: `uq_jd2p_client_ref`; `idx_jd2p_visibility_created (visibility, created)`
@@ -158,6 +159,7 @@ Keys: `uq_jd2g_run_slot (run_id, slot)` (also the `run_id` index),
 | `instrument_version` | `JD2_INSTRUMENT_VERSION` (`v2.0`), stamped server-side |
 | `blind` | 1 unless the rater could see model names |
 | `seat_order` | JSON: the slot letters in the order they were dealt to this rater |
+| `note` | the rater's free-text rationale for the sitting — the owner's taxonomy notes, kept on hand, not necessarily shown (2026-10-01) |
 | `started_at`, `filed_at` | when the sitting opened and was filed; `filed_at` NULL while open or abandoned |
 | `status` | `open` \| `filed` \| `abandoned` (`JD2_SESSION_STATUS`) |
 
@@ -321,3 +323,4 @@ order) plus `run_id`, `prompt_id`, `origin`, each response's `gen_id`, and
 - 2026-10-01 — Phase 3b: the jd2 endpoints (generate, title, rate, curate,
   gen-svg) and `data.php` on the jd2 tables; the "Endpoints" section above.
   No schema change.
+- 2026-10-01 (evening) — `jd2_prompts.category` and `jd2_sessions.note` added as guarded additive migrations (the owner's notes: a categorised ~100-prompt set; a rationale per sitting).

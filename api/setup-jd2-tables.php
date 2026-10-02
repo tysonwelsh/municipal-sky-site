@@ -104,11 +104,35 @@ foreach ($forwardKeys as $name => $def) {
 }
 
 // --- additive migrations (safe to re-run) ----------------------------------
-// None yet: every column is in the CREATE above (2026-10-01). A column added
-// after its table has reached production goes here as a guarded ADD COLUMN,
-// in v1's jd_ensure_column shape (api/setup-jd-tables.php). An allowed word
-// added to a jd2-config.php list needs no migration on MySQL (VARCHAR); a
-// dev SQLite file is recreated (delete local-dev/jd-dev.sqlite, re-run).
+// A column added after its table has reached a database goes here as a
+// guarded ADD COLUMN, in v1's jd_ensure_column shape (api/setup-jd-tables.php);
+// fresh installs get it from the CREATE above. An allowed word added to a
+// jd2-config.php list needs no migration on MySQL (VARCHAR); a dev SQLite
+// file is recreated (delete local-dev/jd-dev.sqlite, re-run).
+function jd2_ensure_column(PDO $db, string $table, string $column, string $mysql, string $sqlite): void
+{
+    global $failed;
+    $label = $table . '.' . $column;
+    try {
+        if (jd_has_column($db, $table, $column)) {
+            jd_setup_line($label, 'already present');
+            return;
+        }
+        $db->exec('ALTER TABLE ' . $table . ' ADD COLUMN ' . $column . ' '
+            . (jd_db_driver($db) === 'sqlite' ? $sqlite : $mysql));
+        jd_setup_line($label, 'added');
+    } catch (PDOException $e) {
+        $failed++;
+        jd_setup_line($label, 'FAILED: ' . $e->getMessage());
+    }
+}
+
+// The owner's prompt-set category and the sitting's rationale note (ROADMAP,
+// owner's notes 2026-10-01): both additive, both nullable, added the same day
+// the tables were first created, so only a dev database made that morning
+// needs the ALTER.
+jd2_ensure_column($db, 'jd2_prompts', 'category', 'VARCHAR(32) NULL AFTER v1_item_id', 'TEXT NULL');
+jd2_ensure_column($db, 'jd2_sessions', 'note', 'TEXT NULL AFTER seat_order', 'TEXT NULL');
 
 // --- the ground truth: are all seven there? ---------------------------------
 $jd2Tables = ['jd2_prompts', 'jd2_runs', 'jd2_generations', 'jd2_sessions',
@@ -183,6 +207,7 @@ CREATE TABLE IF NOT EXISTS jd2_prompts (
     shown_run_id         CHAR(26)     NULL,                 -- the run the drawer shows; NULL = the latest complete run
     pinned_generation_id CHAR(26)     NULL,                 -- explicit display pin; NULL = the current session's 1st place
     v1_item_id           VARCHAR(64)  NULL,                 -- lineage: the archived v1 item this prompt descends from
+    category             VARCHAR(32)  NULL,                 -- the owner's prompt-set category (free word; ROADMAP 2026-10-01)
     visitor_hash         CHAR(64)     NULL,                 -- salted daily visitor hash; NULL for owner prompts
     device_ref           CHAR(36)     NULL,                 -- the browser's kept device UUID; NULL for owner prompts
     consent_version      VARCHAR(16)  NULL,                 -- JD_CONSENT_VERSION the visitor accepted; NULL for owner prompts
@@ -252,6 +277,7 @@ CREATE TABLE IF NOT EXISTS jd2_sessions (
     instrument_version  VARCHAR(16) NOT NULL,             -- JD2_INSTRUMENT_VERSION, stamped server-side
     blind               TINYINT     NOT NULL DEFAULT 1,   -- 1 unless the rater could see model names
     seat_order          TEXT        NULL,                 -- JSON: the slot letters in the order dealt to this rater
+    note                TEXT        NULL,                 -- the rater's free-text rationale for the sitting (owner's taxonomy notes; not necessarily shown)
     started_at          DATETIME    NOT NULL,             -- when the sitting opened, UTC
     filed_at            DATETIME    NULL,                 -- when it was filed; NULL while open or abandoned
     status              VARCHAR(16) NOT NULL DEFAULT 'open', -- {$w['ses_status']} (JD2_SESSION_STATUS)
@@ -363,6 +389,7 @@ CREATE TABLE IF NOT EXISTS jd2_prompts (
     shown_run_id         TEXT     NULL,
     pinned_generation_id TEXT     NULL,
     v1_item_id           TEXT     NULL,
+    category             TEXT     NULL,
     visitor_hash         TEXT     NULL,
     device_ref           TEXT     NULL,
     consent_version      TEXT     NULL,
@@ -434,6 +461,7 @@ CREATE TABLE IF NOT EXISTS jd2_sessions (
     instrument_version  TEXT     NOT NULL,
     blind               INTEGER  NOT NULL DEFAULT 1 CHECK (blind IN (0, 1)),
     seat_order          TEXT     NULL,
+    note                TEXT     NULL,
     started_at          TEXT     NOT NULL,
     filed_at            TEXT     NULL,
     status              TEXT     NOT NULL DEFAULT 'open' CHECK (status IN ({$in['ses_status']})),
