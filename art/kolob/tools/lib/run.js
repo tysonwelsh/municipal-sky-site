@@ -205,6 +205,9 @@ async function renderSet(opts) {
   if (!opts.quiet) process.stderr.write("\n");
   const failed = results.filter((r) => !r.ok || r.loadError || r.verifyError);
   if (failed.length) {
+    // the failure told is the first to finish (results are kept in the order
+    // the renders end): the one that stopped the pool. Where a set's renders
+    // run side by side that is whichever failed first, not the first asked.
     const r = failed[0];
     const hint = r.loadError && engine.legacy ? " (a single-file build needs a harness that honours KOLOB_LEGACY)" : "";
     throw refusal("harness failed for " + r.name + (r.loadError ? " — " + r.loadError + hint : r.verifyError ? " — " + r.verifyError : " (no dump; see " + r.log + ")"));

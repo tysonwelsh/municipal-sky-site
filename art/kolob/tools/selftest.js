@@ -121,7 +121,8 @@
 //    builds, write what one set rendered a seed at a time writes — every
 //    dump and every witness the same bytes; and a set that fails stops the
 //    pool: the renders of the set beside it that had not begun never begin,
-//    and that set says it was stopped.
+//    and that set says it was stopped. The failing set's two renders run side
+//    by side, so the one it names is whichever failed first (either seed).
 // 19. The page's tags (PLAN-REFACTOR §4.1): tools/loadcheck.js on scratch
 //    copies of the page. Whole, every script tag index.php prints is
 //    deferred, and the engine's printer, run, gives every room's tag
@@ -741,8 +742,10 @@ function check(name, ok, detail) {
       R.renderSet({ engine, seeds, secs: 60, pool: Q, dir: path.join(tmp, "pool-good"), quiet: true }).then(() => null, (e) => e),
     ]);
     const begun = fs.existsSync(path.join(tmp, "pool-good")) ? fs.readdirSync(path.join(tmp, "pool-good")).filter((f) => f.endsWith(".log")).length : 0;
+    // both of the bad set's renders hold the pool's two places at once, and
+    // the pool tells whichever fails first: seed 1's or seed 2's, by the machine
     check("a set that fails stops the pool: the set beside it begins none of its renders and says it was stopped",
-      !!bad && /harness failed for seed-1 \(no dump/.test(bad.message) && !!good && good.stopped === true && /3 of 3 seeds not begun/.test(good.message) && begun === 0,
+      !!bad && /harness failed for seed-[12] \(no dump/.test(bad.message) && !!good && good.stopped === true && /3 of 3 seeds not begun/.test(good.message) && begun === 0,
       (bad ? bad.message.split("\n")[0].replace(/ \(no dump.*$/, " (no dump)") : "the bad set passed") + " · " + (good ? good.message : "the other set finished") + " · " + begun + " begun");
   }
 
