@@ -46,6 +46,7 @@ node tools/repetition.js                         # 20 seeds, 1200 s, every compl
 node tools/tally.js                              # the same, counted
 node tools/tally.js --a git:main --b worktree --seeds 1-20   # did my change move the music?
 node tools/screens.js --seed 1847                # staff at 20/60/120 s, 860 + 390 px, frames at 4×
+node tools/screens.js --seed 22 --freeze         # the same, frame-exact: two runs compare by pixel (AE 0)
 node tools/capture.js --seed 1847 --to 240       # four minutes, recorded
 ```
 
@@ -661,7 +662,7 @@ difference is the harness or the flags, not the engine).
 ## screens.js
 
 ```sh
-node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
+node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--freeze] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
                       [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 ```
 
@@ -669,6 +670,30 @@ It loads `?seed=N` in muted headless Chrome and presses PLAY. At each time in
 the meeting (the audio clock since PLAY, or since the jump with `--section`) it
 captures the **staff** canvas at each width: 860 px at DPR 2; 390 px emulated
 as a phone at DPR 3; with `--full`, the whole page as well.
+
+**Frame-exact (`--freeze`, PLAN-REFACTOR §4.0(a)).** Without it a shot is
+taken whenever the audio clock passes the time, between two frames, and two
+runs of one build differ by a few pixels of scroll — tens of thousands of
+pixels by `compare -metric AE` (seed 22 at 20 and 60 s: 33,703 and 35,473 at
+860 px, 22,641 and 10,139 at 390). With it the page holds each time and
+paints there (kolob-viz.js THE FRAME-EXACT CAPTURE: `?kolobFreeze=<secs>`,
+`KolobViz.freezeAt(secs)`, `probe("freeze")`), the times counted from the
+meeting's downbeat — with `--section`, from the jump's `section-start` — and
+two runs give the same staff: `compare -metric AE a.png b.png null:` says 0.
+That is how two builds are compared by pixel (a refactor of the page must say
+0 on every pair). Exact where the ink dries at its own rate (in the sacrament
+and the postlude a shade may differ: the drying follows the section the
+console last reported); after a `--section` jump the page still holds what was
+printed before it, placed by the jump's own moment, until it has scrolled away
+(about 14 s at 860 px). A frozen shot is the plate alone, where the ink is
+(the staff's canvas lies over the wheel's foot, whose organ is the live
+sound's spectrum, and over the console's head), shot where it stands in the
+viewport (a shot beyond the viewport lays the page out again, wider by the
+scrollbar at 860 px; a held page is then painted again at that width). What
+the engine writes after the held moment waits until the page runs on, so the
+page is made of the same notes in every run. In `--full` only the staff is
+held: the wheel's organ is the live sound's spectrum and the console runs on.
+The page runs free again before the frame timing.
 
 **Frame time.** After the shots, the CPU is throttled `--throttle`× for
 `--fps-secs` (0 to skip). Every requestAnimationFrame callback is timed, and

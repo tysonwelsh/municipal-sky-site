@@ -47,7 +47,12 @@
 //
 // No neon, no glitch, no CRT. A printed thing.
 // Public surface: window.KolobViz = { init(canvas, wheelCanvas),
-//   setConductor, setWheelLabels, wheelSeatAt, setTuningMarks, probe }
+//   setConductor, setWheelLabels, wheelSeatAt, setTuningMarks, probe,
+//   freezeAt }
+// Dev (never used by the app): ?kolobFreeze=<secs> or freezeAt(secs) holds
+// the page at that second of the meeting and stops painting, so two
+// captures of one seed are the same page pixel for pixel (THE FRAME-EXACT
+// CAPTURE, below; tools/screens.js --freeze).
 // ============================================================================
 
 window.KolobViz = (function () {
@@ -577,7 +582,94 @@ window.KolobViz = (function () {
         if (PT > a + PT_LEAD) PT = Math.max(p0, a + PT_LEAD);   // the sound has stalled: wait for it
       }
     }
+    if (freeze) PT = held(PT, a);                  // (dev: never past the moment a capture asked for)
     DRY += Math.max(0, PT - p0) * (1 + (cond.section === "sacrament" ? 30 : 0) + (cond.section === "postlude" ? 5 : 0));
+  }
+
+  // ---- the frame-exact capture (dev) ---------------------------------------------
+  // Two captures of one seed at one second were never the same page: each
+  // caught the page between two frames, wherever the page clock stood, a few
+  // pixels of scroll apart, and made of whatever the engine had written
+  // ahead by then, in the bunches the browser's timer happened to fire its
+  // cues in. A capture asks for a second of the meeting — ?kolobFreeze=<secs>
+  // on the page's address, or KolobViz.freezeAt(secs) — counted from the
+  // meeting's downbeat (the moment its meeting-start event carries), so it
+  // falls on the same note in every run of the seed. From the downbeat on,
+  // everything the engine writes is taken in by the music's own time it was
+  // written at (KOLOB._s.now: the cue's), a moment's calls at a time — each
+  // moment its own intake, however the timer bunched them — and what is
+  // written after the moment asked waits. The page runs as ever up to that
+  // moment and holds there: PT never passes it, and the drying stops with
+  // it. Once the sound is FREEZE_LAG past it (everything written by then has
+  // come in) the page is painted there and stops painting, and stays as
+  // painted for tools/screens.js to capture: the same page in every run of
+  // the build. freezeAt(a later second) lets it run on — what waited is taken
+  // in first, as it came — and holds again there; freezeAt(null) lets it go.
+  // Ask before PLAY: the downbeat is heard from the event, and a moment the
+  // page has already passed is painted where it stands. A held page laid out
+  // again (a resize: a capture beyond the viewport widens it by the
+  // scrollbar) is painted again at its moment, at its new width.
+  // probe("freeze") says where the page is held, and the plate's top and
+  // foot. A page that asks for neither is not touched: the clock, the loop,
+  // the intake and the ink are as they always are.
+  // (Exact where the ink dries at its own rate. In the sacrament and the
+  // postlude it dries faster, by the section the console last reported — a
+  // poll that keeps no frame's time — so a page there can differ by a shade.
+  // Only the staff is held: the wheel is painted with the page's last frame
+  // as ever, its organ the live sound's spectrum and its arc the console's
+  // last report, and the staff's canvas lies over the wheel's foot.)
+  var freeze = null;                               // { at: the second of the meeting, frozen, later: [what is written, waiting], due } while a capture is asked
+  var downbeat = null, heardDownbeat = false;      // the meeting's downbeat on the audio clock, heard once a capture is asked
+  var FREEZE_LAG = 1;                              // seconds of sound past the moment before it is painted
+  var replaying = false;                           // (taking in what waited)
+  function freezeAt(secs) {
+    var was = !!(freeze && freeze.frozen), later = freeze ? freeze.later : [];
+    freeze = secs == null || !(+secs >= 0) ? null : { at: +secs, frozen: false, later: [], due: false };
+    if (!heardDownbeat && K && K.setEventListener) {
+      heardDownbeat = true;
+      K.setEventListener(function (ev) { if (ev && ev.type === "meeting-start") downbeat = ev.t; });
+    }
+    takeIn(later);
+    if (was && !running && (canvas || wheel)) { running = true; requestAnimationFrame(frame); }   // (frozen: run on to the next, or go)
+  }
+  function held(pt, a) {
+    if (downbeat == null) return pt;               // (no meeting yet: the page runs as ever)
+    var t = downbeat + freeze.at;
+    if (a >= t + FREEZE_LAG) freeze.frozen = true;
+    return Math.min(pt, t);
+  }
+  // onNote and onEvent hand everything over here once the downbeat is known;
+  // it is taken in when the task that wrote it is done
+  function holdsBack(fn, x) {
+    if (replaying || downbeat == null) return false;
+    var S0 = window.KOLOB && window.KOLOB._s, f = freeze;
+    f.later.push({ fn: fn, x: x, w: S0 && S0.now ? S0.now() : audioNow() });
+    if (!f.due) {
+      f.due = true;
+      Promise.resolve().then(function () {
+        f.due = false;
+        if (freeze !== f) return;
+        var later = f.later;
+        f.later = [];
+        takeIn(later);
+      });
+    }
+    return true;
+  }
+  // what was written by the moment asked, a moment's calls at a time, each
+  // its own intake (as the page would take it had every cue fired in a task
+  // of its own); the rest waits again
+  function takeIn(later) {
+    var t = freeze && downbeat != null ? downbeat + freeze.at : Infinity, i, j, k;
+    if (!later.length) return;
+    flushIntake();
+    for (i = 0; i < later.length; i = j) {
+      for (j = i; j < later.length && later[j].w === later[i].w;) j++;
+      if (later[i].w > t + 1e-9) { for (k = i; k < j; k++) freeze.later.push(later[k]); continue; }
+      replaying = true;
+      try { for (k = i; k < j; k++) later[k].fn(later[k].x); } finally { replaying = false; }
+      flushIntake();
+    }
   }
 
   // ---- note intake ----------------------------------------------------------------
@@ -633,6 +725,7 @@ window.KolobViz = (function () {
   // Hosanna's shout — is never engraved: SCORE §6, PLAN §8.12)
   // (the Hosanna is audio-only whatever it says: the owner's ruling)
   function onNote(n) {
+    if (freeze && holdsBack(onNote, n)) return;   // (dev: a capture asked — taken in by the moment it was written: THE FRAME-EXACT CAPTURE)
     if (!n || n.logged === false || n.hosanna) return;
     if (n.layer === "telegraph") { if (n.marks && n.marks.length) queueIntake({ note: n }); return; }
     if (n.layer === "band") { if (n.freq > 20) queueIntake({ note: n }); return; }
@@ -646,6 +739,7 @@ window.KolobViz = (function () {
   // and each composed line told with its Score, which comes in with its
   // notes
   function onEvent(ev) {
+    if (freeze && holdsBack(onEvent, ev)) return;   // (dev: as onNote's)
     if (!ev || ev.logged === false) return;
     if (ev.type === "transport" && ev.action === "stop") queueIntake({ stop: ev.t != null ? ev.t : audioNow() });
     else if (ev.type === "hymn-announced" && ev.hymn && ev.hymn.id) announceHymn(ev.hymn);
@@ -3978,6 +4072,7 @@ window.KolobViz = (function () {
     ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     if (XW > 120) drawWheel(dt);                   // the facade rides inside the wheel (once the band is laid out)
+    if (freeze && freeze.frozen) running = false;  // (dev: painted at the moment asked; the page stands still — THE FRAME-EXACT CAPTURE)
   }
 
   // ---- the wheel — the order of service round the crown -----------------------
@@ -4219,6 +4314,7 @@ window.KolobViz = (function () {
       xctx = wheel.getContext("2d");
       xctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
+    if (freeze && freeze.frozen) { running = true; frame(lastFrame); }   // (dev: a held page laid out again is painted again at its moment — THE FRAME-EXACT CAPTURE)
   }
 
   function init(mainCanvas, wheelCanvas) {
@@ -4246,6 +4342,8 @@ window.KolobViz = (function () {
       if (K.setNoteListener) K.setNoteListener(onNote);
       if (K.setEventListener) K.setEventListener(onEvent);
     }
+    var fz = /[?&]kolobFreeze=([0-9.]+)/.exec(window.location ? window.location.search : "");
+    if (fz) freezeAt(+fz[1]);                      // (dev: THE FRAME-EXACT CAPTURE)
     running = true;
     requestAnimationFrame(frame);
   }
@@ -4269,6 +4367,7 @@ window.KolobViz = (function () {
   // each placed bar's, in page px, for the bars-touch-no-ink check)
   function probe(what) {
     if (what === "ink") return probeInk();
+    if (what === "freeze") return { at: freeze ? freeze.at : null, frozen: !!(freeze && freeze.frozen), PT: PT, downbeat: downbeat, held: freeze ? freeze.later.length : 0, plate: G ? [G.top, G.bot] : null };
     return {
       PT: PT, sp: G ? G.sp : null, xE: G ? G.xE : null, beams: beamTally,
       groups: groups.map(function (gr) { return { layer: gr.layer, tp: gr.tp, st: gr.st, dir: gr.dir, x: gr.drawnAt === FRAME ? gr.lastX : null, voice: gr.voice || null, beam: gr.beam ? gr.beam.members.indexOf(gr) : null, heads: gr.heads.map(function (h) { return h.q + (h.heavy ? "H" : "") + (h.ghost ? "G" : "") + (h.acc || "") + (h.jm ? "j" : "") + (h.orn ? "o" : ""); }).join(","), flags: gr.flags, alone: gr.alone ? !!gr.aloneOk : null, dx: gr.col ? gr.col.dx : null, barIn: gr.barIn ? gr.barIn.tp : null }; }),
@@ -4332,5 +4431,5 @@ window.KolobViz = (function () {
     return out;
   }
 
-  return { init: init, setConductor: setConductor, setWheelLabels: setWheelLabels, wheelSeatAt: wheelSeatAt, setTuningMarks: setTuningMarks, probe: probe };
+  return { init: init, setConductor: setConductor, setWheelLabels: setWheelLabels, wheelSeatAt: wheelSeatAt, setTuningMarks: setTuningMarks, probe: probe, freezeAt: freezeAt };
 })();

@@ -132,5 +132,11 @@ standing late where densest).
   (DPR 2) and 390 px (a phone, DPR 3) at chosen seconds, then the frame cost under 4× CPU
   throttling against the 16.7 ms budget; the console's errors listed. Always muted
   (`tools/lib/chrome.js` refuses an unmuted Chrome).
+- **The frame-exact capture** (dev; `?kolobFreeze=<secs>`, `KolobViz.freezeAt(secs)`,
+  `probe("freeze")`; `screens.js --freeze`): the page held at that second of the meeting,
+  counted from its downbeat, painted there once the sound has passed it, and left standing, so
+  two captures of one seed are the same staff pixel for pixel (`compare -metric AE` says 0)
+  and two builds compare by pixel. Exact where the ink dries at its own rate; in the
+  sacrament and the postlude a shade may differ. A page that does not ask is not touched.
 
 Authority: kolob-viz.js
