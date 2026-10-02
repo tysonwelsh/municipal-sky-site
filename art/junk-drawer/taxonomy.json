@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 31,
+  "version": 32,
   "updated": "2026-10-02",
   "instrument": "v2.0",
   "instrumentNote": "The dataset v2 instrument: this rubric plus the comparison and gaps scales below and the rules of a sitting; every v2 session stamps it beside the taxonomy version. v1 instruments ignore it.",
@@ -790,35 +790,35 @@
   "gaps": {
     "label": "Margin",
     "description": "After the podium: how much better is each place than the one below it?",
-    "note": "One answer between each pair of adjacent places, filed as jd2_rankings.gap_after (0..3). A pair score is derived as the sum of the gaps between two places, capped at 3 (spaced-rank-v1). Labels marked placeholder are drafts the owner will reword; the values are the permanent part.",
+    "note": "One answer between each pair of adjacent places, filed as jd2_rankings.gap_after (0..3). A pair score is derived as the sum of the gaps between two places, capped at 3 (spaced-rank-v1). The labels are the owner's visitor wording (2026-10-02): the pedestal card names one side of the scale only, because the ranking already says which place is higher, so gap 0 reads 'Negligibly better' and never 'About the same' (that wording is comparison's, the 7-point analysis scale, at 0). `short` is the word the card's ledger slips pencil in. The values are the permanent part.",
     "values": [
       {
         "id": "same",
         "value": 0,
-        "label": "About the same",
-        "description": "The two places are about level; the order between them is close to a coin toss.",
-        "placeholder": true
+        "label": "Negligibly better",
+        "short": "negligibly",
+        "description": "The higher place is better, but only just."
       },
       {
         "id": "slightly-better",
         "value": 1,
         "label": "Slightly better",
-        "description": "The higher place is a little better than the one below it.",
-        "placeholder": true
+        "short": "slightly",
+        "description": "The higher place is a little better than the one below it."
       },
       {
         "id": "better",
         "value": 2,
         "label": "Better",
-        "description": "The higher place is clearly better than the one below it.",
-        "placeholder": true
+        "short": "better",
+        "description": "The higher place is clearly better than the one below it."
       },
       {
         "id": "much-better",
         "value": 3,
         "label": "Much better",
-        "description": "The higher place is much better than the one below it.",
-        "placeholder": true
+        "short": "much better",
+        "description": "The higher place is much better than the one below it."
       }
     ]
   },
@@ -977,6 +977,11 @@
       "date": "2026-10-02",
       "version": 31,
       "note": "Intake, second live check (67/67 answered, 60% exact, 90% within one tier): ten of the owner's 23 smalls still came back extra small (cigarette, crayon, earring, pin, popsicle stick…), and the word 'trinket' in the xs tier fit those exactly. xs is now 'a speck with no parts to speak of, lost among the rest of the drawer' and s 'a handheld thing with parts of its own, small but its own object', with the owner's own smalls (loose cigarette, broken crayon, earring) among s's examples; the picture-bearing-object rule now says a photograph of a planet is sized as a photograph. intakeVersion intake-v4. No grade, axis, scale or pool change."
+    },
+    {
+      "date": "2026-10-02",
+      "version": 32,
+      "note": "The gaps scale takes the owner's pedestal wording now that the \"by how much\" card is the instrument: gap 0 (id `same`, value 0, unchanged) reads \"Negligibly better\" (was \"About the same\") with the description \"The higher place is better, but only just.\", and the four labels Negligibly better / Slightly better / Better / Much better stand, so every `placeholder` flag goes; each value gains `short`, the word the card's ledger slips use. comparison (the 7-point scale, \"About the same\" at 0) is a different scale and is unchanged. The intake prompt does not render gaps, so intakeVersion stays intake-v4. No grade, axis, comparison or pool change."
     }
   ]
 }
