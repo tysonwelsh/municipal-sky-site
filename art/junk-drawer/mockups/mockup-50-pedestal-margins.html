@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Pedestal Margins</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* MOCKUP 50 — BEST TO WORST, THEN BY HOW MUCH (the working copy).
+   The question block is the QUESTIONNAIRE (owner pick from mockup 51,
+   2026-10-01): a ruled form section with a "Question n of m" tab and a
+   ballot row of answers the visitor's pencil ticks.
+   Distilled from mockup 49's version A, the owner's pick (2026-10-01); B–D
+   were scrapped. Card 1 is the live podium. Card 2 asks, one pair at a
+   time (1st›2nd, 2nd›3rd, 3rd›4th), how much better the left pedestal is
+   than its neighbour, and the visitor answers by raising it:
+     negligibly  a brass SHIM + a pencilled ≈ in the gap (never stacked)
+     slightly / better / much better   one, two, three stone NOTCHES
+   The 4th never moves. Raising a pedestal lays a course under it and every
+   pedestal to its left, so the courses line up across the podium.
+   Ledger slips above the podium record every pair as it is set. The
+   non-adjacent pairs are the server's to derive (summed visible notches,
+   capped at 3; a shim adds none); only the readout shows them. Owner
+   rulings live in the comments where they bite. */
+:root {
+  color-scheme: light;
+  --tpaper: #ece0bf;
+  --tpaper-hi: #f4ead0;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.82);
+  --tink-3: rgba(51, 36, 15, 0.44);
+  --trule: rgba(74, 53, 18, 0.40);
+  --trule-2: rgba(74, 53, 18, 0.19);
+  --tred: #b3402f;
+  --graphite: #4b4030;
+  --tmono: "Courier Prime", "Courier New", Courier, monospace;
+  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  --plate-paper: #f8f3e2;
+  --graph-rule: rgba(74, 98, 138, 0.17);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --m0: rgba(196, 146, 58, 0.34);
+  --m1: rgba(108, 140, 96, 0.34);
+  --m2: rgba(84, 112, 150, 0.30);
+  --m0-on: rgba(196, 146, 58, 0.62);
+  --m1-on: rgba(108, 140, 96, 0.60);
+  --m2-on: rgba(84, 112, 150, 0.55);
+  --bump: rgba(226, 192, 122, 0.75);
+  --ease: cubic-bezier(.25, .8, .25, 1);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 50% 18%, #3b2817 0%, #22160c 58%, #150d06 100%);
+  color: var(--tink); font-family: var(--tform);
+  padding: 18px 16px 64px;
+}
+
+/* ---- the mockup's own strip ----------------------------------------------- */
+.bar {
+  max-width: 1100px; margin: 0 auto 10px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  font: 12px var(--tmono); letter-spacing: 0.04em; color: #e9dcbb;
+}
+.bar h1 { margin: 0 auto 0 0; font: 700 12px var(--tmono); letter-spacing: 0.2em; text-transform: uppercase; color: #f4ead0; }
+.bar .plain { font: inherit; color: inherit; background: transparent; border: 0; padding: 6px 10px; cursor: pointer; }
+.bar .plain { border: 1px solid rgba(244, 234, 208, 0.35); }
+
+.layout { max-width: 1100px; margin: 0 auto; display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) { .layout { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; } }
+
+/* ---- the sheet ------------------------------------------------------------- */
+.sheet {
+  --pw: 132px; --gut: 34px; --b: 56px; --notch: 22px; --shim: 6px;
+  width: min(760px, 100%); margin: 0 auto;
+  background: var(--grain), var(--tpaper);
+  border: 1px solid rgba(58, 40, 14, 0.55);
+  box-shadow: 0 22px 44px -14px rgba(0, 0, 0, 0.75), 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+@media (max-width: 600px) { .sheet { --pw: 64px; --gut: 20px; --b: 34px; --notch: 14px; --shim: 5px; } }
+.head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 16px; border-bottom: 1px solid var(--trule); }
+.title { flex: 1 1 auto; margin: 0; font: 700 0.86rem/1.3 var(--tform); letter-spacing: 0.14em; text-transform: uppercase; }
+.stages { display: flex; gap: 6px; }
+.stages button {
+  font: 10px var(--tmono); letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 4px 8px; border: 1px solid var(--trule); background: rgba(255, 250, 232, 0.45); color: var(--tink-2); cursor: pointer;
+}
+.stages button[aria-current="step"] { background: var(--tink); color: var(--tpaper-hi); border-color: var(--tink); }
+.body { padding: 16px; }
+
+/* ---- the podium ------------------------------------------------------------ */
+.pod { position: relative; }
+.row { position: relative; display: flex; align-items: flex-end; justify-content: center; gap: var(--gut); }
+.tier {
+  position: relative; flex: 0 0 var(--pw);
+  display: flex; flex-direction: column; justify-content: flex-end;
+  cursor: pointer; touch-action: none; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none;
+}
+.stand { height: calc(var(--pw) + 6px); display: flex; align-items: flex-end; justify-content: center; padding-bottom: 3px; }
+.hole { width: var(--pw); height: var(--pw); align-self: flex-start; border: 1px dashed rgba(74, 53, 18, 0.34); background: rgba(255, 250, 232, 0.22); }
+.block {
+  position: relative; border: 1px solid var(--trule); border-bottom: 0;
+  background: var(--tpaper-hi); box-shadow: inset 0 1px 0 rgba(255, 255, 240, 0.8);
+  font: 700 0.82rem var(--tform); letter-spacing: 0.08em; text-transform: uppercase; text-align: center;
+}
+.pod1 .block { padding-top: 7px; }
+.pod1 .tier[data-rank="1"] .block { height: calc(var(--b) + var(--notch) * 3); }
+.pod1 .tier[data-rank="2"] .block { height: calc(var(--b) + var(--notch) * 2); }
+.pod1 .tier[data-rank="3"] .block { height: calc(var(--b) + var(--notch)); }
+.pod1 .tier[data-rank="4"] .block { height: var(--b); }
+.floor { height: 3px; background: var(--trule); margin: 0 2px; }
+.tier.is-armed .hole, .tier.is-armed .block { border-color: var(--graphite); }
+.tier.is-armed .hole { border-style: solid; background: rgba(255, 250, 232, 0.6); }
+.tier.is-waiting .block, .tray.is-waiting { outline: 2px solid var(--graphite); outline-offset: 2px; }
+.tray {
+  display: flex; justify-content: center; gap: var(--gut); margin-top: 16px; padding: 9px;
+  border: 1px solid var(--trule); background: rgba(74, 53, 18, 0.05);
+  box-shadow: inset 0 1px 4px rgba(74, 53, 18, 0.14); cursor: pointer;
+}
+.cell { flex: 0 0 var(--pw); min-height: calc(var(--pw) + 4px); display: flex; justify-content: center; }
+.cell:empty::before { content: ""; width: var(--pw); height: var(--pw); border: 1px dashed rgba(74, 53, 18, 0.34); background: rgba(255, 250, 232, 0.22); }
+
+.print { position: relative; width: var(--pw); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.art {
+  position: relative; width: 100%; aspect-ratio: 1 / 1;
+  display: flex; align-items: center; justify-content: center; padding: 16% 9% 9%;
+  background:
+    repeating-linear-gradient(0deg,  var(--graph-rule) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, var(--graph-rule) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    var(--plate-paper);
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+}
+/* the image is taken OUT of flow: in flow, its intrinsic height stretched
+   the aspect-ratio box past square and the print overflowed its stand */
+.art img { position: absolute; left: 9%; top: 16%; width: 82%; height: 75%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
+.corner { position: absolute; z-index: 2; width: 15px; height: 15px; background: linear-gradient(135deg, #dfcd9a, #c3aa6e); filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45)); }
+.corner.tl { top: -4px; left: -4px; clip-path: polygon(0 0, 100% 0, 0 100%); }
+.corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.corner.bl { bottom: -4px; left: -4px; clip-path: polygon(0 0, 100% 100%, 0 100%); background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+.corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%); background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+.tag { position: absolute; top: 3px; left: 4px; right: 4px; z-index: 2; text-align: center; pointer-events: none; font: 0.72rem/1.1 var(--thand); color: var(--graphite); }
+.print.is-lifted .art { opacity: 0.2; box-shadow: none; }
+.print:focus-visible, .tier:focus-visible, .tray:focus-visible { outline: 2px solid var(--tred); outline-offset: 3px; }
+.ghost { position: fixed; z-index: 90; left: 0; top: 0; pointer-events: none; }
+.ghost .art { box-shadow: 0 12px 22px -6px rgba(6, 3, 0, 0.6); }
+body.dragging, body.dragging * { user-select: none !important; -webkit-user-select: none !important; }
+@media (max-width: 600px) { .corner { width: 11px; height: 11px; } .tag { font-size: 0.6rem; } .block { font-size: 0.7rem; } }
+
+/* ---- card 2 podium --------------------------------------------------------- */
+.pod2 .tier { cursor: ns-resize; }
+.pod2 .tier.is-floor { cursor: default; }
+.pod2 .print { cursor: inherit; }
+.pod2 .block { overflow: hidden; padding: 0; transition: height 380ms var(--ease); }
+.pod2 .base { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; }
+.course {
+  position: absolute; left: 0; right: 0; border-top: 1px solid var(--trule);
+  background:
+    repeating-linear-gradient(to top, transparent 0 calc(var(--notch) - 1px), rgba(74, 53, 18, 0.22) calc(var(--notch) - 1px) var(--notch)),
+    var(--wash);
+  transition: height 380ms var(--ease), bottom 380ms var(--ease), opacity 260ms ease;
+  display: flex; align-items: center; justify-content: center;
+}
+.course[data-m="0"] { --wash: var(--m0); }
+.course[data-m="1"] { --wash: var(--m1); }
+.course[data-m="2"] { --wash: var(--m2); }
+.course.is-active[data-m="0"] { --wash: var(--m0-on); }
+.course.is-active[data-m="1"] { --wash: var(--m1-on); }
+.course.is-active[data-m="2"] { --wash: var(--m2-on); }
+.course.is-active { border-top: 2px solid var(--graphite); }
+.course.is-zero { border-top: 0; }
+/* the shim — a different MATERIAL, not a short block */
+.course.is-shim {
+  background: linear-gradient(180deg, #f3dc9c 0%, #c99a46 55%, #8d6528 100%);
+  border-top: 1px solid #6e4d1c;
+}
+.pod2.is-drag .block, .pod2.is-drag .course, .pod2.is-drag .ruler, .pod2.is-drag .refline,
+.pod2.is-drag .mk, .pod2.is-drag .gmark { transition: none; }
+.pod2 .tier.is-active .block { outline: 2px solid var(--graphite); outline-offset: 2px; }
+.pod2 .tier.is-ref .block { border-color: var(--graphite); }
+/* THE PAIR IN QUESTION (owner, 2026-10-01; widened 2026-10-02): the two
+   pedestals the question names stay at full strength, and every other
+   pedestal steps back WHOLE: drawing, block, courses and shim alike. */
+.pod2 .print, .pod2 .block { transition: opacity 260ms ease; }
+.pod2 .tier.is-dim .print, .pod2 .tier.is-dim .block { opacity: 0.3; }
+
+/* RIDES ALONG: a pedestal lifted by a margin further down the line */
+.carry {
+  position: absolute; left: 50%; top: -1px; transform: translate(-50%, -100%);
+  font: 0.72rem/1 var(--thand); color: var(--tred); white-space: nowrap;
+  opacity: 0; transition: opacity 200ms ease; pointer-events: none;
+}
+.pod2 .tier.carried .carry { opacity: 1; }
+.pod2 .tier.carried .block { box-shadow: inset 0 1px 0 rgba(255, 255, 240, 0.8), 0 0 0 2px rgba(179, 64, 47, 0.35); }
+@media (max-width: 600px) { .carry { font-size: 0.56rem; } }
+
+.refline { position: absolute; z-index: 3; height: 0; pointer-events: none; border-top: 1.5px dashed var(--graphite); transition: bottom 380ms var(--ease); }
+.ruler { position: absolute; z-index: 3; pointer-events: none; transition: bottom 380ms var(--ease); }
+.ruler::before { content: ""; position: absolute; left: 2px; top: 0; bottom: 0; border-left: 1px solid var(--graphite); }
+.tk { position: absolute; left: 2px; width: 9px; height: 0; border-top: 1px solid var(--graphite); }
+.tk b { position: absolute; left: 12px; bottom: -6px; font: 700 10px/1 var(--tmono); color: var(--graphite); }
+.tk.is-on b { color: var(--tred); }
+.mk { position: absolute; left: -9px; width: 0; height: 0; border: 5px solid transparent; border-left: 7px solid var(--tred); transform: translateY(50%); transition: bottom 380ms var(--ease); }
+.mk.is-unset { border-left-color: transparent; }
+@media (max-width: 600px) { .tk b { font-size: 8px; left: 9px; } .tk { width: 7px; } }
+
+/* the gutter mark: every pair's state, at the neighbour's level, always on */
+.gmark {
+  position: absolute; z-index: 3; pointer-events: none;
+  transform: translate(-50%, 50%);
+  display: flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 4px;
+  font: 1rem/1 var(--thand); color: var(--graphite);
+  transition: bottom 380ms var(--ease), opacity 200ms ease;
+}
+.gmark.is-hair { background: var(--tpaper-hi); border: 1.5px solid var(--graphite); border-radius: 11px; font-weight: 700; }
+.gmark.is-unset { color: var(--tink-3); }
+.gmark.is-hidden { opacity: 0; }
+@media (max-width: 600px) { .gmark { min-width: 16px; height: 16px; font-size: 0.78rem; padding: 0 2px; } }
+
+/* THE GUTTERS ARE CLEAR (owner, 2026-10-02: "cluttered"). The guides that
+   lived between the pedestals are switched OFF, not deleted, so any of them
+   can come back by dropping it from this list: the dashed level line, the
+   1/2/3 notch rule with its red marker, and the ? / ≈ gutter badges. The
+   shim, the courses and the ballot carry the answer meanwhile. */
+.pod2 .refline, .pod2 .ruler, .pod2 .gmark { display: none; }
+
+/* ---- the words row --------------------------------------------------------- */
+/* the icon is the pair itself: two little pedestals, the left one raised */
+/* the icon is the pair itself, drawn in the same courses as the podium: a
+   base block under each, and on the left one a SEGMENT per notch it stands
+   above its neighbour, so 2 and 3 read as two and three blocks, not as two
+   bar heights to compare (owner, after mockup 49 v2). Negligibly = level, ≈. */
+.pico { display: flex; align-items: flex-end; gap: 4px; height: 36px; padding-bottom: 0; border-bottom: 1.5px solid var(--graphite); }
+.pico .p { display: flex; flex-direction: column-reverse; width: 18px; }
+.pico .bs { height: 8px; background: var(--tpaper-hi); border: 1px solid var(--graphite); border-bottom: 0; }
+.pico .sg { height: 8px; background: rgba(75, 64, 48, 0.22); border: 1px solid var(--graphite); border-bottom: 0; }
+.pico .sg.shim { height: 3px; background: #c99a46; border-color: #6e4d1c; }
+
+/* ════ THE QUESTION — the questionnaire ══════════════════════════════════ */
+.qbox { position: relative; }
+.qbox em { font-style: italic; }
+.qbox p { margin: 0; }
+.qo { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.qo:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* a ruled form section with a tab, answers as a ballot row, each with a
+   box the visitor's pencil ticks (owner pick, mockup 51 option 1) */
+.qv1 {
+  margin-top: 28px; padding: 24px 18px 6px;
+  border: 1px solid var(--trule); background: rgba(255, 252, 240, 0.6);
+  box-shadow: inset 0 1px 3px rgba(74, 53, 18, 0.12);
+}
+.qv1 .q-tab {
+  position: absolute; top: 0; left: 16px; transform: translateY(-50%);
+  padding: 4px 10px; background: var(--tink); color: var(--tpaper-hi);
+  font: 700 10px var(--tmono); letter-spacing: 0.16em; text-transform: uppercase;
+}
+.qv1 .q-said { font: 0.92rem/1.4 var(--tform); color: var(--tink-2); }
+.qv1 .q-said b { font-weight: 700; color: var(--tink); }
+.qv1 .q-ask { font: 700 1.24rem/1.3 var(--tform); color: var(--tink); margin: 2px 0 14px; }
+.qv1 .q-opts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--trule-2); }
+.qv1 .qo {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 6px 12px; background: transparent; border: 0; border-left: 1px dashed var(--trule-2);
+  font: 10px var(--tmono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--tink);
+}
+.qv1 .qo:first-child { border-left: 0; }
+.qv1 .qo:hover { background: rgba(255, 250, 232, 0.7); }
+.qv1 .qo-box { position: relative; width: 20px; height: 20px; border: 1.5px solid var(--graphite); background: var(--plate-paper); }
+.qv1 .qo-box i { position: absolute; left: 2px; top: -6px; font: 700 1.45rem/1 var(--thand); color: var(--graphite); font-style: normal; }
+.qv1 .qo[aria-pressed="true"] .qo-l { font-weight: 700; }
+
+@media (max-width: 600px) {
+  .qv1 .q-opts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .qv1 .qo:nth-child(3) { border-left: 0; }
+  .qv1 .qo:nth-child(n+3) { border-top: 1px dashed var(--trule-2); }
+}
+
+
+.actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 18px; }
+.go, .alt { min-height: 34px; padding: 0 1.1rem; font: 0.72rem var(--tmono); letter-spacing: 0.16em; text-transform: uppercase; border: 1px solid rgba(58, 40, 14, 0.6); cursor: pointer; }
+.go { color: #2a1c07; background: linear-gradient(180deg, #e2c07a 0%, #b3873a 46%, #7a5722 100%); box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55), 2px 3px 5px -2px rgba(22, 11, 4, 0.5); }
+.alt { color: var(--tink); background: rgba(255, 250, 232, 0.55); }
+.go[disabled], .alt[disabled] { opacity: 0.42; cursor: default; box-shadow: none; }
+@media (pointer: coarse) { .go, .alt, .qo, .slip { min-height: 44px; } }
+
+/* ---- the ledger: one slip per adjacent pair, above the podium ----------- */
+.ledger { display: grid; grid-template-columns: repeat(var(--pairs, 3), minmax(0, 1fr)); gap: 6px; margin-bottom: 16px; }
+.slip {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+  padding: 6px 9px 7px; border: 1px solid var(--trule); background: rgba(255, 250, 232, 0.5);
+  font: 10px var(--tmono); color: var(--tink); cursor: pointer; min-width: 0;
+}
+.slip .k { display: flex; align-items: center; gap: 5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--tink-2); }
+.slip .sw { width: 9px; height: 9px; border: 1px solid var(--trule); }
+.slip[data-m="0"] .sw { background: var(--m0-on); }
+.slip[data-m="1"] .sw { background: var(--m1-on); }
+.slip[data-m="2"] .sw { background: var(--m2-on); }
+.slip .w { font: 0.98rem/1.2 var(--thand); color: var(--graphite); min-height: 1.2em; }
+.slip.is-unset .w { color: var(--tink-3); }
+.slip.is-on { border-color: var(--graphite); box-shadow: inset 0 0 0 1px var(--graphite); background: var(--tpaper-hi); }
+.slip:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+/* a slip whose answer just changed flashes once */
+.slip { transition: background-color 500ms ease; }
+.bump { background-color: var(--bump) !important; transition: none !important; }
+@media (max-width: 600px) { .slip { padding: 5px 6px; } .slip .k { letter-spacing: 0.04em; font-size: 9px; } .slip .w { font-size: 0.82rem; } }
+
+/* ---- readout (mockup only) -------------------------------------------------- */
+.readout { background: var(--grain), #f7f0dd; border: 1px solid rgba(58, 40, 14, 0.5); box-shadow: 0 14px 30px -12px rgba(0, 0, 0, 0.7); padding: 14px 16px 16px; font: 12px/1.5 var(--tmono); color: var(--tink); }
+.readout h2 { margin: 0 0 4px; font: 700 0.78rem var(--tform); letter-spacing: 0.16em; text-transform: uppercase; }
+.readout h3 { margin: 14px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--trule-2); font: 700 10px var(--tmono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--tink-2); }
+.readout .lede { margin: 0; color: var(--tink-2); font-size: 11px; }
+.readout table { width: 100%; border-collapse: collapse; }
+.readout td { padding: 3px 4px 3px 0; vertical-align: baseline; }
+.readout td.n { text-align: right; white-space: nowrap; }
+.readout tr.implied td { color: var(--tink-2); }
+.readout .w { font-family: var(--thand); font-size: 13px; color: var(--graphite); }
+.readout pre { margin: 0; padding: 8px; overflow-x: auto; background: rgba(74, 53, 18, 0.06); border: 1px solid var(--trule-2); font: 10.5px/1.45 var(--tmono); }
+.vh { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="bar" role="group" aria-label="Mockup controls">
+  <h1>Mockup 50 · ranking + margins</h1>
+  <button type="button" class="plain" data-opt="clear">clear margins</button>
+  <button type="button" class="plain" data-opt="reset">reset all</button>
+</div>
+
+<div class="layout">
+  <section class="sheet" aria-labelledby="jd-title">
+    <header class="head">
+      <h2 class="title" id="jd-title">By how much</h2>
+      <nav class="stages" aria-label="Cards">
+        <button type="button" data-act="stage" data-stage="1">1 · rank</button>
+        <button type="button" data-act="stage" data-stage="2" aria-current="step">2 · by how much</button>
+      </nav>
+    </header>
+    <div class="body" id="jd-body"></div>
+  </section>
+  <aside class="readout" aria-live="polite">
+    <h2>What this would file</h2>
+    <p class="lede">Mockup readout, not part of the card. Each pair files its word and its visible notches (negligibly = 0); implied comparisons add up visible notches only.</p>
+    <div id="jd-readout"></div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var ITEM = '../items/2026-07-28-desktop-succulent/';
+  /* FOUR IS NOT A CONSTANT (handoff, 2026-10-01): visitors will default to
+     two drawings and may ask for three. Everything below reads N; the page
+     shows four, and ?n=2 or ?n=3 seats fewer for checking. */
+  var SRC = { a: 'gpt-5-1.svg', b: 'claude-fable-5.svg', c: 'kimi-k3.svg', d: 'gemini-3-1-pro.svg' };
+  var N = Math.max(2, Math.min(4, parseInt(new URLSearchParams(location.search).get('n'), 10) || 4));
+  var SLOTS = ['a', 'b', 'c', 'd'].slice(0, N);
+  var DEMO_ORDER = ['b', 'c', 'a', 'd'].filter(function (s) { return SLOTS.indexOf(s) !== -1; });
+  var ORD = ['1st', '2nd', '3rd', '4th'];
+  var PHRASE = { 0.5: 'negligibly better', 1: 'slightly better', 2: 'better', 3: 'much better' };
+  var SHORT = { 0.5: 'negligibly', 1: 'slightly', 2: 'better', 3: 'much better' };
+
+  var S = {
+    stage: 2,
+    ranks: DEMO_ORDER.reduce(function (o, s, i) { o[s] = i + 1; return o; }, {}),
+    armed: null,
+    gaps: [], active: 0, sig: '',
+    live: null,        /* { m, px } while a pedestal is in the hand */
+    carry: null, carryT: 0, bumps: {}
+  };
+
+  var sheet = document.querySelector('.sheet');
+  var bodyEl = document.getElementById('jd-body');
+  var titleEl = document.getElementById('jd-title');
+  var readEl = document.getElementById('jd-readout');
+  var swallowUntil = 0;
+
+  function U(s) { return s.toUpperCase(); }
+  function px(name) { return parseFloat(getComputedStyle(sheet).getPropertyValue(name)) || 0; }
+  function fmt(x) { var w = Math.floor(x + 1e-9), f = x - w > 0.25; return (w || !f ? String(w) : '') + (f ? '½' : ''); }
+  function printHTML(s) {
+    return '<div class="print" data-slot="' + s + '" role="button" tabindex="0" aria-label="Model ' + U(s) + '">' +
+      '<div class="art"><span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>' +
+      '<img src="' + ITEM + SRC[s] + '" alt="" draggable="false"></div><span class="tag">Model ' + U(s) + '</span></div>';
+  }
+
+  /* ═══ CARD 1 — the podium ═══════════════════════════════════════════════ */
+  function rankOf(s) { return S.ranks[s] || 0; }
+  function at(k) { for (var i = 0; i < N; i++) if (rankOf(SLOTS[i]) === k) return SLOTS[i]; return null; }
+  function ready1() { return SLOTS.every(function (s) { return rankOf(s) > 0; }); }
+  function order() { var o = []; for (var k = 1; k <= N; k++) o.push(at(k)); return o; }
+  function move(s, k) {
+    var from = rankOf(s), sit = k ? at(k) : null;
+    if (from) delete S.ranks[s];
+    if (k) { S.ranks[s] = k; if (sit && sit !== s) { if (from) S.ranks[sit] = from; else delete S.ranks[sit]; } }
+    S.armed = null; render();
+  }
+  function arm(k) { S.armed = (S.armed === k) ? null : k; render(); }
+  function tap1(s) {
+    if (S.armed !== null) { move(s, S.armed); return; }
+    if (!rankOf(s)) { for (var k = 1; k <= N; k++) if (!at(k)) { move(s, k); return; } }
+  }
+  function render1() {
+    var h = '<div class="pod pod1"><div class="row">';
+    for (var k = 1; k <= N; k++) {
+      var o = at(k);
+      h += '<div class="tier' + (S.armed === k ? ' is-waiting' : '') + '" data-rank="' + k + '" role="button" tabindex="0" aria-label="' + ORD[k - 1] + '">' +
+        '<div class="stand">' + (o ? printHTML(o) : '<div class="hole"></div>') + '</div><div class="block">' + ORD[k - 1] + '</div></div>';
+    }
+    h += '</div><div class="floor"></div><div class="tray' + (S.armed === 0 ? ' is-waiting' : '') + '" role="button" tabindex="0" aria-label="The row">';
+    SLOTS.forEach(function (s) { h += '<div class="cell">' + (rankOf(s) ? '' : printHTML(s)) + '</div>'; });
+    h += '</div></div><div class="actions"><button type="button" class="alt" disabled>&larr; back</button>' +
+      '<button type="button" class="go" data-act="to2"' + (ready1() ? '' : ' disabled') + '>next — by how much &rarr;</button></div>';
+    bodyEl.innerHTML = h;
+  }
+  var d1 = null;
+  function down1(e) {
+    var p = e.target.closest && e.target.closest('.pod1 .print');
+    if (!p || (e.button !== undefined && e.button > 0)) return;
+    e.preventDefault();
+    d1 = { s: p.getAttribute('data-slot'), el: p, x0: e.clientX, y0: e.clientY, id: e.pointerId, live: false, ghost: null, dx: 0, dy: 0, w: 0, over: null };
+    try { p.setPointerCapture(e.pointerId); } catch (err) {}
+    window.addEventListener('pointermove', move1, true);
+    window.addEventListener('pointerup', up1, true);
+    window.addEventListener('pointercancel', cancel1, true);
+  }
+  function lift1(e) {
+    var r = d1.el.getBoundingClientRect(), g = document.createElement('div');
+    g.className = 'ghost'; g.style.width = r.width + 'px';
+    var c = d1.el.cloneNode(true); c.removeAttribute('tabindex'); g.appendChild(c); sheet.appendChild(g);
+    d1.live = true; d1.ghost = g; d1.w = r.width; d1.dx = e.clientX - r.left; d1.dy = e.clientY - r.top;
+    d1.el.classList.add('is-lifted'); document.body.classList.add('dragging');
+  }
+  function grow(r, t, s, b) { return { l: r.left - s, r: r.right + s, t: r.top - t, b: r.bottom + b }; }
+  function inR(q, x, y) { return x >= q.l && x <= q.r && y >= q.t && y <= q.b; }
+  function hit1(x, y) {
+    var row = bodyEl.querySelector('.pod1 .row'), tray = bodyEl.querySelector('.pod1 .tray');
+    if (row && inR(grow(row.getBoundingClientRect(), 14, 8, 4), x, y)) {
+      var best = 1, dd = Infinity;
+      row.querySelectorAll('.tier').forEach(function (t) {
+        var q = t.getBoundingClientRect(), d = Math.abs(x - (q.left + q.right) / 2);
+        if (d < dd) { dd = d; best = +t.getAttribute('data-rank'); }
+      });
+      return best;
+    }
+    if (tray && inR(grow(tray.getBoundingClientRect(), 6, 8, 14), x, y)) return 0;
+    return null;
+  }
+  function aim1(e) { return { x: e.clientX - d1.dx + d1.w / 2, y: e.clientY - d1.dy + d1.w / 2 }; }
+  function move1(e) {
+    if (!d1 || e.pointerId !== d1.id) return;
+    if (!d1.live) { if (Math.abs(e.clientX - d1.x0) < 6 && Math.abs(e.clientY - d1.y0) < 6) return; lift1(e); }
+    var a = aim1(e), k = hit1(a.x, a.y);
+    d1.ghost.style.left = (e.clientX - d1.dx) + 'px'; d1.ghost.style.top = (e.clientY - d1.dy) + 'px';
+    if (k !== d1.over) { d1.over = k; bodyEl.querySelectorAll('.pod1 .tier').forEach(function (t) { t.classList.toggle('is-armed', +t.getAttribute('data-rank') === k); }); }
+    if (e.cancelable) e.preventDefault();
+  }
+  function done1() {
+    var d = d1; d1 = null;
+    window.removeEventListener('pointermove', move1, true);
+    window.removeEventListener('pointerup', up1, true);
+    window.removeEventListener('pointercancel', cancel1, true);
+    try { d.el.releasePointerCapture(d.id); } catch (err) {}
+    if (d.ghost) d.ghost.remove();
+    document.body.classList.remove('dragging');
+    swallowUntil = Date.now() + 350;
+    return d;
+  }
+  function up1(e) {
+    if (!d1 || e.pointerId !== d1.id) return;
+    if (!d1.live) { var s = d1.s; done1(); tap1(s); return; }
+    var a = aim1(e), k = hit1(a.x, a.y), d = done1();
+    if (k === null) { render(); return; }
+    move(d.s, k);
+  }
+  function cancel1() { if (d1) { done1(); render(); } }
+
+  /* ═══ CARD 2 — the margin geometry ═══════════════════════════════════════ */
+  /* ONE SHIM AT MOST (owner, 2026-10-01). Shims don't stack: a negligible
+     margin draws a shim only when no pair UPSTREAM of it (nearer the 1st)
+     already has one. Any later "negligibly" draws nothing; its pedestals
+     stand level and the ≈ in the gap carries the word. Notches still stack. */
+  function upstreamShim(m) { for (var q = 0; q < m; q++) if (valNow(q) === 0.5) return true; return false; }
+  function hairPx(m) { return upstreamShim(m) ? 0 : px('--shim'); }
+  /* a margin's drawn height. Unset draws flat: nothing has been claimed. */
+  function pxOf(v, m) { return v == null ? 0 : v === 0.5 ? hairPx(m) : v * px('--notch'); }
+  function mpx(m) { return (S.live && S.live.m === m) ? S.live.px : pxOf(S.gaps[m], m); }
+  function heightAt(r) { var h = px('--b'); for (var m = r; m < N - 1; m++) h += mpx(m); return h; }
+  function snap(p, m) {
+    var n = px('--notch'), c = [[0.5, hairPx(m)], [1, n], [2, 2 * n], [3, 3 * n]], best = c[0];
+    c.forEach(function (x) { if (Math.abs(p - x[1]) < Math.abs(p - best[1])) best = x; });
+    return best[0];
+  }
+  /* the value a live drag would land on right now, or the stored one */
+  function valNow(m) { return (S.live && S.live.m === m) ? snap(S.live.px, S.live.m) : S.gaps[m]; }
+  /* WHAT THE PEDESTALS SHOW IS WHAT IS IMPLIED (owner, after mockup 49 v1).
+     A non-adjacent comparison is the height you can SEE between the two
+     pedestals, in whole notches. "Negligibly" draws no height, so it adds
+     nothing. It used to add half a notch, so two ≈ pairs quietly summed to
+     a whole notch and pushed 1st › 4th from "better" to "much better" while
+     the pedestals stood exactly two notches apart. Zero visible notches
+     between two ranked drawings still reads "negligibly", never a tie. */
+  function notches(v) { return v === 0.5 ? 0 : v; }
+  function bucket(x) { if (x < 1) return 'negligibly'; if (x < 2) return 'slightly'; if (x < 3) return 'better'; return 'much better'; }
+  /* the visible notches between rank i and rank j, or null while any pair
+     between them is unset */
+  function lead(i, j) {
+    var s = 0;
+    for (var m = i; m < j; m++) { var v = valNow(m); if (v == null) return null; s += notches(v); }
+    return s;
+  }
+
+  function render2() {
+    var o = order(), h = '';
+    /* the record, ABOVE the podium */
+    /* one slip per adjacent pair. (The implied line under the slips went,
+       owner 2026-10-01: the non-adjacent pairs are the server's to derive
+       and the readout's to show, not the visitor's to read.) */
+    h += '<div class="ledger" style="--pairs:' + (N - 1) + '"></div>';
+    h += '<div class="pod pod2"><div class="row">';
+    for (var r = 0; r < N; r++) {
+      var floor = r === N - 1;
+      h += '<div class="tier' + (floor ? ' is-floor' : '') + '" data-r="' + r + '"' +
+        (floor ? '' : ' tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="3"') + '>' +
+        '<div class="stand">' + printHTML(o[r]) + '</div><div class="block">';
+      for (var mm = r; mm < N - 1; mm++) h += '<div class="course" data-m="' + mm + '"></div>';
+      h += '<div class="base">' + ORD[r] + '</div></div>' +
+        (floor ? '' : '<span class="carry">rides along ↑</span>') + '</div>';
+    }
+    for (var g = 0; g < N - 1; g++) h += '<span class="gmark" data-m="' + g + '"></span>';
+    h += '<div class="refline"></div><div class="ruler">' +
+      '<i class="tk" data-s="0.5"><b>≈</b></i><i class="tk" data-s="1"><b>1</b></i><i class="tk" data-s="2"><b>2</b></i><i class="tk" data-s="3"><b>3</b></i>' +
+      '<span class="mk"></span></div></div><div class="floor"></div></div>';
+    h += '<div class="qbox qv1" id="jd-q"></div>' +
+      '<div class="actions"><button type="button" class="alt" data-act="back2">&larr; back</button>' +
+      '<button type="button" class="go" data-act="next2">next</button></div>' +
+      '<span class="vh" role="status" aria-live="polite" id="jd-live"></span>';
+    bodyEl.innerHTML = h;
+    layout2(); paint2();
+  }
+
+  /* heights and positions only — safe mid-drag */
+  function layout2() {
+    var root = bodyEl.querySelector('.pod2');
+    if (!root) return;
+    var n = px('--notch'), b = px('--b'), pw = px('--pw');
+    var row = root.querySelector('.row');
+    /* headroom: everything already standing, plus the full three notches the
+       pair being set could still reach. Independent of that pair's own value,
+       so the row never resizes under a drag (the floor would slide away from
+       the finger); it changes only when the visitor moves to another pair. */
+    var reserve = 3 * n;
+    for (var q0 = 0; q0 < N - 1; q0++) if (q0 !== S.active) reserve += pxOf(S.gaps[q0], q0);
+    row.style.height = (b + reserve + pw + 26) + 'px';
+    var tiers = row.querySelectorAll('.tier'), rr = row.getBoundingClientRect();
+    tiers.forEach(function (t, r) {
+      t.querySelector('.block').style.height = heightAt(r) + 'px';
+      t.querySelector('.base').style.height = b + 'px';
+      t.classList.toggle('is-active', r === S.active);
+      t.classList.toggle('is-ref', r === S.active + 1);
+      t.classList.toggle('is-dim', r !== S.active && r !== S.active + 1);
+      t.classList.toggle('carried', S.carry != null && r < S.carry);
+      t.querySelectorAll('.course').forEach(function (c) {
+        var m = +c.getAttribute('data-m'), below = b;
+        for (var q = m + 1; q < N - 1; q++) below += mpx(q);
+        var hpx = mpx(m), dragging = S.live && S.live.m === m;
+        c.style.bottom = below + 'px';
+        c.style.height = hpx + 'px';
+        c.classList.toggle('is-active', m === S.active);
+        c.classList.toggle('is-zero', hpx < 1);
+        c.classList.toggle('is-shim', !dragging && S.gaps[m] === 0.5 && hpx > 0);
+      });
+      if (r < N - 1) {
+        var sv = S.gaps[r];
+        t.setAttribute('aria-valuenow', String(sv == null ? 0 : sv));
+        t.setAttribute('aria-valuetext', sv == null ? 'not set' : PHRASE[sv]);
+        t.setAttribute('aria-label', ORD[r] + ', Model ' + U(order()[r]) + ', over Model ' + U(order()[r + 1]));
+      }
+    });
+    /* every pair's state, in its own gutter: ? unset, ≈ negligibly */
+    root.querySelectorAll('.gmark').forEach(function (gm) {
+      var m = +gm.getAttribute('data-m'), A = tiers[m], B = tiers[m + 1];
+      var ra = A.getBoundingClientRect(), rb = B.getBoundingClientRect(), val = valNow(m);
+      gm.style.left = ((ra.right + rb.left) / 2 - rr.left) + 'px';
+      gm.style.bottom = (heightAt(m + 1) + 14) + 'px';
+      gm.className = 'gmark';
+      if (val == null) { gm.textContent = '?'; gm.classList.add('is-unset'); }
+      else if (val === 0.5) { gm.textContent = '≈'; gm.classList.add('is-hair'); }
+      else { gm.textContent = ''; gm.classList.add('is-hidden'); }
+      gm.setAttribute('title', val == null ? 'not set yet' : PHRASE[val]);
+      if (m === S.active) gm.classList.add('is-hidden');     /* the ruler speaks for the active pair */
+    });
+    var k = S.active, A = tiers[k], B = tiers[k + 1];
+    if (!A || !B) return;
+    var ra = A.getBoundingClientRect(), rb = B.getBoundingClientRect(), ref = heightAt(k + 1);
+    var ruler = root.querySelector('.ruler'), line = root.querySelector('.refline');
+    ruler.style.left = (ra.right - rr.left) + 'px';
+    ruler.style.width = (rb.left - ra.right) + 'px';
+    ruler.style.bottom = ref + 'px';
+    ruler.style.height = (3 * n) + 'px';
+    var cur = valNow(k);
+    ruler.querySelectorAll('.tk').forEach(function (tk) {
+      var s = +tk.getAttribute('data-s');
+      tk.style.bottom = pxOf(s, k) + 'px';
+      tk.classList.toggle('is-on', cur === s);
+    });
+    var mk = ruler.querySelector('.mk');
+    mk.style.bottom = mpx(k) + 'px';
+    mk.classList.toggle('is-unset', cur == null);
+    line.style.left = (ra.left - rr.left) + 'px';
+    line.style.width = (rb.left - ra.left + 6) + 'px';
+    line.style.bottom = ref + 'px';
+  }
+
+  /* ---- the summaries ------------------------------------------------------ */
+  function impliedList() {
+    var o = order(), out = [];
+    for (var i = 0; i < N; i++) for (var j = i + 2; j < N; j++) {
+      out.push({ key: i + '-' + j, i: i, j: j, a: o[i], b: o[j], sum: lead(i, j) });
+    }
+    return out;
+  }
+  function bumpCls(key) { return S.bumps[key] ? ' bump' : ''; }
+
+  function paintLedger() {
+    var o = order(), h = '';
+    for (var m = 0; m < N - 1; m++) {
+      var val = valNow(m);
+      h += '<button type="button" class="slip' + (m === S.active ? ' is-on' : '') + (val == null ? ' is-unset' : '') + bumpCls('m' + m) +
+        '" data-act="pair" data-m="' + m + '"><span class="k"><i class="sw"></i>' + ORD[m] + ' › ' + ORD[m + 1] + '</span>' +
+        '<span class="w">' + (val == null ? 'not yet' : (val === 0.5 ? '≈ ' : '') + SHORT[val]) + '</span></button>';
+    }
+    bodyEl.querySelector('.ledger').innerHTML = h;
+  }
+
+  /* THE QUESTION (owner, 2026-10-01): the card asks, and stays asking.
+     The ranking already said which is better, so the card says so back and
+     asks only how MUCH; the answer shows as the chosen button and the
+     raised pedestal. Dressed as a questionnaire item (mockup 51 option 1). */
+  function optHTML(val, k) {
+    /* the ballot: icon, words, and a box the pencil ticks. It reads the
+       LIVE value, so the tick follows a dragged pedestal before release. */
+    var on = valNow(k) === val;
+    return '<button type="button" class="qo" data-act="stop" data-s="' + val + '" aria-pressed="' + on + '">' +
+      picoHTML(val) + '<span class="qo-l">' + PHRASE[val] + '</span>' +
+      '<span class="qo-box">' + (on ? '<i>✓</i>' : '') + '</span></button>';
+  }
+  function paintQuestion() {
+    var q = document.getElementById('jd-q');
+    if (!q) return;
+    var o = order(), k = S.active;
+    var prog = 'Question ' + (k + 1) + ' of ' + (N - 1);
+    /* the two model names in bold (owner, 2026-10-01) */
+    var said = 'You’ve indicated that <b>Model ' + U(o[k]) + '</b> is better than <b>Model ' + U(o[k + 1]) + '</b>.';
+    var opts = '<div class="q-opts" role="group" aria-label="How much better">' +
+      [0.5, 1, 2, 3].map(function (v) { return optHTML(v, k); }).join('') + '</div>';
+    q.innerHTML = '<span class="q-tab">' + prog + '</span><p class="q-said">' + said + '</p>' +
+      '<p class="q-ask">How <em>much</em> better is it?</p>' + opts;
+  }
+  function picoHTML(val) {
+    var shim = val === 0.5, segs = '';
+    if (shim) segs = '<span class="sg shim"></span>';
+    else for (var i = 0; i < notches(val); i++) segs += '<span class="sg"></span>';
+    return '<span class="pico" aria-hidden="true"><span class="p">' + '<span class="bs"></span>' + segs + '</span>' +
+      '<span class="p"><span class="bs"></span></span></span>';
+  }
+  function allSet() { for (var m = 0; m < N - 1; m++) if (S.gaps[m] == null) return false; return true; }
+
+  function paintSummary() { paintLedger(); }
+  function paint2() {
+    if (!bodyEl.querySelector('.pod2')) return;
+    paintSummary();
+    paintQuestion();
+    var next = bodyEl.querySelector('[data-act="next2"]'), last = S.active === N - 2;
+    next.disabled = last ? !allSet() : S.gaps[S.active] == null;
+    next.innerHTML = last ? 'file the grades' : 'next pedestal &rarr;';
+  }
+  /* live repaint during a drag: geometry + the ledger + the sentence */
+  function paintLive() {
+    layout2(); paintSummary(); paintQuestion();
+  }
+
+  /* ---- what changed: rides-along + flashes -------------------------------- */
+  function snapshotLeads() {
+    var o = {};
+    for (var m = 0; m < N - 1; m++) o['m' + m] = valNow(m);
+    impliedList().forEach(function (x) { o[x.key] = x.sum; });
+    return o;
+  }
+  function flashChanges(before, m) {
+    var after = snapshotLeads();
+    S.bumps = {};
+    Object.keys(after).forEach(function (k) { if (after[k] !== before[k]) S.bumps[k] = true; });
+    /* only when the drawn height really moved: an unshimmed "negligibly" lifts nothing */
+    S.carry = (m > 0 && pxOf(before['m' + m], m) !== pxOf(after['m' + m], m)) ? m : null;
+    clearTimeout(S.carryT);
+    S.carryT = setTimeout(function () {
+      S.bumps = {}; S.carry = null;
+      if (S.stage === 2) { layout2(); paintSummary(); }
+    }, 1100);
+  }
+
+  function setGap(m, val) {
+    var before = snapshotLeads();
+    S.gaps[m] = val;
+    flashChanges(before, m);
+    layout2(); paint2(); readout();
+    if (val != null) liveSay('Model ' + U(order()[m]) + ' ' + PHRASE[val] + ' than Model ' + U(order()[m + 1]));
+  }
+  function setActive(m) { S.active = m; layout2(); paint2(); }
+  function liveSay(msg) { var l = document.getElementById('jd-live'); if (l) l.textContent = msg; }
+
+  /* the lift */
+  var d2 = null;
+  function down2(e) {
+    var t = e.target.closest && e.target.closest('.pod2 .tier');
+    if (!t || (e.button !== undefined && e.button > 0)) return;
+    var r = +t.getAttribute('data-r');
+    if (r >= N - 1) return;
+    e.preventDefault();
+    try { t.focus({ preventScroll: true }); } catch (err) {}
+    if (S.active !== r) setActive(r);
+    d2 = { m: r, y0: e.clientY, p0: mpx(r), id: e.pointerId, moved: false, el: t, before: snapshotLeads() };
+    try { t.setPointerCapture(e.pointerId); } catch (err) {}
+    window.addEventListener('pointermove', move2, true);
+    window.addEventListener('pointerup', up2, true);
+    window.addEventListener('pointercancel', up2, true);
+  }
+  function move2(e) {
+    if (!d2 || e.pointerId !== d2.id) return;
+    var dy = d2.y0 - e.clientY;
+    if (!d2.moved && Math.abs(dy) < 4) return;
+    if (!d2.moved) { d2.moved = true; bodyEl.querySelector('.pod2').classList.add('is-drag'); document.body.classList.add('dragging'); }
+    var n = px('--notch'), gain = n / Math.max(n, 26);
+    S.live = { m: d2.m, px: Math.max(0, Math.min(3 * n, d2.p0 + dy * gain)) };
+    S.carry = d2.m > 0 ? d2.m : null;
+    paintLive();
+    if (e.cancelable) e.preventDefault();
+  }
+  function up2(e) {
+    if (!d2 || (e.pointerId !== undefined && e.pointerId !== d2.id)) return;
+    var d = d2; d2 = null;
+    window.removeEventListener('pointermove', move2, true);
+    window.removeEventListener('pointerup', up2, true);
+    window.removeEventListener('pointercancel', up2, true);
+    try { d.el.releasePointerCapture(d.id); } catch (err) {}
+    var root = bodyEl.querySelector('.pod2');
+    if (root) root.classList.remove('is-drag');
+    document.body.classList.remove('dragging');
+    swallowUntil = Date.now() + 350;
+    if (d.moved && S.live && e.type === 'pointerup') {
+      var val = snap(S.live.px, S.live.m); S.live = null;
+      S.gaps[d.m] = val;
+      flashChanges(d.before, d.m);
+      layout2(); paint2(); readout();
+    } else { S.live = null; S.carry = null; layout2(); paint2(); }
+  }
+
+  /* ═══ the flow ═══════════════════════════════════════════════════════════ */
+  function goStage(n) {
+    if (n === 2) {
+      if (!ready1()) SLOTS.forEach(function (s) { if (!rankOf(s)) for (var k = 1; k <= N; k++) if (!at(k)) { S.ranks[s] = k; break; } });
+      var sig = order().join('');
+      if (sig !== S.sig) { S.sig = sig; S.gaps = []; S.active = 0; }
+      S.stage = 2; S.armed = null;
+    } else S.stage = 1;
+    render();
+  }
+  function render() {
+    titleEl.textContent = S.stage === 1 ? 'Best to worst' : 'By how much';
+    document.querySelectorAll('.stages button').forEach(function (b) {
+      if (+b.getAttribute('data-stage') === S.stage) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current');
+    });
+    if (S.stage === 1) render1(); else render2();
+    readout();
+  }
+
+  /* ═══ the integration contract (PLAN-PEDESTAL-HANDOFF.md) ════════════════
+     answer()  → { ranking: [{slot, rank, gap}], complete } — the shape
+                 jd2-rate.php takes. gap is the VISIBLE notches 0..3: a
+                 "negligibly" shim files as 0 (the midpoint, 4 on 1–7), the
+                 last place carries no gap, an unset pair sends null.
+     restore(ranking) — the same shape back in (back/forward, bench prefill).
+                 A gap of 0 restores as "negligibly": the card never offers
+                 "about the same", because the ranking already said who is
+                 above. Exposed as window.JD_pedestal. */
+  function answer() {
+    var o = order(), ranking = [], complete = ready1();
+    o.forEach(function (s, r) {
+      var row = { slot: s, rank: r + 1 };
+      if (r < N - 1) {
+        var g = S.gaps[r];
+        row.gap = g == null ? null : notches(g);
+        if (g == null) complete = false;
+      }
+      ranking.push(row);
+    });
+    return { ranking: ranking, complete: complete };
+  }
+  function restore(ranking) {
+    S.ranks = {}; S.gaps = []; S.active = 0;
+    (ranking || []).forEach(function (row) {
+      if (SLOTS.indexOf(row.slot) === -1) return;
+      S.ranks[row.slot] = row.rank;
+      if (row.gap != null && row.rank < N) S.gaps[row.rank - 1] = row.gap === 0 ? 0.5 : row.gap;
+    });
+    S.sig = ready1() ? order().join('') : '';
+    for (var m = 0; m < N - 1; m++) if (S.gaps[m] == null) { S.active = m; break; }
+    render();
+  }
+  window.JD_pedestal = { answer: answer, restore: restore };
+  /* the server's derivation, mirrored for the readout only — the card itself
+     never computes or sends a score */
+  function derivePairs(ranking) {
+    if (!ranking.every(function (r, i) { return i === ranking.length - 1 || r.gap != null; })) return null;
+    var out = [];
+    for (var i = 0; i < ranking.length; i++) {
+      var sum = 0;
+      for (var j = i + 1; j < ranking.length; j++) {
+        sum += ranking[j - 1].gap;
+        var sc = Math.min(sum, 3), hi = ranking[i].slot, lo = ranking[j].slot;
+        var a = hi < lo ? hi : lo, b = hi < lo ? lo : hi;
+        out.push({ a: a, b: b, score: sc === 0 ? 0 : (a === hi ? sc : -sc) });
+      }
+    }
+    return out.sort(function (x, y) { return (x.a + x.b) < (y.a + y.b) ? -1 : 1; });
+  }
+
+  /* ═══ readout ════════════════════════════════════════════════════════════ */
+  function readout() {
+    if (!ready1()) { readEl.innerHTML = '<p class="lede">Put every drawing on the podium.</p>'; return; }
+    var o = order(), h = '<h3>Stated, then implied</h3><table>';
+    for (var m = 0; m < N - 1; m++) {
+      var v = S.gaps[m];
+      h += '<tr><td>' + U(o[m]) + ' › ' + U(o[m + 1]) + '</td><td class="w">' + (v == null ? '—' : SHORT[v]) + '</td><td class="n">' + (v == null ? '' : v === 0.5 ? '≈' : '+' + v) + '</td></tr>';
+    }
+    for (var i = 0; i < N; i++) for (var j = i + 2; j < N; j++) {
+      var s = 0, ok = true;
+      for (var q = i; q < j; q++) { if (S.gaps[q] == null) ok = false; else s += notches(S.gaps[q]); }
+      h += '<tr class="implied"><td>' + U(o[i]) + ' › ' + U(o[j]) + ' *</td><td class="w">' + (ok ? bucket(s) : '—') + '</td><td class="n">' + (ok ? (s ? '+' + s : '≈') : '') + '</td></tr>';
+    }
+    h += '</table>';
+    /* what the server derives (api/jd2-config.php jd2_derive_pairs,
+       spaced-rank-v1): every pair, canonical order by slot letter, score
+       −3..+3 positive = the first-named preferred; 1–7 = 4 − score */
+    var ans = answer(), derived = derivePairs(ans.ranking);
+    if (derived) {
+      h += '<h3>Server-derived pairs (7-point)</h3><table>';
+      derived.forEach(function (d) {
+        h += '<tr><td>' + U(d.a) + ' vs ' + U(d.b) + '</td><td class="n">' + (d.score > 0 ? '+' : '') + d.score +
+          '</td><td class="n">' + (4 - d.score) + ' / 7</td></tr>';
+      });
+      h += '</table><p class="lede">1 = first much better · 4 = about the same · 7 = second much better</p>';
+    }
+    h += '<h3>Request body (ranking + gaps)</h3><pre>' + JSON.stringify({ ranking: ans.ranking, pairs: null }, null, 1)
+      .replace(/\n\s+(?=[^\s"{\[])/g, ' ').replace(/{\n\s+/g, '{ ').replace(/\n\s+}/g, ' }') + '</pre>' +
+      '<p class="lede">complete: ' + ans.complete + '</p>';
+    readEl.innerHTML = h;
+  }
+
+  /* ═══ events ═════════════════════════════════════════════════════════════ */
+  window.addEventListener('pointerdown', function (e) { if (S.stage === 1) down1(e); else down2(e); }, true);
+
+  sheet.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]');
+    if (b && !b.disabled) {
+      var act = b.getAttribute('data-act');
+      if (act === 'stage') return goStage(+b.getAttribute('data-stage'));
+      if (act === 'to2') return goStage(2);
+      if (act === 'pair') return setActive(+b.getAttribute('data-m'));
+      if (act === 'stop') return setGap(S.active, +b.getAttribute('data-s'));
+      if (act === 'back2') { if (S.active > 0) setActive(S.active - 1); else goStage(1); return; }
+      if (act === 'next2') {
+        if (S.active < N - 2) { setActive(S.active + 1); return; }
+        document.getElementById('jd-q').innerHTML = '<span class="q-tab">Filed</span><p class="q-ask">Every pair is answered.</p><p class="q-said" style="padding-bottom:14px">The full verdict is in the slips above.</p>';
+        return;
+      }
+    }
+    if (Date.now() < swallowUntil) return;
+    if (S.stage === 1) {
+      var t = e.target.closest('.pod1 .tier');
+      if (t) return arm(+t.getAttribute('data-rank'));
+      if (e.target.closest('.pod1 .tray')) return arm(0);
+    }
+  });
+
+  sheet.addEventListener('keydown', function (e) {
+    var t = e.target;
+    if (S.stage === 1 && (e.key === 'Enter' || e.key === ' ')) {
+      var p = t.closest('.print');
+      if (p) { e.preventDefault(); tap1(p.getAttribute('data-slot')); return; }
+      if (t.classList.contains('tier')) { e.preventDefault(); arm(+t.getAttribute('data-rank')); return; }
+      if (t.classList.contains('tray')) { e.preventDefault(); arm(0); }
+      return;
+    }
+    if (S.stage === 2 && t.classList && t.classList.contains('tier')) {
+      var r = +t.getAttribute('data-r');
+      if (r >= N - 1) return;
+      var up = e.key === 'ArrowUp' || e.key === 'ArrowRight', dn = e.key === 'ArrowDown' || e.key === 'ArrowLeft';
+      if (!up && !dn) return;
+      e.preventDefault();
+      S.active = r;
+      var st = [0.5, 1, 2, 3], cur = S.gaps[r];
+      /* from unset: ↓ says "negligibly", ↑ says "slightly" */
+      var i = cur == null ? (up ? 1 : 0) : st.indexOf(cur) + (up ? 1 : -1);
+      setGap(r, st[Math.max(0, Math.min(3, i))]);
+    }
+  });
+  sheet.addEventListener('focusin', function (e) {
+    var t = e.target;
+    if (S.stage === 2 && t.classList && t.classList.contains('tier') && !d2) {
+      var r = +t.getAttribute('data-r');
+      if (r < N - 1 && r !== S.active) setActive(r);
+    }
+  });
+
+  document.querySelector('.bar').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    var opt = b.getAttribute('data-opt');
+    if (opt === 'reset') { S.ranks = {}; S.gaps = []; S.active = 0; S.sig = ''; S.stage = 1; render(); return; }
+    if (opt === 'clear') { S.gaps = []; S.active = 0; render(); }
+  });
+
+  var rz = 0;
+  window.addEventListener('resize', function () { cancelAnimationFrame(rz); rz = requestAnimationFrame(function () { if (S.stage === 2) layout2(); }); });
+
+  S.sig = order().join('');
+  render();
+})();
+</script>
+</body>
+</html>

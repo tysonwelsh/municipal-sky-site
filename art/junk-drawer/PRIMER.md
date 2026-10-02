@@ -104,12 +104,12 @@ re-derive them):
 Per drawing: an overall grade (Prime / Choice / Select / Standard /
 Utility, filed as 5..1) and four axes — Understanding Assignment (4-point),
 Structural Coherence, Layering, Je ne sais quoi (3-point). Then the
-podium: drag or tap the drawings into 1st..4th. Then head-to-head: today,
-six side-by-side cards on a 7-point scale ("the first is much better" …
-"about the same" … "the second is much better"); soon, alternatively, the
-**pedestal card** the owner is designing in another session, where the
-spacing between pedestals (0..3 notches, a "negligibly" shim = 0) yields
-the same scores by derivation. Then size, and for the owner a note. Owner
+podium: drag or tap the drawings into 1st..4th. Then the **pedestal card**
+is live (0.12.0): one card asks each adjacent pair "how much better?"
+(negligibly / slightly / better / much better, a brass shim = gap 0) and
+the server derives every 7-point pair score from the gaps, the six
+side-by-side cards surviving only as the bench's `?pairs=1` audit. Then
+size, and for the owner a note. Owner
 and visitors use the same card; the bench just seats the backlog in it.
 Since 0.11.0 the **intake clerk** (one Sonnet call, `api/jd2-intake.php`)
 files each prompt's heading, size tier and faceted classification
@@ -119,8 +119,8 @@ owner's size (`size_by` `owner`) is never overwritten.
 
 Labels, descriptions, scales, the model pool and the intake model are all
 **data in `taxonomy.json`**; ids are permanent, labels may be reworded, a
-retired axis gets `"defunct": true`. The four gap labels are placeholders
-until the owner settles the pedestal wording.
+retired axis gets `"defunct": true`. The four gap labels are the owner's
+pedestal wording (taxonomy v32).
 
 ## 6. What is done (all live since 2026-10-02)
 

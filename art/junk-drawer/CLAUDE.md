@@ -130,6 +130,20 @@ The bench and the visitor card are ONE instrument (`JD_turn.curate`). A
 layout or behaviour change to the rating flow is made once, in the shared
 card, and never forked into a bench-only copy.
 
+**The head-to-head instrument is the pedestal card** (since 0.12.0, owner
+2026-10-02; design source `mockups/mockup-50-pedestal-margins.html`). After
+the podium, one card ("by how much", the `gaps` step in `jd-turn.js`) asks
+each adjacent pair how much better the higher place is: the visitor ticks
+one of four words or raises the pedestal. It files a `gap` 0..3 on every
+place of the ranking but the last, with `pairs: null`, and `jd2-rate`
+derives all the pair scores. Visitors and the bench both get it. The six
+side-by-side cards survive only as the bench's **audit**: `?bench&pairs=1`
+(or `?bench&prompt=<id>&pairs=1`) skips the pedestal card, runs the six
+cards, and files direct pairs with a ranking that carries no gaps. One
+sitting never runs both. The bench prefills the gaps from the owner's last
+sitting (`jd2-queue` `prefill.gap_after`); `JD_turn.pedestal.answer()` /
+`.restore(ranking)` are the card's contract hooks.
+
 ## How ratings work
 
 - **A session is one sitting** of one rater over one run. It carries a grade
@@ -146,9 +160,10 @@ card, and never forked into a bench-only copy.
   session if that is complete. Owner and visitor are separate populations,
   reported separately and never averaged together.
 - **Pairs** are −3..+3, positive = `gen_a` (canonical order, by slot). They
-  are `direct` when the card asks them (the side-by-side head-to-head cards)
-  or `derived` (`spaced-rank-v1`) from the ranking plus gaps. One session
-  uses one method or the other.
+  are `derived` (`spaced-rank-v1`) from the ranking plus gaps when the
+  pedestal card is the instrument (every visitor sitting, and the bench by
+  default), or `direct` when the bench's `?pairs=1` audit asks them on the
+  side-by-side cards. One session uses one method or the other.
 - **Complete** = every ok, unhidden drawing has a grade and every live axis,
   the ranking places them all, and every pair has a score. Completeness is
   computed from the taxonomy at the session's version, never from a constant.
@@ -167,8 +182,13 @@ card, and never forked into a bench-only copy.
   stays for the ratings filed under it, is never asked again, and drops out
   of completeness.
 - **`comparison`** is the 7-point head-to-head scale (+3 = the first much
-  better). **`gaps`** is the 0..3 margin between adjacent places. Every
-  instrument renders both from the file.
+  better; "About the same" at 0), rendered by the `?pairs=1` audit cards.
+  **`gaps`** is the 0..3 margin between adjacent places, rendered by the
+  pedestal card: each value's `label` is its ballot word (Negligibly better
+  / Slightly better / Better / Much better, the owner's) and `short` the
+  word its ledger slips pencil in. Gap 0 reads "Negligibly better", never
+  "About the same": the ranking already says which place is higher. The
+  card renders both from the file and never hard-codes a word.
 - **The pool is data.** A model with `pool: true`, `provider` and
   `api_model` is in the pool, and `poolVersion` names the snapshot that every
   run records. To refresh the pool: verify the wire ids and prices, add

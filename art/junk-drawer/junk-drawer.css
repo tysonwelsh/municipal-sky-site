@@ -2248,6 +2248,18 @@ tr.rc-axdesc td {
   --thand: var(--jd-font-hand);
   --tgrain: var(--jd-grain-url);
   --tmottle: var(--jd-mottle-url);
+  /* THE PEDESTAL CARD's bands (owner design, mockup-50, 2026-10-02): one
+     wash per adjacent pair — 1st›2nd, 2nd›3rd, 3rd›4th — on the courses and
+     the slips' swatches, a stronger one for the pair being asked; the gold
+     a slip flashes when its answer changes; the heights' ease */
+  --tband-0: rgba(196, 146, 58, 0.34);
+  --tband-1: rgba(108, 140, 96, 0.34);
+  --tband-2: rgba(84, 112, 150, 0.30);
+  --tband-0-on: rgba(196, 146, 58, 0.62);
+  --tband-1-on: rgba(108, 140, 96, 0.60);
+  --tband-2-on: rgba(84, 112, 150, 0.55);
+  --tbump: rgba(226, 192, 122, 0.75);
+  --tease: cubic-bezier(.25, .8, .25, 1);
 
   /* THE SPACING SYSTEM (round-16 tidy, 2026-08-13). One type scale and one
      spacing scale for the whole form, named so the next new row reaches for
@@ -3407,6 +3419,7 @@ html.jd-turn-open { overflow: hidden; }
 @media (min-width: 769px) {
   .jd-turn[data-view="bench"] .jd-rail-step,
   .jd-turn[data-view="call"] .jd-rail-step,
+  .jd-turn[data-view="gaps"] .jd-rail-step,
   .jd-turn[data-view="pair"] .jd-rail-step {
     min-height: 26px; padding: 0 12px;
     background: rgba(255, 250, 232, 0.35);
@@ -3414,29 +3427,39 @@ html.jd-turn-open { overflow: hidden; }
   }
   .jd-turn[data-view="bench"] .jd-rail-word,
   .jd-turn[data-view="call"] .jd-rail-word,
+  .jd-turn[data-view="gaps"] .jd-rail-word,
   .jd-turn[data-view="pair"] .jd-rail-word { display: inline; }
   .jd-turn[data-view="bench"] .jd-rail-ring,
   .jd-turn[data-view="call"] .jd-rail-ring,
+  .jd-turn[data-view="gaps"] .jd-rail-ring,
   .jd-turn[data-view="pair"] .jd-rail-ring { display: none; }
   /* the scales — and the head to head's two prints — keep their icon
      inside the pill, unringed */
   .jd-turn[data-view="bench"] .jd-rail-step--call .jd-rail-ring,
   .jd-turn[data-view="call"] .jd-rail-step--call .jd-rail-ring,
+  .jd-turn[data-view="gaps"] .jd-rail-step--call .jd-rail-ring,
   .jd-turn[data-view="pair"] .jd-rail-step--call .jd-rail-ring,
+  .jd-turn[data-view="bench"] .jd-rail-step--gaps .jd-rail-ring,
+  .jd-turn[data-view="call"] .jd-rail-step--gaps .jd-rail-ring,
+  .jd-turn[data-view="gaps"] .jd-rail-step--gaps .jd-rail-ring,
+  .jd-turn[data-view="pair"] .jd-rail-step--gaps .jd-rail-ring,
   .jd-turn[data-view="bench"] .jd-rail-step--pairs .jd-rail-ring,
   .jd-turn[data-view="call"] .jd-rail-step--pairs .jd-rail-ring,
+  .jd-turn[data-view="gaps"] .jd-rail-step--pairs .jd-rail-ring,
   .jd-turn[data-view="pair"] .jd-rail-step--pairs .jd-rail-ring {
     display: flex; width: auto; height: auto;
     border: 0; background: none;
   }
   .jd-turn[data-view="bench"] .jd-rail-step.is-done,
   .jd-turn[data-view="call"] .jd-rail-step.is-done,
+  .jd-turn[data-view="gaps"] .jd-rail-step.is-done,
   .jd-turn[data-view="pair"] .jd-rail-step.is-done {
     background: var(--graphite); border-color: var(--graphite);
     color: var(--tpaper-hi);
   }
   .jd-turn[data-view="bench"] .jd-rail-step.is-current,
   .jd-turn[data-view="call"] .jd-rail-step.is-current,
+  .jd-turn[data-view="gaps"] .jd-rail-step.is-current,
   .jd-turn[data-view="pair"] .jd-rail-step.is-current {
     border: 2px solid var(--tred); background: var(--tpaper-hi);
   }
@@ -3447,6 +3470,7 @@ html.jd-turn-open { overflow: hidden; }
   .jd-rail--long .jd-rail-lnk { flex-basis: 10px; }
   .jd-turn[data-view="bench"] .jd-rail--long .jd-rail-step,
   .jd-turn[data-view="call"] .jd-rail--long .jd-rail-step,
+  .jd-turn[data-view="gaps"] .jd-rail--long .jd-rail-step,
   .jd-turn[data-view="pair"] .jd-rail--long .jd-rail-step { padding: 0 9px; }
 }
 /* …and between the pills' breakpoint and ~1000px the sheet is narrower
@@ -3455,6 +3479,7 @@ html.jd-turn-open { overflow: hidden; }
   .jd-rail--long .jd-rail-word { letter-spacing: 0.08em; }
   .jd-turn[data-view="bench"] .jd-rail--long .jd-rail-step,
   .jd-turn[data-view="call"] .jd-rail--long .jd-rail-step,
+  .jd-turn[data-view="gaps"] .jd-rail--long .jd-rail-step,
   .jd-turn[data-view="pair"] .jd-rail--long .jd-rail-step { padding: 0 7px; }
 }
 /* the head-to-head node's count — "3/6" — rides its word, in the pencil's
@@ -4393,6 +4418,318 @@ body.jd-pod-drag, body.jd-pod-drag * {
   color: var(--tink-2); text-align: center;
 }
 .jd-pod-h2h b { color: var(--tink); font-weight: 700; }
+
+/* ============================================================================
+   BY HOW MUCH — THE PEDESTAL CARD (owner design, mockups/mockup-50-pedestal-
+   margins.html; integrated 2026-10-02). After the podium, one card asks each
+   adjacent pair's margin: the ledger of slips, the podium in rank order with
+   the 4th as the floor, the questionnaire box, the actions. Ported from the
+   mockup rule for rule under .jd-ped (the mockup's .sheet/.pod2/.qv1 names),
+   on this card's tokens; its own band colours are --tband-* on the scrim.
+   Every motion — the 380ms heights, the 260ms fade of the other pedestals,
+   the slips' gold flash, the "rides along" fade — sits inside the
+   no-preference query at the foot of this block, the card's convention;
+   with reduced motion each state is simply there.
+   The sheet stands at the call's measure (the podium just before it), so
+   nothing changes size between the two steps. The mockup's ≤600px sizes
+   apply at ≤700px here: below 701 the call's sheet is 462 wide, and the
+   desktop row (4 × 132 + 3 × 34 = 630px) would not fit it.
+   ========================================================================== */
+.jd-turn[data-view="gaps"] { width: min(462px, 100%); }
+@media (min-width: 701px) {
+  .jd-turn[data-view="gaps"] { width: min(960px, 100%); }
+}
+.jd-ped {
+  --pw: 132px;      /* one print */
+  --gut: 34px;      /* between pedestals */
+  --b: 56px;        /* the bare block (the 4th, the floor) */
+  --notch: 22px;    /* one notch of margin */
+  --shim: 6px;      /* the brass shim */
+  position: relative;
+  max-width: 728px; margin: 0 auto;
+}
+@media (max-width: 700px) {
+  .jd-ped { --pw: 64px; --gut: 20px; --b: 34px; --notch: 14px; --shim: 5px; }
+}
+
+/* ---- the ledger: one slip per adjacent pair, above the podium ------------ */
+.jd-ped-ledger {
+  display: grid; grid-template-columns: repeat(var(--pairs, 3), minmax(0, 1fr));
+  gap: 6px; margin-bottom: 16px;
+}
+.jd-ped-slip {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+  min-width: 0; padding: 6px 9px 7px;
+  border: 1px solid var(--trule); background: rgba(255, 250, 232, 0.5);
+  font-family: var(--tmono); font-size: 10px; color: var(--tink); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.jd-ped-k {
+  display: flex; align-items: center; gap: 5px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--tink-2);
+}
+.jd-ped-sw { display: block; flex: none; width: 9px; height: 9px; border: 1px solid var(--trule); }
+.jd-ped-slip[data-m="0"] .jd-ped-sw { background: var(--tband-0-on); }
+.jd-ped-slip[data-m="1"] .jd-ped-sw { background: var(--tband-1-on); }
+.jd-ped-slip[data-m="2"] .jd-ped-sw { background: var(--tband-2-on); }
+.jd-ped-w {
+  font-family: var(--thand); font-size: 0.98rem; line-height: 1.2;
+  color: var(--graphite); min-height: 1.2em;
+}
+.jd-ped-slip.is-unset .jd-ped-w { color: var(--tink-3); }
+.jd-ped-slip.is-on {
+  border-color: var(--graphite); box-shadow: inset 0 0 0 1px var(--graphite);
+  background: var(--tpaper-hi);
+}
+.jd-ped-slip:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ---- the podium, in rank order ------------------------------------------- */
+.jd-ped-pod { position: relative; }
+.jd-ped-row {
+  position: relative;
+  display: flex; align-items: flex-end; justify-content: center; gap: var(--gut);
+}
+.jd-ped-tier {
+  position: relative; flex: 0 0 var(--pw);
+  display: flex; flex-direction: column; justify-content: flex-end;
+  /* TOUCH GRIPS AT ONCE: the live podium's and the drawer's convention (the
+     hold-to-grip delay was retired, jd-core G5 rev. 3) — see pedDown */
+  cursor: ns-resize; touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+}
+.jd-ped-tier.is-floor { cursor: default; }
+.jd-ped-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 3px; }
+.jd-ped-stand {
+  height: calc(var(--pw) + 6px);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 3px;
+}
+.jd-ped-print {
+  position: relative; width: var(--pw); cursor: inherit; touch-action: none;
+  -webkit-user-select: none; user-select: none; -webkit-user-drag: none;
+}
+.jd-ped-print .jd-turn-plate { width: 100%; }
+.jd-ped-print .jd-turn-corner { width: 15px; height: 15px; }
+.jd-ped-print svg { pointer-events: none; }
+.jd-ped-block {
+  position: relative; overflow: hidden; padding: 0;
+  border: 1px solid var(--trule); border-bottom: 0;
+  background: var(--tpaper-hi);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 240, 0.8);
+  font-family: var(--tform); font-weight: 700; font-size: 0.82rem;
+  letter-spacing: 0.08em; text-transform: uppercase; text-align: center;
+  color: var(--tink);
+}
+.jd-ped-base {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+}
+/* a COURSE: one margin's height under a pedestal, in that pair's band
+   colour, with a hairline at every whole notch — level with the same course
+   under every pedestal it runs beneath, so the courses read as strata */
+.jd-ped-course {
+  position: absolute; left: 0; right: 0;
+  border-top: 1px solid var(--trule);
+  background:
+    repeating-linear-gradient(to top, transparent 0 calc(var(--notch) - 1px),
+      rgba(74, 53, 18, 0.22) calc(var(--notch) - 1px) var(--notch)),
+    var(--wash);
+  display: flex; align-items: center; justify-content: center;
+}
+.jd-ped-course[data-m="0"] { --wash: var(--tband-0); }
+.jd-ped-course[data-m="1"] { --wash: var(--tband-1); }
+.jd-ped-course[data-m="2"] { --wash: var(--tband-2); }
+.jd-ped-course.is-active[data-m="0"] { --wash: var(--tband-0-on); }
+.jd-ped-course.is-active[data-m="1"] { --wash: var(--tband-1-on); }
+.jd-ped-course.is-active[data-m="2"] { --wash: var(--tband-2-on); }
+.jd-ped-course.is-active { border-top: 2px solid var(--graphite); }
+.jd-ped-course.is-zero { border-top: 0; }
+/* THE SHIM — a different MATERIAL, not a short block: brass, never stone */
+.jd-ped-course.is-shim {
+  background: linear-gradient(180deg, #f3dc9c 0%, #c99a46 55%, #8d6528 100%);
+  border-top: 1px solid #6e4d1c;
+}
+/* THE PAIR IN QUESTION: the pedestal being raised wears a graphite outline,
+   its neighbour a graphite border, and every other pedestal steps back
+   WHOLE — print, block, courses and shim alike */
+.jd-ped-tier.is-active .jd-ped-block { outline: 2px solid var(--graphite); outline-offset: 2px; }
+.jd-ped-tier.is-ref .jd-ped-block { border-color: var(--graphite); }
+.jd-ped-tier.is-dim .jd-ped-print, .jd-ped-tier.is-dim .jd-ped-block { opacity: 0.3; }
+/* RIDES ALONG: a pedestal lifted by a margin further down the line. The
+   label keeps full strength even over a faded pedestal (owner, told). */
+.jd-ped-carry {
+  position: absolute; left: 50%; top: -1px; transform: translate(-50%, -100%);
+  font-family: var(--thand); font-size: 0.72rem; line-height: 1;
+  color: var(--tred); white-space: nowrap;
+  opacity: 0; pointer-events: none;
+}
+.jd-ped-tier.is-carried .jd-ped-carry { opacity: 1; }
+.jd-ped-tier.is-carried .jd-ped-block {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 240, 0.8), 0 0 0 2px rgba(179, 64, 47, 0.35);
+}
+
+/* the gutter furniture: the dashed level line, the 1/2/3 notch rule with its
+   red marker, and the ? / ≈ badge in each pair's gutter */
+.jd-ped-refline {
+  position: absolute; z-index: 3; height: 0; pointer-events: none;
+  border-top: 1.5px dashed var(--graphite);
+}
+.jd-ped-ruler { position: absolute; z-index: 3; pointer-events: none; }
+.jd-ped-ruler::before {
+  content: ""; position: absolute; left: 2px; top: 0; bottom: 0;
+  border-left: 1px solid var(--graphite);
+}
+.jd-ped-tk {
+  position: absolute; left: 2px; width: 9px; height: 0;
+  border-top: 1px solid var(--graphite); font-style: normal;
+}
+.jd-ped-tk b {
+  position: absolute; left: 12px; bottom: -6px;
+  font-family: var(--tmono); font-size: 10px; font-weight: 700; line-height: 1;
+  color: var(--graphite);
+}
+.jd-ped-tk.is-on b { color: var(--tred); }
+.jd-ped-mk {
+  position: absolute; left: -9px; width: 0; height: 0;
+  border: 5px solid transparent; border-left: 7px solid var(--tred);
+  transform: translateY(50%);
+}
+.jd-ped-mk.is-unset { border-left-color: transparent; }
+.jd-ped-gmark {
+  position: absolute; z-index: 3; pointer-events: none;
+  transform: translate(-50%, 50%);
+  display: flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 4px;
+  font-family: var(--thand); font-size: 1rem; line-height: 1;
+  color: var(--graphite);
+}
+.jd-ped-gmark.is-hair {
+  background: var(--tpaper-hi); border: 1.5px solid var(--graphite);
+  border-radius: 11px; font-weight: 700;
+}
+.jd-ped-gmark.is-unset { color: var(--tink-3); }
+.jd-ped-gmark.is-hidden { opacity: 0; }
+/* THE GUTTERS ARE CLEAR (owner, 2026-10-02: "cluttered"). The guides that
+   lived between the pedestals are switched OFF, not deleted, so any of them
+   can come back by dropping it from this list: the dashed level line, the
+   1/2/3 notch rule with its red marker, and the ? / ≈ gutter badges. The
+   shim, the courses and the ballot carry the answer meanwhile. */
+.jd-ped-pod .jd-ped-refline, .jd-ped-pod .jd-ped-ruler, .jd-ped-pod .jd-ped-gmark { display: none; }
+
+body.jd-ped-drag, body.jd-ped-drag * {
+  -webkit-user-select: none !important; user-select: none !important;
+}
+
+/* ---- the question: the questionnaire ------------------------------------- */
+/* a ruled form section with a tab, the answers a ballot row, each with a
+   box the visitor's pencil ticks (owner pick, mockup 51 option 1) */
+.jd-ped-q {
+  position: relative;
+  margin-top: 28px; padding: 24px 18px 6px;
+  border: 1px solid var(--trule); background: rgba(255, 252, 240, 0.6);
+  box-shadow: inset 0 1px 3px rgba(74, 53, 18, 0.12);
+}
+.jd-ped-q p { margin: 0; }
+.jd-ped-q em { font-style: italic; }
+.jd-ped-q-tab {
+  position: absolute; top: 0; left: 16px; transform: translateY(-50%);
+  padding: 4px 10px; background: var(--tink); color: var(--tpaper-hi);
+  font-family: var(--tmono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
+}
+.jd-ped-q-said { font-family: var(--tform); font-size: 0.92rem; line-height: 1.4; color: var(--tink-2); }
+.jd-ped-q-said b { font-weight: 700; color: var(--tink); }
+.jd-ped-q .jd-ped-q-ask {
+  margin: 2px 0 14px;
+  font-family: var(--tform); font-weight: 700; font-size: 1.24rem; line-height: 1.3;
+  color: var(--tink);
+}
+.jd-ped-q-opts {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 1px solid var(--trule-2);
+}
+.jd-ped-qo {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 6px 12px;
+  background: transparent; border: 0; border-left: 1px dashed var(--trule-2);
+  font-family: var(--tmono); font-size: 10px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--tink);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.jd-ped-qo:first-child { border-left: 0; }
+.jd-ped-qo:hover { background: rgba(255, 250, 232, 0.7); }
+.jd-ped-qo:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-ped-qo-box {
+  position: relative; display: block; width: 20px; height: 20px;
+  border: 1.5px solid var(--graphite); background: var(--jd-plate-paper);
+}
+.jd-ped-qo-box i {
+  position: absolute; left: 2px; top: -6px;
+  font-family: var(--thand); font-size: 1.45rem; font-weight: 700; line-height: 1;
+  font-style: normal; color: var(--graphite);
+}
+.jd-ped-qo[aria-pressed="true"] .jd-ped-qo-l { font-weight: 700; }
+/* the ballot's icon is the pair itself, drawn in the podium's courses: a
+   base block under each, and on the left one a SEGMENT per notch it stands
+   above its neighbour (a brass sliver for negligibly) */
+.jd-ped-pico {
+  display: flex; align-items: flex-end; gap: 4px; height: 36px;
+  border-bottom: 1.5px solid var(--graphite);
+}
+.jd-ped-p { display: flex; flex-direction: column-reverse; width: 18px; }
+.jd-ped-bs { display: block; height: 8px; background: var(--tpaper-hi); border: 1px solid var(--graphite); border-bottom: 0; }
+.jd-ped-sg { display: block; height: 8px; background: rgba(75, 64, 48, 0.22); border: 1px solid var(--graphite); border-bottom: 0; }
+.jd-ped-sg.is-shim { height: 3px; background: #c99a46; border-color: #6e4d1c; }
+
+/* the actions span the card's measure, back at the left, brass at the right */
+.jd-ped ~ .jd-turn-actions {
+  max-width: 728px; margin-left: auto; margin-right: auto;
+  justify-content: space-between;
+}
+.jd-ped ~ .jd-suppress { display: block; max-width: 728px; margin-left: auto; margin-right: auto; }
+
+@media (any-pointer: coarse) {
+  .jd-ped-qo, .jd-ped-slip { min-height: 44px; }
+}
+@media (max-width: 700px) {
+  .jd-ped-print .jd-turn-corner { width: 11px; height: 11px; }
+  .jd-ped-print .jd-pod-tag { font-size: 0.6rem; }
+  .jd-ped-block { font-size: 0.7rem; }
+  .jd-ped-carry { font-size: 0.56rem; }
+  .jd-ped-tk b { font-size: 8px; left: 9px; }
+  .jd-ped-tk { width: 7px; }
+  .jd-ped-gmark { min-width: 16px; height: 16px; font-size: 0.78rem; padding: 0 2px; }
+  .jd-ped-slip { padding: 5px 6px; }
+  .jd-ped-k { letter-spacing: 0.04em; font-size: 9px; }
+  .jd-ped-w { font-size: 0.82rem; }
+  /* the ballot goes 2 × 2 on phones */
+  .jd-ped-q-opts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .jd-ped-qo:nth-child(3) { border-left: 0; }
+  .jd-ped-qo:nth-child(n+3) { border-top: 1px dashed var(--trule-2); }
+}
+
+/* THE MOTION, and only here (the card's convention) */
+@media (prefers-reduced-motion: no-preference) {
+  /* the block itself only FADES: in the mockup its height transition is
+     overridden by the later fade rule (same specificity), so the block
+     takes its new height at once and the courses inside it slide — the
+     effective behaviour the owner approved, kept as such */
+  .jd-ped-block, .jd-ped-print { transition: opacity 260ms ease; }
+  .jd-ped-course {
+    transition: height 380ms var(--tease), bottom 380ms var(--tease), opacity 260ms ease;
+  }
+  .jd-ped-carry { transition: opacity 200ms ease; }
+  .jd-ped-refline, .jd-ped-ruler, .jd-ped-mk { transition: bottom 380ms var(--tease); }
+  .jd-ped-gmark { transition: bottom 380ms var(--tease), opacity 200ms ease; }
+  /* a slip whose answer just changed flashes once (~1.1 s) */
+  .jd-ped-slip { transition: background-color 500ms ease; }
+  .jd-ped-slip.is-bump { background-color: var(--tbump); transition: none; }
+  /* a pedestal in the hand follows the finger, unsmoothed */
+  .jd-ped-pod.is-drag .jd-ped-block, .jd-ped-pod.is-drag .jd-ped-course,
+  .jd-ped-pod.is-drag .jd-ped-ruler, .jd-ped-pod.is-drag .jd-ped-refline,
+  .jd-ped-pod.is-drag .jd-ped-mk, .jd-ped-pod.is-drag .jd-ped-gmark { transition: none; }
+}
 
 /* ============================================================================
    THE PORTRAIT STACK — ≤700px the bench folds back to the mockup's phone

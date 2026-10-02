@@ -17,13 +17,17 @@
 //   seed   two owner prompts through jd2-generate (bench profile, four slots
 //          one after another on one client_ref each)
 //   rate   ?bench seats the newest; the card is rated end to end — four
-//          grading panels, the podium, six head-to-head cards, the size, the
-//          "notes for the record" — and filed; the unveil names the models
-//          from the filing's reveal; DONE advances the queue to the other
-//          prompt; SQLite holds ONE owner session, blind, with the note and
-//          six DIRECT pairs, and the prompt went live
+//          grading panels, the podium, THE PEDESTAL CARD (gaps 1, 0, 2 by
+//          ballot), the size, the "notes for the record" — and filed with
+//          the gaps on the ranking and `pairs: null`; the unveil names the
+//          models from the filing's reveal; DONE advances the queue to the
+//          other prompt; SQLite holds ONE owner session, blind, with the
+//          note, gap_after 1/0/2 and six DERIVED pairs, and the prompt went
+//          live
 //   direct ?bench&prompt=<id> seats the closed prompt with its prefill
-//          (opens on the podium, every scale answered); ?bench&item= too
+//          (opens on the podium, every scale answered, and the pedestal card
+//          comes up with the filed gaps — the reload round trip, through the
+//          server); ?bench&item= too
 //   scrap  hides it (visibility hidden) and the bench moves on
 //   hidden HIDDEN ITEMS lists it from the ledger; SHOW returns it live — and
 //          a jd2-curate answer naming another build (the response rewritten
@@ -38,6 +42,9 @@
 //          rating
 //   rerun  RERUN draws a new bench run of that prompt and seats it; the
 //          drawer's ?rerun=<id> door does the same through the owner path
+//   audit  ?bench&prompt=<id>&pairs=1 runs the six side-by-side head-to-head
+//          cards in the pedestal card's place and files DIRECT pairs with a
+//          ranking that carries no gaps
 //   gate   without the key, JD_turn.rerun refuses (a rerun is never a
 //          visitor turn) and the strip shows only the key gate
 // One PASS/FAIL line per check; exit 0 iff all pass.
@@ -136,7 +143,21 @@ async function seated(pg, promptId, timeout) {
 }
 const barText = (pg) => pg.$eval('.jd-bench-bar', (b) => b.textContent);
 
-async function rateThrough(pg, note) {
+// the pedestal card's slips, its answer and its button, read off the page
+const pedState = (pg) => pg.evaluate(() => {
+  const go = document.querySelector('.jd-turn-actions .jd-turn-go');
+  return {
+    tab: (document.querySelector('.jd-ped-q-tab') || {}).textContent,
+    slips: [...document.querySelectorAll('.jd-ped-slip .jd-ped-w')].map((x) => x.textContent),
+    answer: window.JD_turn.pedestal.answer(),
+    go: go ? { act: go.getAttribute('data-act'), disabled: go.disabled } : null
+  };
+});
+
+// mode 'gaps' (the instrument) answers the pedestal card by ballot with
+// `gaps` (the card's stops: 0.5 = negligibly); mode 'pairs' (?pairs=1) runs
+// the six side-by-side cards
+async function rateThrough(pg, note, mode, gaps) {
   // the four grading panels: every select answered (varied values)
   for (let d = 0; d < 4; d++) {
     await pg.waitForSelector('.jd-bench', { timeout: 10000 });
@@ -155,20 +176,35 @@ async function rateThrough(pg, note) {
     await pg.click('.jd-pod-tier[data-rank="' + k + '"] .jd-pod-block');
     await pg.click('.jd-pod-print[data-pod="' + order[k - 1] + '"]');
   }
-  await shot(pg, '3-podium');
+  await shot(pg, mode === 'pairs' ? '3-podium-audit' : '3-podium');
   await pg.click('.jd-turn-actions [data-act="next"]');
-  // the head to head: six cards
-  let cards = 0;
-  for (;;) {
-    if ((await view(pg)) !== 'pair') break;
-    cards++;
-    const title = await pg.$eval('.jd-turn-title', (h) => h.textContent);
-    await pg.click('.jd-pair-stop[data-score="' + [-3, -1, 0, 1, 2, 3][cards - 1] + '"]');
-    await pg.click('.jd-turn-actions .jd-turn-go');
-    await pg.waitForFunction((t) => {
-      const h = document.querySelector('.jd-turn-title');
-      return h && h.textContent !== t;
-    }, title, { timeout: 5000 });
+  let cards = 0, ped = null;
+  const rail = await pg.$$eval('.jd-rail-step', (b) => b.map((x) => x.getAttribute('data-step')));
+  if (mode === 'pairs') {
+    // the audit's head to head: six cards
+    for (;;) {
+      if ((await view(pg)) !== 'pair') break;
+      cards++;
+      const title = await pg.$eval('.jd-turn-title', (h) => h.textContent);
+      await pg.click('.jd-pair-stop[data-score="' + [-3, -1, 0, 1, 2, 3][cards - 1] + '"]');
+      await pg.click('.jd-turn-actions .jd-turn-go');
+      await pg.waitForFunction((t) => {
+        const h = document.querySelector('.jd-turn-title');
+        return h && h.textContent !== t;
+      }, title, { timeout: 5000 });
+    }
+  } else {
+    // the pedestal card: one question per adjacent pair, by ballot
+    await pg.waitForSelector('.jd-turn[data-view="gaps"] .jd-ped', { timeout: 10000 });
+    for (let i = 0; i < gaps.length; i++) {
+      await pg.click('.jd-ped-qo[data-gap="' + gaps[i] + '"]');
+      if (i === gaps.length - 1) {
+        await pg.waitForTimeout(1200);
+        await shot(pg, '3b-pedestal');
+        ped = await pedState(pg);
+      }
+      await pg.click('.jd-turn-actions .jd-turn-go');
+    }
   }
   // the size card: the tier, and the notes for the record
   await pg.waitForSelector('[data-act="size"][data-size="m"]');
@@ -178,7 +214,7 @@ async function rateThrough(pg, note) {
   if (hasNote) await pg.fill('textarea[data-role="sitting-note"]', note);
   await shot(pg, '4-size-note');
   await pg.click('.jd-turn-actions [data-act="file"]');
-  return { cards, hasNote, preset };
+  return { cards, hasNote, preset, ped, rail };
 }
 
 async function main() {
@@ -245,8 +281,19 @@ async function main() {
     check('the queue was read blind (no model_id without ?reveal=1)', blind);
 
     const NOTE = 'b and d missed the dried crust; a reads as an inkwell at a glance';
-    const r = await rateThrough(page, NOTE);
-    check('the card ran six head-to-head cards', r.cards === 6, String(r.cards));
+    const filing = page.waitForRequest((rq) => /\/api\/jd2-rate\.php/.test(rq.url()) && rq.method() === 'POST', { timeout: 30000 })
+      .then((rq) => JSON.parse(rq.postData() || '{}'));
+    const r = await rateThrough(page, NOTE, 'gaps', ['1', '0.5', '2']);
+    check('the card ran the pedestal card — one rail station, no head-to-head cards',
+      r.cards === 0 && r.rail.filter((x) => x === 'gaps').length === 1 && !r.rail.some((x) => x === 'pairs'),
+      JSON.stringify(r.rail));
+    check('…answered 1, negligibly, 2: the slips say so and its last button hands on to the size',
+      !!(r.ped && r.ped.slips.join('|') === 'slightly|≈ negligibly|better' && r.ped.answer.complete &&
+        r.ped.go.act === 'next' && !r.ped.go.disabled), JSON.stringify(r.ped));
+    const body = await filing;
+    check('the bench files the ranking with gaps 1/0/2 (none on the last) and pairs null',
+      body.pairs === null && Array.isArray(body.ranking) && body.ranking.map((p) => p.gap).join() === '1,0,2,' &&
+      !('gap' in body.ranking[3]), JSON.stringify({ ranking: body.ranking, pairs: body.pairs }));
     check('the size card carries "notes for the record" on the bench', r.hasNote);
     check("the bench's size card opens on the clerk's tier (" + P2tier + ', pre-selected)',
       r.preset.length === 1 && r.preset[0] === P2tier, JSON.stringify(r.preset));
@@ -267,9 +314,15 @@ async function main() {
     check('SQLite: one owner session on the run, blind, filed', sess.length === 1 && sess[0].rater_role === 'owner' &&
       Number(sess[0].blind) === 1 && sess[0].status === 'filed', JSON.stringify(sess));
     check('SQLite: the sitting carries the note', sess.length === 1 && sess[0].note === NOTE, JSON.stringify(sess[0] && sess[0].note));
-    const prs = sess.length ? q('SELECT source, method, shown_left FROM jd2_pairs WHERE session_id = ?', [sess[0].id]) : [];
-    check('SQLite: six DIRECT pairs, each with shown_left', prs.length === 6 &&
-      prs.every((p) => p.source === 'direct' && p.method === null && p.shown_left), JSON.stringify(prs));
+    const prs = sess.length ? q('SELECT source, method, shown_left, score FROM jd2_pairs WHERE session_id = ?', [sess[0].id]) : [];
+    check('SQLite: six DERIVED pairs (spaced-rank-v1), none with shown_left', prs.length === 6 &&
+      prs.every((p) => p.source === 'derived' && p.method === 'spaced-rank-v1' && p.shown_left === null), JSON.stringify(prs));
+    const gapsFiled = sess.length ? q('SELECT rank_pos, gap_after FROM jd2_rankings WHERE session_id = ? ORDER BY rank_pos', [sess[0].id]) : [];
+    check('SQLite: the ranking carries gap_after 1, 0, 2 and none on the last place',
+      gapsFiled.map((x) => x.gap_after === null ? '-' : String(x.gap_after)).join() === '1,0,2,-', JSON.stringify(gapsFiled));
+    // spaced-rank-v1: 1st›2nd 1, 2nd›3rd 0, 3rd›4th 2, 1st›3rd 1, 2nd›4th 2, 1st›4th 3
+    check('SQLite: the derived magnitudes are the summed gaps, capped at 3 (1,0,2,1,2,3)',
+      prs.map((p) => Math.abs(Number(p.score))).sort().join() === [1, 0, 2, 1, 2, 3].sort().join(), JSON.stringify(prs));
     const cells = sess.length ? q("SELECT COUNT(*) AS n FROM jd2_judgments WHERE session_id = ? AND kind = 'grade'", [sess[0].id])[0].n : 0;
     const ranks = sess.length ? q('SELECT rank_pos FROM jd2_rankings WHERE session_id = ? ORDER BY rank_pos', [sess[0].id]) : [];
     check('SQLite: four grades and a strict ranking 1..4', Number(cells) === 4 &&
@@ -288,14 +341,20 @@ async function main() {
     await page.waitForSelector('.jd-bench select.jd-turn-select');
     const answered = await page.$$eval('.jd-bench select.jd-turn-select', (s) => s.length > 0 && s.every((x) => x.value !== ''));
     check('…and every scale on its drawings comes up answered (prefilled grades and axes)', answered);
-    const pairsPrefilled = await page.$eval('.jd-rail-step--pairs', (b) => !b.disabled).catch(() => false);
+    const gapsReached = await page.$eval('.jd-rail-step--gaps', (b) => !b.disabled).catch(() => false);
     await shot(page, '6-direct-prefill');
-    // the pairs prefill: the podium's button leads on, and the first pair card shows an answer
+    // the gaps prefill: the podium's button leads on, and the pedestal card
+    // comes up with every margin the owner filed (seats are re-dealt, so the
+    // gaps are compared in place order)
     await page.click('.jd-rail-step[data-step="call"]');
     await page.click('.jd-turn-actions [data-act="next"]');
-    await page.waitForSelector('.jd-turn[data-view="pair"]');
-    const pairAnswered = await page.$eval('.jd-turn-actions .jd-turn-go', (b) => !b.disabled);
-    check('…and its head-to-head answers come back prefilled', pairAnswered, String(pairsPrefilled));
+    await page.waitForSelector('.jd-turn[data-view="gaps"] .jd-ped');
+    const pre = await pedState(page);
+    await shot(page, '6b-direct-pedestal');
+    check('…and the pedestal card comes up with the filed gaps (1, negligibly, 2), complete, its rail station reached',
+      gapsReached && pre.slips.join('|') === 'slightly|≈ negligibly|better' && pre.answer.complete &&
+      pre.answer.ranking.slice(0, 3).map((p) => p.gap).join() === '1,0,2' && !pre.go.disabled,
+      JSON.stringify({ gapsReached, pre }));
 
     // --- scrap ---------------------------------------------------------------
     await page.click('.jd-bench-bar [data-bench="scrap"]');
@@ -394,6 +453,28 @@ async function main() {
     check('?rerun=<id> draws an owner bench rerun and lands on the bench seated on it', p2runs.length === 2 &&
       p2runs[0].kind === 'rerun' && p2runs[0].profile === 'bench-medium' && p2runs[0].requested_by === 'owner' &&
       p2seated === p2runs[0].id, JSON.stringify(p2runs));
+
+    // --- audit ----------------------------------------------------------------------
+    // ?pairs=1: the six side-by-side cards run in the pedestal card's place
+    // and file DIRECT pairs, the ranking without gaps — never both
+    await page.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P1.prompt_id + '&pairs=1', { waitUntil: 'load' });
+    await seated(page, P1.prompt_id);
+    const auditFiling = page.waitForRequest((rq) => /\/api\/jd2-rate\.php/.test(rq.url()) && rq.method() === 'POST', { timeout: 30000 })
+      .then((rq) => JSON.parse(rq.postData() || '{}'));
+    const ra = await rateThrough(page, 'audit sitting: the side-by-side cards', 'pairs');
+    check('?pairs=1 runs the six side-by-side cards and no pedestal card',
+      ra.cards === 6 && !ra.rail.includes('gaps') && ra.rail.includes('pairs'), JSON.stringify(ra.rail) + ' cards=' + ra.cards);
+    const ab = await auditFiling;
+    check('…and files six direct pairs with a ranking that carries no gaps',
+      Array.isArray(ab.pairs) && ab.pairs.length === 6 && ab.ranking.length === 4 && ab.ranking.every((p) => !('gap' in p)),
+      JSON.stringify({ ranking: ab.ranking, pairs: ab.pairs && ab.pairs.length }));
+    await page.waitForSelector('.jd-pod--said', { timeout: 20000 });
+    const as = q("SELECT id FROM jd2_sessions WHERE run_id = ? AND rater_role = 'owner' ORDER BY filed_at DESC, id DESC", [P1.run_id]);
+    const apairs = as.length ? q('SELECT source, method, shown_left FROM jd2_pairs WHERE session_id = ?', [as[0].id]) : [];
+    const ag = as.length ? q('SELECT gap_after FROM jd2_rankings WHERE session_id = ?', [as[0].id]) : [];
+    check('SQLite: the audit sitting holds six DIRECT pairs with shown_left and no gap_after anywhere',
+      as.length === 1 && apairs.length === 6 && apairs.every((p) => p.source === 'direct' && p.method === null && p.shown_left) &&
+      ag.length === 4 && ag.every((x) => x.gap_after === null), JSON.stringify({ apairs, ag }));
 
     // --- gate ---------------------------------------------------------------------
     const anon = await browser.newContext({ viewport: { width: 1280, height: 800 } });

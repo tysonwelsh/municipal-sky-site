@@ -145,3 +145,4 @@
 0.10.2 — the cutover: v1 frozen (legacy exhibit only), the drawer and the about page read dataset v2, method-only prose
 0.10.3 — review fixes: visitor sittings need the turn's own token; admin save never copies a visitor's ranking; cached drawings; set-based manifest and analytics
 0.11.0 — intake: Sonnet files the catalogue heading, the size tier and the faceted classification the moment a prompt is filed; visitors no longer pick a size
+0.12.0 — by how much: the pedestal card asks each adjacent pair's margin after the podium; the six side-by-side cards become the bench's audit mode
