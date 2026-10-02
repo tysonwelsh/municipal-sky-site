@@ -75,7 +75,8 @@ const JD2_INTAKE_EFFORT = 'low';
 /** The heading's bounds (PLAN-INTAKE-PROMPT §4): words, the parenthesis included, and characters. */
 const JD2_INTAKE_TITLE_MIN_WORDS = 1;   // a bare noun is a legal heading for an ambiguous prompt (ENTRY 1, last rule)
 const JD2_INTAKE_TITLE_MAX_WORDS = 5;
-const JD2_INTAKE_TITLE_MAX_CHARS = 40;
+const JD2_INTAKE_TITLE_MAX_CHARS = 40;   // what the prompt asks for (advice; see jd2_intake_validate)
+const JD2_INTAKE_TITLE_COLUMN = 80;      // jd2_prompts.title VARCHAR(80): the only hard limit, by clipping
 
 /** The prompt's measure: the doc's ENTRY 2 is wrapped at 72 columns with hanging punctuation. */
 const JD2_INTAKE_WRAP = 72;
@@ -348,6 +349,7 @@ function jd2_intake_count_word(int $n): string
 function jd2_intake_validate(mixed $answer, array $taxonomy): array
 {
     $errors = [];
+    $warnings = [];
     if (!is_array($answer) || array_is_list($answer)) {
         return ['ok' => false, 'errors' => ['the answer is not a JSON object'], 'title' => null, 'size' => null,
                 'tags' => null, 'reasons' => null];
@@ -357,21 +359,27 @@ function jd2_intake_validate(mixed $answer, array $taxonomy): array
         $errors[] = 'title is missing';
         $title = null;
     } else {
-        $title = trim($title);
+        // THE HEADING'S SHAPE IS ADVICE, NEVER A FAILURE (owner, 2026-10-02:
+        // "I'm okay if the title goes a little long or breaks the format").
+        // The prompt asks for two to five words and the limits are stated, but
+        // a six-word or 44-character heading is filed as written and noted in
+        // the record's `warnings`; only the column's width is enforced, by
+        // clipping. Line breaks are folded to spaces.
+        $title = trim(preg_replace('/\s*[\r\n]+\s*/u', ' ', $title));
         $words = preg_split('/\s+/u', $title, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-        if (count($words) < JD2_INTAKE_TITLE_MIN_WORDS || count($words) > JD2_INTAKE_TITLE_MAX_WORDS) {
-            $errors[] = 'title has ' . count($words) . ' words (' . JD2_INTAKE_TITLE_MIN_WORDS . '–'
-                . JD2_INTAKE_TITLE_MAX_WORDS . ')';
+        if (count($words) > JD2_INTAKE_TITLE_MAX_WORDS) {
+            $warnings[] = 'title has ' . count($words) . ' words (the prompt asks for at most ' . JD2_INTAKE_TITLE_MAX_WORDS . ')';
         }
         if (mb_strlen($title) > JD2_INTAKE_TITLE_MAX_CHARS) {
-            $errors[] = 'title is ' . mb_strlen($title) . ' characters (at most ' . JD2_INTAKE_TITLE_MAX_CHARS . ')';
+            $warnings[] = 'title is ' . mb_strlen($title) . ' characters (the prompt asks for at most ' . JD2_INTAKE_TITLE_MAX_CHARS . ')';
+        }
+        if (mb_strlen($title) > JD2_INTAKE_TITLE_COLUMN) {
+            $warnings[] = 'title clipped to the column\'s ' . JD2_INTAKE_TITLE_COLUMN . ' characters';
+            $title = rtrim(mb_substr($title, 0, JD2_INTAKE_TITLE_COLUMN - 1)) . '…';
         }
         $first = mb_substr($title, 0, 1);
         if (!preg_match('/^\p{Lu}$/u', $first)) {
-            $errors[] = 'title does not open with a capital letter';
-        }
-        if (preg_match('/[\r\n]/', $title)) {
-            $errors[] = 'title runs over one line';
+            $title = mb_strtoupper($first) . mb_substr($title, 1);
         }
     }
     $size = $answer['size'] ?? null;
@@ -397,7 +405,7 @@ function jd2_intake_validate(mixed $answer, array $taxonomy): array
         $reasons = ['size' => trim($r['size']), 'classification' => trim($r['classification'])];
     }
     $ok = $errors === [];
-    return ['ok' => $ok, 'errors' => $errors, 'title' => $ok ? $title : null, 'size' => $ok ? $size : null,
+    return ['ok' => $ok, 'errors' => $errors, 'warnings' => $warnings, 'title' => $ok ? $title : null, 'size' => $ok ? $size : null,
             'tags' => $ok ? $tags : null, 'reasons' => $ok ? $reasons : null];
 }
 
@@ -527,12 +535,14 @@ function jd2_intake_answer(array $taxonomy, string $prompt, bool $mock): array
             $moreMessages = [
                 ['role' => 'assistant', 'content' => $text],
                 ['role' => 'user', 'content' => 'That entry failed the catalogue\'s checks: ' . implode('; ', $v['errors'])
-                    . '. The heading is at most five words and forty characters, the parenthesis included; '
-                    . 'the rules in ENTRY 1 apply. The corrected entry follows, in the same JSON shape.'],
+                    . '. The corrected entry follows, in the same JSON shape.'],
             ];
             goto retry;
         }
         return $fail('schema_miss', 'The answer failed the checks: ' . implode('; ', $v['errors']) . '.');
+    }
+    if ($v['warnings'] !== []) {
+        $record['warnings'] = $v['warnings'];
     }
     return ['ok' => true, 'title' => $v['title'], 'size' => $v['size'], 'tags' => $v['tags'],
             'reasons' => $v['reasons'], 'model' => $m['api_model'], 'record' => $record,

@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "version": 29,
+  "version": 30,
   "updated": "2026-10-02",
   "instrument": "v2.0",
   "instrumentNote": "The dataset v2 instrument: this rubric plus the comparison and gaps scales below and the rules of a sitting; every v2 session stamps it beside the taxonomy version. v1 instruments ignore it.",
   "poolVersion": "pool-2026-08-14",
-  "intakeVersion": "intake-v2",
+  "intakeVersion": "intake-v3",
   "intakeVersionNote": "The intake prompt's version (api/jd2-intake-prompt.php: the system prompt's bytes with the facets and the size tiers rendered in). Stamped on every prompt intake answers (jd2_prompts.intake_version). Bump it whenever those bytes change — the prompt prose, a facet, a heading, a scope note, a tier description or example — as harness ids are bumped: answers under different intake prompts are not pooled.",
   "utility": {
     "title": {
@@ -691,7 +691,7 @@
         {
           "id": "transparency",
           "label": "Transparency",
-          "scope": "Applies when glass, liquid, ice, smoke or see-through material is asked for. Does not apply to a transparent background, which every drawing has."
+          "scope": "Applies when success depends on seeing through something: glass, liquid, ice, smoke or see-through material, or an opening in the object itself — an open window, a hole, the gaps in a lattice — that must show nothing behind it. Does not apply to the transparent background every drawing has."
         },
         {
           "id": "texture",
@@ -965,6 +965,11 @@
       "date": "2026-10-02",
       "version": 29,
       "note": "Intake prompt tuned after the first live agreement check (67 v1 prompts, 59% exact / 89% within one tier, 13 fallbacks all on heading length): ENTRY 2 gains the line between extra small and small (a thing one would pick up and hold is at least small), sizes a picture-bearing object as the object rather than the scene it shows, and breaks a tie toward the more ordinary tier (small over xs, medium over large) instead of the smaller; the probe heading `transparency` no longer applies to a transparent background. The clerk also retries ONCE, telling the model what failed, before falling back. The prompt's bytes changed, so intakeVersion is now intake-v2 (no production prompt was ever filed under intake-v1). No grade, axis, scale or pool change."
+    },
+    {
+      "date": "2026-10-02",
+      "version": 30,
+      "note": "Intake, owner's two corrections after reading intake-v2: the probe heading `transparency` now also covers see-through OPENINGS in the object itself (an open window, a hole, a lattice's gaps) that must show nothing behind them — those test the same capability as glass — while still excluding the transparent background every drawing has; and the clerk's heading-length rules became ADVICE: a long or oddly shaped heading is filed as written and noted in intake_json.warnings, never refused (the retry fires only on a genuinely invalid answer, which structured output makes rare). The scope note's bytes changed, so intakeVersion is intake-v3. No grade, axis, scale or pool change."
     }
   ]
 }
