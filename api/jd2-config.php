@@ -348,6 +348,26 @@ function jd2_pool(array $taxonomy): array
     return $pool;
 }
 
+/**
+ * A helper model the drawer calls OUTSIDE the eval pool, by use (taxonomy.json
+ * `utility.<use>`, e.g. `utility.title`, the tag titler): its wire
+ * `api_model` and its `provider`. Model names live in the taxonomy, never in
+ * PHP; a 500 envelope with a sentence when the entry is absent or incomplete.
+ *
+ * @return array{api_model:string,provider:string}
+ */
+function jd2_utility_model(array $taxonomy, string $use): array
+{
+    $m = $taxonomy['utility'][$use] ?? null;
+    $apiModel = is_array($m) ? ($m['api_model'] ?? null) : null;
+    $provider = is_array($m) ? ($m['provider'] ?? null) : null;
+    if (!is_string($apiModel) || $apiModel === '' || !is_string($provider) || $provider === '') {
+        error_log('jd2_utility_model: taxonomy.json has no usable utility.' . $use . ' {api_model, provider}');
+        jd_fail(500, 'server_error', 'The ' . $use . ' model is not configured in the taxonomy (utility.' . $use . ').');
+    }
+    return ['api_model' => $apiModel, 'provider' => $provider];
+}
+
 /** The pool snapshot's name (taxonomy.json `poolVersion`), stamped on every run; a 500 when absent. */
 function jd2_pool_version(array $taxonomy): string
 {

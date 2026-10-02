@@ -9,6 +9,10 @@
 // hold up a turn. The card files the title it shows with its ratings
 // (jd2-rate.php writes jd2_prompts.title); nothing is stored here.
 //
+// THE MODEL is data: taxonomy.json `utility.title` ({api_model, provider}),
+// read through jd2_utility_model(); a taxonomy without it answers 500. The
+// wire here is the Anthropic Messages API, so the provider must be anthropic.
+//
 // ABUSE GUARD: this is a compute endpoint, so it answers only for a real
 // turn — the client_ref must belong to a jd2 prompt filed in the last hour
 // (jd2-generate.php files the prompt under the turn's client_ref, the
@@ -23,7 +27,6 @@ jd_require_allowed_origin();
 jd_require_post();
 jd_no_store();
 
-const JD_TITLE_MODEL = 'claude-haiku-4-5-20251001';
 const JD_TITLE_SYSTEM =
     'You write museum specimen-tag titles. Reply with ONLY a title for the ' .
     'object described: two to four plain words (five only if a small word ' .
@@ -61,6 +64,14 @@ try {
     jd_fail(500, 'server_error', 'The turn could not be checked.');
 }
 
+// The titler's model, from the taxonomy (checked in dev too, so a taxonomy
+// that lost it fails the tests rather than production).
+$titler = jd2_utility_model(jd_taxonomy_required('jd2-title'), 'title');
+if ($titler['provider'] !== 'anthropic') {
+    error_log('jd2-title: utility.title provider ' . $titler['provider'] . ' is not the Anthropic wire this file speaks');
+    jd_fail(500, 'server_error', 'The title model must be an Anthropic model; this endpoint speaks only that API.');
+}
+
 // jd2_title_clean: whatever comes back, ship at most five plain words.
 function jd2_title_clean(string $raw): string
 {
@@ -86,7 +97,7 @@ if (JD_DEV_MODE) {
         implode(' ', array_slice($words, 0, 3)))]);
 }
 
-$key = jd_provider_key('anthropic');
+$key = jd_provider_key($titler['provider']);
 if ($key === null) {
     jd_fail(500, 'server_error', 'No provider key on file.');
 }
@@ -96,7 +107,7 @@ $wire = jd_http_post_json('https://api.anthropic.com/v1/messages', [
     'x-api-key: ' . $key,
     'anthropic-version: 2023-06-01',
 ], [
-    'model'      => JD_TITLE_MODEL,
+    'model'      => $titler['api_model'],
     'max_tokens' => 30,
     'system'     => JD_TITLE_SYSTEM,
     'messages'   => [['role' => 'user', 'content' => $prompt]],

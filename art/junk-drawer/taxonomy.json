@@ -1,10 +1,16 @@
 {
   "schema": 1,
-  "version": 26,
+  "version": 27,
   "updated": "2026-10-01",
   "instrument": "v2.0",
   "instrumentNote": "The dataset v2 instrument: this rubric plus the comparison and gaps scales below and the rules of a sitting; every v2 session stamps it beside the taxonomy version. v1 instruments ignore it.",
   "poolVersion": "pool-2026-08-14",
+  "utility": {
+    "title": {
+      "api_model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic"
+    }
+  },
   "grades": [
     {
       "id": "prime",
@@ -729,6 +735,11 @@
       "date": "2026-10-01",
       "version": 26,
       "note": "The dataset v2 instrument baseline (PLAN-V2 §4, §6). Additive only; nothing existing is renamed, removed or reworded. New top-level keys: `instrument` (\"v2.0\") and `instrumentNote`, the instrument version every v2 sitting stamps beside this version; `comparison`, the 7-point head-to-head scale (+3 the first much better … 0 about the same … -3 the second much better, the sign of jd2_pairs.score, positive = gen_a preferred); `gaps`, the 0..3 margin between adjacent podium places that spaced ranking asks after the podium (labels are PLACEHOLDERS, marked `placeholder`, for the owner to reword; the values are permanent); and `poolVersion` (\"pool-2026-08-14\", the day the four-chair pool formed), which every v2 run records. The four current pool members (claude-opus-5, gpt-5-1, kimi-k3, gemini-3-1-pro) gain `pool: true`, `provider` and `api_model`, copied from JD_MODEL_POOL in api/jd-config.php, so the pool can be read as data; JD_MODEL_POOL itself is unchanged and v1 keeps reading it. v1 instruments (the turn card, the bench, data.php, the validator) ignore every new key; grades, axes and their ranks are as at v25. Ids of the comparison and gap values are kebab-case like every other id in this file (same day, before anything referenced them)."
+    },
+    {
+      "date": "2026-10-01",
+      "version": 27,
+      "note": "New top-level `utility`: the models the drawer's helpers call that are NOT in the eval pool, by use. `utility.title` (`api_model` claude-haiku-4-5-20251001, `provider` anthropic) is the tag titler jd2-title.php calls during the darkroom wait; it was a constant in that file. Moving it here keeps every model name the v2 code calls in this file. No rubric, scale, pool or label change; sessions filed under v26 and v27 rate on the same instrument."
     }
   ]
 }

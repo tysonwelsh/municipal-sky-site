@@ -155,6 +155,9 @@ card, and never forked into a bench-only copy.
   run records. To refresh the pool: verify the wire ids and prices, add
   `api/jd-prices.json` rows, bump `poolVersion`, and bump the consent version
   if the provider list changes (privacy.php §4 must match).
+- **`utility`** names the helper models outside the pool, by use:
+  `utility.title` is the tag titler `jd2-title.php` calls
+  (`jd2_utility_model`; a taxonomy without it makes the titler answer 500).
 - Every edit adds a `changelog` line and bumps `version`. Sessions stamp the
   version; `instrument` (`v2.0`) changes only when the rules of a sitting
   change.
