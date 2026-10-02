@@ -269,6 +269,16 @@ The dump is the clean run's. Seed 7, 300 s: 1,755 notes thrown at and 2 told
 (the first and the thousandth), 91 events and 1 told; before PLAN-REFACTOR §2.4
 the engine told none of them — an empty catch around every listener.
 
+**The note unwritten (PLAN-REFACTOR §4.4).** The engine hands one note object
+to every note listener (`kolob-core.js`, ONE NOTE, ONE OBJECT), so a listener
+that wrote into it would be read by the next. On every run the harness
+registers each note listener through a wrapper whose first call freezes the
+note (its own fields), so a listener that writes into one — the page's drawing
+under `staff=` among them — throws, is told by the engine, and fails the run:
+a copy of the staff that marked each note it took in failed at its first note
+(`Kolob: the note listener 1 threw (on a note of the ambient) Cannot add
+property …`). The listeners keep their numbers in what the engine tells.
+
 **The page's drawing (`staff=`, PLAN-REFACTOR §3.5).** `staff` (or
 `staff=860`; `staff=390`, a phone) plays the page's drawing along with the
 meeting: the files on `_viz.php`'s list (`kolob-viz.js` alone in a build older

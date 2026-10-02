@@ -416,12 +416,22 @@ window.KolobAudio = (function () {
   // FAULTS: once per listener, then every thousandth, with the layer or the
   // type it threw on): a bug in the staff or the minutes is seen in the
   // console, not hidden at every note.
+  // ONE NOTE, ONE OBJECT. A note is built once — its layer, pitch, time and
+  // length, with the fields its voice adds copied in — and the same object
+  // is handed to every listener, as an event always was. So a listener
+  // never writes into a note or an event, nor into what one carries (a
+  // telegraph's marks, a line's Score): the next listener would read what it
+  // wrote. The staff copies what it keeps (kolob-viz-intake.js); the minutes
+  // read the note and keep a row of their own (kolob-ui.js); the harness
+  // writes it down as it comes, and holds every note listener to the rule
+  // (_harness.js, THE NOTE UNWRITTEN).
   var noteListeners = [], eventListeners = [];
   function emitNote(layer, freq, startTime, duration, extra) {
     if (HOUSE[layer] && !auditioning && duration > 0) heldByHouse(layer, freq, startTime, duration);
+    if (!noteListeners.length) return;
+    var n = { layer: layer, freq: freq, startTime: startTime, duration: duration || 0 };
+    if (extra) { for (var ek in extra) n[ek] = extra[ek]; }   // e.g. telegraph { marks:[…] }
     for (var i = 0; i < noteListeners.length; i++) {
-      var n = { layer: layer, freq: freq, startTime: startTime, duration: duration || 0 };
-      if (extra) { for (var ek in extra) n[ek] = extra[ek]; }   // e.g. telegraph { marks:[…] }
       try { noteListeners[i](n); } catch (e) { confess("the note listener " + (i + 1) + " threw", e, "on a note of the " + layer); }
     }
   }

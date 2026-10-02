@@ -593,15 +593,21 @@
   // its visitation events write its minutes.)
   var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1 };
   // (and a layer the minutes have no name for is not written in English;
-  // a note an unlogged guest sounds — logged: false — writes no row)
+  // a note an unlogged guest sounds — logged: false — writes no row. The
+  // note is the engine's one object, handed to every listener: it is read
+  // here and never written — kolob-core.js, ONE NOTE, ONE OBJECT. A phrase
+  // goes into the queue at its place in time, after any that begin at the
+  // same moment: the order a stable sort by time gave, without sorting the
+  // whole queue for every phrase.)
   function onNoteForLog(n) {
     if (!n || !n.layer || PHRASE_SKIP[n.layer] || !LAYERS_DS[n.layer] || n.logged === false) return;
     var end = n.startTime + (n.duration || 0);
     var last = phraseLast[n.layer] != null ? phraseLast[n.layer] : -1e9;
     if (n.startTime > last + PHRASE_GAP_S && K.isPlaying && K.isPlaying()) {
       if (phraseQueue.length > 80) phraseQueue.shift();
-      phraseQueue.push({ layer: n.layer, at: n.startTime });
-      phraseQueue.sort(function (a, b) { return a.at - b.at; });
+      var qi = phraseQueue.length;
+      while (qi > 0 && phraseQueue[qi - 1].at > n.startTime) qi--;
+      phraseQueue.splice(qi, 0, { layer: n.layer, at: n.startTime });
     }
     if (end > last) phraseLast[n.layer] = end;
   }

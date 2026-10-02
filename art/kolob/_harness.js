@@ -53,7 +53,8 @@
 //                 listener, registered after the harness's own, that throws
 //                 at every note (event) it is handed, as a bug in the staff or
 //                 the minutes would (THE BAD LISTENER, below); both with
-//                 badlistener=note,event
+//                 badlistener=note,event. (A listener that writes into a
+//                 note fails every run: THE NOTE UNWRITTEN, below.)
 //   desk=<secs>   the hymnal's idle road paced: each of its slices (one hymn
 //                 written on the main thread) comes <secs> after the one
 //                 before, as a browser's comes after the hymn before it took
@@ -807,6 +808,26 @@ if (!K || typeof K.play !== "function") {
 const KOLOB = global.KOLOB || {};
 const S = KOLOB._s || null;
 watchClock();                                    // throw=: the clock PLAY makes is watched (above)
+
+// ----------------------------------------------------------------------------
+// THE NOTE UNWRITTEN. The engine builds a note once and hands the same
+// object to every note listener (kolob-core.js, ONE NOTE, ONE OBJECT), so a
+// listener that wrote into it would be read by the next — where each was
+// once handed its own copy, and a write stayed its writer's. The rule is now
+// that none writes, and the harness holds every note listener to it, the
+// page's drawing (staff=) among them: each is registered through a wrapper,
+// and the first to be handed a note freezes it (its own fields; what it
+// carries, a telegraph's marks or a monzo, is the engine's), so a write —
+// every listener here is strict code — throws, is passed over and told as
+// any listener's fault is (THE FAULTS), and fails the run (a
+// console.error). The listeners keep their numbers in what the engine
+// tells. A listener that throws is still only passed over (THE BAD
+// LISTENER, below).
+// ----------------------------------------------------------------------------
+const setNoteListener = K.setNoteListener;
+K.setNoteListener = function (fn) {
+  return setNoteListener(function (n) { if (n && typeof n === "object" && !Object.isFrozen(n)) Object.freeze(n); return fn(n); });
+};
 
 // ----------------------------------------------------------------------------
 // THE STAFF (staff=): the page's drawing, played along. Its files are read

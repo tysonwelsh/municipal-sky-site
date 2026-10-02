@@ -505,7 +505,10 @@ type and the payload, never a label.
 
 **`onNote(n)`** — every sounded pitched note is reported, doublings included:
 `{ layer, freq, startTime, duration, …extra }` (`startTime` absolute audio
-time). The extras, by layer:
+time). A note is one object, built once and handed to every listener, as an
+event is: a listener reads it and never writes into it, nor into what it
+carries (`kolob-core.js`, ONE NOTE, ONE OBJECT; the harness fails a run whose
+listener writes into a note). The extras, by layer:
 
 | layer | fields a note may carry |
 |---|---|
