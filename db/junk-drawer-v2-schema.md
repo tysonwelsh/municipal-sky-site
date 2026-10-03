@@ -413,7 +413,7 @@ removed when Phase 4 reads `run_id`.
 | `POST api/jd2-rate.php` | origin; visitor: only their own turn — a run a visitor requested whose prompt's `client_ref` the request carries (missing or wrong → 403 `not_yours`) — and one filed session per run (409 `already_rated`); owner: the bench key, no `client_ref` | `{run_id, client_ref (visitor), client, device_ref?, title?, size?, suppress?, ratings:[{slot, kind, axis_id?, value, note?}], ranking:[{slot, rank, gap?}]\|null, pairs:[{slot_a, slot_b, score, shown_left?}]\|null, blind?}` → `{ok, build, session_id, run_id, prompt_id, complete, reveal:[{slot, model_id, label, vendor, status, tokens?, cost_usd?, priced?}]}` |
 | `POST api/jd2-curate.php` | origin + bench key | `{prompt_id, visibility?, shown_run_id?, pinned_generation_id?, title?, size_class?, size_scale?, category?, tags?}` or `{generation_id, hidden}` → `{ok, build, prompt:{…}, runs:[{…, generations, sessions, display_session_id, complete}]}` |
 | `GET api/jd2-gen-svg.php?gen=<id>` | origin; public when the prompt is `live` and the drawing not hidden, else bench key; otherwise 404 | → `image/svg+xml`, `nosniff`; a public answer (no key presented) is `private, max-age=86400` with a strong ETag (md5 of the svg) and 304 on `If-None-Match`; a keyed or non-public one is `no-store` |
-| `GET art/junk-drawer/data.php` | public | → `{generated, count, taxonomy, items, errors:[]}`, ETag (taken over its own reads: the session and generation aggregates, the prompts, runs and drawings it serves); `?item=<prompt_id>` any visibility (`hidden: true` unless live); `?slim=1` via `_slim.php`; a database outage answers an empty manifest |
+| `GET art/junk-drawer/data.php` | public | → `{generated, count, taxonomy, items, errors:[]}` (each response's `annotations` are the live axes only; a value on a retired axis with a `successor` is served under the successor at the mapped rank as `{value, mapped_from: {axis, value}}`, taxonomy v36), ETag (taken over its own reads: the session and generation aggregates, the prompts, runs and drawings it serves); `?item=<prompt_id>` any visibility (`hidden: true` unless live); `?slim=1` via `_slim.php`; a database outage answers an empty manifest |
 
 **jd2-generate.** The first request for a `client_ref` files the prompt
 (`visibility` `draft`) and its `initial` run in one transaction; the
@@ -537,7 +537,7 @@ owner session.
 | --- | --- | --- |
 | `GET api/jd2-queue.php` | origin + bench key; `no-store` | the bench's backlog → `{build, taxonomy_version, instrument_version, axes[], grades[], size_tiers[], facets[], comparison, gaps, models{id: label}, items[], progress{prompts, complete, drawing, cells_filed, cells_total}}`; `?prompt=<id>` one prompt in any state, `?all=1` every prompt, `?reveal=1` adds `model_id`, `?count=1` only `{today:{generations, limit, remaining, since, resets_in_s}}` |
 | `GET api/jd2-ledger.php` | origin + bench key; `no-store` | one row per prompt, every visibility → `{build, taxonomy_version, instrument_version, axes[], grades{}, models{}, counts{prompts, live, hidden, draft, bench_open}, items[]}`; `?prompt=<id>` one prompt |
-| `GET api/jd2-analytics.php` | origin; public; `Cache-Control: no-cache`, ETag and 304 (as data.php) | v1's `jd-analytics.php` keys and shapes (`totals, models, cost, firsts, grades, axes, spend, turns`) from the jd2 tables, each `axes[]` entry also carries `values [{rank, label}]` best first (v35), plus `pairs{models, matrix, wins, bt}`, `margins[]` and `tags{facet: {heading: {label, n, by_model{model: {mean, n}}}}}`; `?origin=owner\|visitor`; `?tag=<facet>:<heading>` keeps the prompts filed under that heading (population and spend; 400 for a heading the taxonomy lacks) |
+| `GET api/jd2-analytics.php` | origin; public; `Cache-Control: no-cache`, ETag and 304 (as data.php) | v1's `jd-analytics.php` keys and shapes (`totals, models, cost, firsts, grades, axes, spend, turns`) from the jd2 tables, each `axes[]` entry also carries `values [{rank, label}]` best first (v35) and `mapped` / `mapped_from` (v36: how many judgments on a retired axis were folded into this panel through the taxonomy's `successor` map, and from which axis ids; 0 and `[]` when none), plus `pairs{models, matrix, wins, bt}`, `margins[]` and `tags{facet: {heading: {label, n, by_model{model: {mean, n}}}}}`; `?origin=owner\|visitor`; `?tag=<facet>:<heading>` keeps the prompts filed under that heading (population and spend; 400 for a heading the taxonomy lacks) |
 
 **The bench run and "open".** A prompt's bench run is `shown_run_id`, else its
 newest run (`jd2_bench_view`). The prompt is OPEN on the bench when that run
@@ -550,8 +550,13 @@ axes unanswered, ranked k of n, pairs scored k of n). The bench is blind: a
 queue response carries `generation_id, slot, svg_url, hidden`, the owner's
 latest sitting as `prefill {grade, axes, rank_pos, gap_after}` and the
 visitor's current one as `visitor {grade, axes, rank_pos}`; the item carries
-`pairs_prefill [{slot_a, slot_b, score, source}]` and `prefill_pruned`. The
-prefill carries only what a sitting filed now can file: a value on a defunct
+`pairs_prefill [{slot_a, slot_b, score, source}]`, `prefill_pruned` and
+`prefill_mapped`. The prefill carries only what a sitting filed now can file:
+a value on a defunct axis WITH a `successor` (taxonomy v36: `layering` →
+`layering-2`, 3 → 4, 2 → 3, 1 → 1) is first carried onto the successor at
+the mapped rank (`jd2_map_axes`; a value filed on the successor wins) and
+`prefill_mapped: true` says so (the card prints "earlier Layering answers
+were carried onto its new 4-point scale"); then a value still on a defunct
 axis, or off its axis's current scale (a grade off the grade scale), is
 dropped, and `prefill_pruned: true` says it was (the card prints "earlier
 answers on a retired or rescaled axis were not carried over"; `curateOpen`
@@ -718,3 +723,13 @@ after the drawings, stand over the clerk's.
   `title_desc_stripped`; `api/jd2-resanitize.php` gains `recheck=ok`
   (Runbook). No schema change (`normalized` is `VARCHAR(64)`; the longest
   value, `cdata_unwrapped,title_desc_stripped`, is 35).
+- 2026-10-03 — taxonomy v36 (`layering` → `layering-2`, 4-point, mid-campaign;
+  owner): a defunct axis may carry `successor` `{id, map}` (old rank → new
+  rank), applied at READ time only (`jd2_axis_successors`, `jd2_map_axes`):
+  `jd2-queue` items gain `prefill_mapped`; `jd2-analytics` `axes[]` gain
+  `mapped` and `mapped_from`; data.php annotations may carry `mapped_from`;
+  the export's judgments gain `mapped_axis_id` / `mapped_value` and the
+  standing CSV `<axis>_onescale` / `<axis>_mapped_from` (and keeps `layering`
+  as a retired column). No filed row changes; `required_cells` unchanged in
+  meaning (the campaign's v35 sittings name `layering` and stay complete).
+  No schema change.

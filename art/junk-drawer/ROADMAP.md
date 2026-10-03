@@ -32,6 +32,12 @@ back-end change; the owner decides the wording):
   trial), so every sitting now carries the cells it was required to carry
   (`jd2_sessions.required_cells`) and the runner backfilled the trial's;
   after the first campaign sitting a scale change is still a new id.
+  **Layering followed mid-campaign (owner, 2026-10-03; taxonomy v36,
+  VERSION 0.16.0):** `layering` (3-point) is defunct and `layering-2` is
+  4-point (No / Minor / Moderate / Major problems), with the owner's
+  "adjust" recorded as `layering`'s `successor` map (No → No, Small →
+  Minor, Big → Major) and applied at read time only — see "The taxonomy" in
+  `CLAUDE.md`. Every issue axis is now 4-point; only Je ne sais quoi is 3.
   The original entry, for the record: the owner is reconsidering: possibly NOT a
   4-point scale for understanding-assignment, and possibly 4-point scales
   for layering and structural coherence (jnsq undecided). Why it is a gate:
@@ -45,6 +51,18 @@ back-end change; the owner decides the wording):
   understanding-assignment at 4 points (it is the axis most reworded and
   the mostly/somewhat distinction has carried weight) and bring the issue
   axes up to 4 to match, rather than go to 3 anywhere.
+- **The successor map's loose ends (taxonomy v36, 2026-10-03).** The map
+  is read by the bench prefill, the analytics panels, data.php's report-card
+  annotations and the export. Not yet: (1) the **ledger** (`jd2-ledger`,
+  `ledger.html`) shows the filed values on the live axes only, so a v35
+  sitting's Layering column is blank there, and a ledger SAVE over one
+  files a sitting without `layering-2` (incomplete; the drawer keeps the
+  earlier one) — it should seed the edit from the map as the bench does;
+  (2) the analytics folder and the about page draw the folded Layering
+  panel but print nothing of its `mapped` count — a footnote ("n of these
+  read from the 3-point scale") is the owner's call; (3) the about page's
+  Layering example says "a big Layering problem", the retired scale's word
+  (`about/COPY.md`; owner's copy).
 - **Settle the names.** "Subjects / categories / axes", and "ratings vs
   grades" — the owner leans to calling the per-axis answers *ratings* so
   *overall grade* keeps its name, or renaming it (overall quality /

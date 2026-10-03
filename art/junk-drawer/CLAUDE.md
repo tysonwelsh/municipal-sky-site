@@ -290,23 +290,52 @@ there (`previewDest`). A one-drawing turn has no rail and no preview. The
   stays for the ratings filed under it, is never asked again, and drops out
   of completeness for new sittings (an older sitting's `required_cells`
   still names it). The bench prefill drops a value on a defunct axis or off
-  its axis's current scale (`prefill_pruned`) and the card says so.
+  its axis's current scale (`prefill_pruned`) and the card says so — unless
+  the defunct axis names a `successor` (below).
 - **A scale change is a new id, not a wording edit** (v17, and v35's
   `structural-coherence` → `structural-coherence-2`): one id always means
   one scale. Labels, descriptions and summaries are free data edits at any
   time (bump `version`, add a changelog line); a different number of points
   is a new axis id with the old one marked defunct. Say so when an owner
   "refinement" would change a scale.
-- **The live axes as of v35 (2026-10-02)**, in display order (array order):
-  `understanding-assignment` (4), `structural-coherence-2` (4), `layering`
-  (3), `paintwork` (4), `jnsq` (3). Each issue axis is named by the edit
+- **The successor rule (v36, owner 2026-10-03): how a scale change honours
+  "never overwrite".** When the owner says how the old scale's answers read
+  on the new one ("any ratings left where it was rated Small Problem can be
+  adjusted to be minor problems"), that is NOT an edit to filed rows: it is
+  recorded on the DEFUNCT axis as data, `"successor": {"id": <live axis>,
+  "map": {"<old rank>": <new rank>, …}}` — `layering`'s is `{"id":
+  "layering-2", "map": {"3": 4, "2": 3, "1": 1}}` (No → No, Small → Minor,
+  Big → Major; nothing maps to Moderate). The map is applied at READ time
+  only, by `jd2_axis_successors` / `jd2_map_axes` (`api/jd2-config.php`;
+  `scripts/jd2-export.py` states the same rule once in Python): the bench
+  prefill carries the old answer onto the successor (`jd2q_carry`,
+  `prefill_mapped`, and the card's note beside the pruned one); the
+  analytics folds the old axis's judgments into the successor's panel
+  (`mapped`, `mapped_from` on that `axes[]` entry); data.php serves it on the
+  report card under the successor at the mapped rank as `{value,
+  mapped_from: {axis, value}}`, and the card marks it "mapped from the
+  3-point scale" (`mappedNote` in `jd-record.js`); the export keeps the filed
+  `axis_id`/`value` and adds `mapped_axis_id`/`mapped_value` (JSONL) and
+  `<axis>_onescale`/`<axis>_mapped_from` (standing CSV). A value filed on the
+  successor itself always wins; a rank the map does not name is not carried;
+  a defunct axis without `successor` still prunes. Completeness never reads
+  the map: an old sitting is complete under its own `required_cells` (which
+  name the old axis), and a sitting filed now requires the successor. The
+  judgment rows never change — a mapped value becomes a filed one only when
+  the owner files a new sitting carrying it. Never "migrate" a scale with an
+  UPDATE.
+- **The live axes as of v36 (2026-10-03)**, in display order (array order):
+  `understanding-assignment` (4), `structural-coherence-2` (4), `layering-2`
+  (4), `paintwork` (4), `jnsq` (3). Retired under a new id: `structural-coherence`
+  (3-point, v35, no successor) and `layering` (3-point, v36, successor
+  `layering-2`). Each issue axis is named by the edit
   that fixes it — redraw / move on x-y / restack or erase / repaint in
   place — and the descriptions carry the boundary rulings (framing is
   Structural Coherence's; an unrequested setting is Layering's, an added
   thing Understanding Assignment's; every cast shadow is Paintwork's).
-  The 4-point issue axes read No / Minor / Moderate / Major problems,
-  Layering No / Small / Big. `JD_axisCls` gives every 4-point axis the
-  `rc-q*` ramp. The analytics folder and the about page chart one panel
+  Every issue axis is 4-point and reads No / Minor / Moderate / Major
+  problems; Je ne sais quoi is the one 3-point axis. `JD_axisCls` gives
+  every 4-point axis the `rc-q*` ramp. The analytics folder and the about page chart one panel
   per live axis (`JD_axisRates` + `JD_axisBuckets`, which names each
   panel's two segments from the value labels).
 - **`houseRule`** is the drawing system prompt's house rules in one
