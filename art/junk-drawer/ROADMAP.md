@@ -60,6 +60,13 @@ back-end change; the owner decides the wording):
 
 **Instrument / UI (Phase 4b and after):**
 
+- **About page: the "spread-lead" highlight hard-codes the OLD pool's model
+  ids** (`about.css` ~L1254–1256 and ~L1929–1931: `gpt-5-1`,
+  `claude-opus-5`…). On new-pool data it dims Opus 5.5 and never fades GPT-6
+  Astra. Make it read the pool from the taxonomy (or drop the per-model
+  colour rules). Also the three v1 specimen steps name "Claude Fable 5",
+  "Gemini 3.1 Pro" and "Kimi K3" by design (they describe the v1 specimen).
+
 - **Bounding boxes on the drawing for a rated issue (owner, 2026-10-02 —
   consider before launch).** When filing a structural-coherence or layering
   problem, let the rater draw a box (or circle) on the drawing marking
