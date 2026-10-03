@@ -118,8 +118,8 @@ quoi (3-point). Each issue axis is named by the edit that fixes it: redraw
 including an unrequested setting), repaint in place (Paintwork, including
 every cast shadow). The four issue axes read No / Minor / Moderate /
 Major problems. Since 0.18.0 they are asked ONE QUESTION A CARD: six cards
-per drawing (the five axes, then the grade), each a list of radio rows that
-goes on by itself when one is pressed; the preview prints the house rule
+per drawing (the five axes, then the grade), each a list of radio rows — a
+tap selects, NEXT moves on (0.18.1); the preview prints the house rule
 (`houseRule`: what every model was told) once per sitting. Then the
 podium: drag or tap the drawings into 1st..4th. Then the **pedestal card**
 is live (0.12.0): one card asks each adjacent pair "how much better?"

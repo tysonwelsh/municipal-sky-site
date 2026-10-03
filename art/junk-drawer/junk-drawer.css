@@ -3766,8 +3766,8 @@ html.jd-bench-on .jd-turn[data-view="bench"] { --q-strip: calc(var(--jd-bench-ba
 
 /* ---- the question and its options (ONE QUESTION A CARD, 0.18.0) -----------
    The selects' row table retired with them. A card asks one thing: the
-   progress line (which drawing, which question of how many; the answer just
-   given echoed; on a phone the "definitions" switch), the question — the
+   progress line (which drawing, which question of how many; on a phone the
+   "definitions" switch), the question — the
    axis label as the heading, its summary as the line under it, the long
    description (and, for the axes judged against it, the house rule) folded
    behind "more" — and the options, best first, as a vertical list of radio
@@ -3785,8 +3785,6 @@ html.jd-bench-on .jd-turn[data-view="bench"] { --q-strip: calc(var(--jd-bench-ba
   font-family: var(--tform); font-size: var(--t-label);
   letter-spacing: 0.16em; text-transform: uppercase; color: var(--tink-2);
 }
-/* the answer just given, on the card it advanced to: the pencil's tick */
-.jd-q-echo { letter-spacing: 0.04em; text-transform: none; font-style: italic; color: var(--tink-2); }
 /* "definitions": a phone's switch (the desk shows every description) */
 .jd-q-defs { display: none; }
 .jd-q .jd-turn-assign { margin: 0 0 var(--sp-2); }
@@ -3827,7 +3825,7 @@ html.jd-bench-on .jd-turn[data-view="bench"] { --q-strip: calc(var(--jd-bench-ba
 .jd-q-desc p + p { margin-top: 6px; }
 .jd-q-desc-rule { font-style: italic; }
 /* a re-rate's prefilled answer, said on its own row: "last time: … — tap
-   to keep" (a press on it keeps it and goes on) */
+   to keep" (it stands selected; NEXT keeps it) */
 .jd-q-last {
   font-family: var(--tform); font-size: 0.74rem; font-style: italic; color: var(--tink);
 }

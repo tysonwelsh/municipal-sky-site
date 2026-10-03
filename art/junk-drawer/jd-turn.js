@@ -1893,17 +1893,16 @@
      role="radiogroup"). On a phone a row is its label and gauge; the chosen
      row shows its description, and the progress line's "definitions" switch
      (remembered on this device) shows them all.
-     Choosing records the answer in work.ratings at once, as the selects
-     did, lights the row on the axis's own rank pencil (JD_axisCls: the rc-q
-     ramp, rc-r on the 3-point axis, rc-g on the grade), and after a beat
-     (Q_BEAT; at once under prefers-reduced-motion) goes on to the next
-     question, the next drawing's first, or — after the last drawing's
-     grade — the ranking, where the old panel's next went; the next card's
-     progress line echoes the answer. A press within Q_GUARD of a card's
-     painting is ignored (a double tap must not answer the card it lands
-     on). Back walks the questions (across drawings too); next stands on an
-     answered card. A re-rate's prefilled answer says "last time: … — tap to
-     keep". Same card for visitors and the bench.
+     A tap SELECTS and nothing more (0.18.1, owner 2026-10-03: "just having
+     me select it and then push the next button"): it records the answer in
+     work.ratings at once, as the selects did, lights the row on the axis's
+     own rank pencil (JD_axisCls: the rc-q ramp, rc-r on the 3-point axis,
+     rc-g on the grade) and arms NEXT; a second tap re-selects. NEXT is the
+     only way on — to the next question, the next drawing's first, or after
+     the last drawing's grade to the ranking, where the old panel's next
+     went (on a phone it rides the sticky bar, always on screen). Back walks
+     the questions (across drawings too). A re-rate's prefilled answer says
+     "last time: … — tap to keep". Same card for visitors and the bench.
 
      How it rides the step machine: the rail's stations and stepSeq() are
      untouched — a drawing is still ONE step (its slot letter) and
@@ -1916,12 +1915,6 @@
      (or a bench resume, through the preview) on its first unanswered one.
      The filing payload and work.ratings are exactly what they were. */
   var Q_GRADE = 'grade';
-  var Q_BEAT = 350;
-  /* a press this soon after a question column was painted is ignored: the
-     second tap of a double tap lands on the card the first one advanced to
-     (critic, round 2: at 320 ms it answered the next card's first row) */
-  var Q_GUARD = 400;
-  var qTimer = 0, qPaintedAt = 0;
   /* the "definitions" switch: every row's description on a phone, or only
      the chosen row's — remembered on this device (a viewer's convenience) */
   var K_QDEFS = 'jd2-q-defs';
@@ -1984,14 +1977,10 @@
     var rule = String(tax().houseRule || '').trim();
     var ruled = !!(ax && rule && (tax().houseRuleAxes || []).indexOf(ax.id) !== -1);
     var base = 'jdq-' + slot + '-' + i;
-    /* the answer just given, echoed on the card it advanced to */
-    var echo = work.qEcho;
-    work.qEcho = null;
     /* a re-rate's prefill, not yet pressed this sitting */
     var last = chosen != null && !!(work.qPrefilled && work.qPrefilled[slot + '|' + qid]) ? qLevel(qid, chosen) : null;
     var h = '<p class="jd-q-step"><span id="' + base + '-p">Drawing ' + slot.toUpperCase() + ' · ' +
       (i + 1) + ' of ' + qs.length + '</span>' +
-      (echo ? '<span class="jd-q-echo">✓ ' + JD_labelHTML(echo) + '</span>' : '') +
       '<button type="button" class="jd-q-defs" data-act="qdefs" aria-pressed="' +
       (qDefs ? 'true' : 'false') + '">definitions</button></p>' +
       /* the prompt, verbatim, in reach on every card (THE PROMPT ON THE
@@ -2072,10 +2061,9 @@
     if (!two && !sized && lastQ) acts = suppressHTML() + acts;   /* the last card */
     return h + actions(acts);
   }
-  /* a question column was just painted: start the double-tap guard, and
-     bring a checked row into view (a re-rate's grade row sits low) */
+  /* a question column was just painted: bring a checked row into view (a
+     re-rate's grade row sits low) */
   function qPainted() {
-    qPaintedAt = Date.now();
     var on = bodyEl && bodyEl.querySelector('.jd-q-opt.is-on');
     if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest' }); } catch (e) {} }
   }
@@ -2084,7 +2072,6 @@
      the card scrolls back to its top and the keyboard lands on the radio
      group's tab stop. Anything else is a full render. */
   function qShow(i) {
-    clearTimeout(qTimer);
     work.qAt = i;
     var col = bodyEl && bodyEl.querySelector('.jd-q');
     var tiers = sizeTiers();
@@ -2101,15 +2088,12 @@
     if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} }
     qPainted();
   }
-  /* a choice: recorded now, shown in place, and the card goes on after the
-     beat — unless something else moved the card first */
+  /* a choice: recorded now and shown in place, NEXT armed — and that is
+     all; the card stays until NEXT is pressed */
   function qPick(b) {
     var col = b.closest('.jd-q');
     var slot = work && work.step;
     if (!col || !isSlotStep(slot) || col.getAttribute('data-slot') !== slot) return;
-    /* the double-tap guard (reduced motion included: there the first tap
-       advances at once, so the second lands on a card painted just now) */
-    if (Date.now() - qPaintedAt < Q_GUARD) return;
     var qid = qList()[work.qAt], v = Number(b.getAttribute('data-v'));
     if (qid == null || !isFinite(v)) return;
     if (qid === Q_GRADE) work.ratings[slot].grade = v;
@@ -2129,26 +2113,10 @@
     });
     setDisabled('.jd-turn-actions [data-act="next"]', false);
     setDisabled('.jd-turn-actions [data-act="file"]', !benchRated(slot));
-    clearTimeout(qTimer);
-    var at = work.qAt;
-    /* the one-drawing turn's last card files by its button, never by
-       itself: bring the button into view instead */
-    if (!col.querySelector('.jd-turn-actions [data-act="next"]')) {
-      var fileBtn = col.querySelector('.jd-turn-actions');
-      if (fileBtn && fileBtn.scrollIntoView) { try { fileBtn.scrollIntoView({ block: 'nearest' }); } catch (e) {} }
-      return;
-    }
-    var lv = qLevel(qid, v);
-    var go = function () {
-      qTimer = 0;
-      if (!isOpen || state !== 'rate' || !work || work.step !== slot || work.qAt !== at) return;
-      work.qEcho = lv ? (lv.label || lv.id) : null;
-      nav('next');
-      /* the echo belongs to the card the press advanced to, nowhere else */
-      work.qEcho = null;
-    };
-    if (window.JD_reduced && JD_reduced()) go();
-    else qTimer = setTimeout(go, Q_BEAT);
+    /* the buttons come into view (the one-drawing turn's last card files
+       by its button; on a phone the sticky bar already shows them) */
+    var acts = col.querySelector('.jd-turn-actions');
+    if (acts && acts.scrollIntoView) { try { acts.scrollIntoView({ block: 'nearest' }); } catch (e) {} }
   }
   /* the "definitions" switch, in place: every row's description, or the
      chosen row's alone (phone; the desk shows them all) */
@@ -2160,14 +2128,21 @@
     b.setAttribute('aria-pressed', qDefs ? 'true' : 'false');
   }
   /* the radio group's keys: the arrows (and Home/End) move between the
-     rows; Enter/Space press the row (a native button). This departs from
-     the standard radio pattern (where an arrow also selects) on purpose:
-     here a choice advances the card, so moving must not choose. */
+     rows; Space presses the row (a native button: it selects), and Enter
+     selects too — or, on the row already selected, goes on (NEXT), so a
+     keyboard can answer a card with Enter, Enter. Moving does not select
+     (the standard radio pattern's arrow-selects is left out): the arrows
+     stay a way to read the rows. */
   function onQKey(e) {
     var t = e.target;
     if (!t || !t.classList || !t.classList.contains('jd-q-opt')) return;
     if (e.altKey || e.ctrlKey || e.metaKey) return;
     var k = e.key;
+    if (k === 'Enter' && t.getAttribute('aria-checked') === 'true') {
+      var nx = bodyEl.querySelector('.jd-turn-actions [data-act="next"]');
+      if (nx && !nx.disabled) { e.preventDefault(); nav('next'); }
+      return;
+    }
     var d = (k === 'ArrowDown' || k === 'ArrowRight') ? 1 : (k === 'ArrowUp' || k === 'ArrowLeft') ? -1 : 0;
     var opts = Array.prototype.slice.call(t.parentNode.querySelectorAll('.jd-q-opt'));
     var i = opts.indexOf(t), j = -1;
@@ -3868,7 +3843,6 @@
      its first card, back on its grade, the docket or a resume (the
      preview's next) on its first unanswered card. */
   function nav(act, target) {
-    clearTimeout(qTimer);
     var seq = stepSeq();
     var at = seq.indexOf(work.step);
     if (state === 'rate' && isSlotStep(work.step) && act !== 'step') {
@@ -3935,9 +3909,9 @@
       step: 'preview', reached: reached, resume: null,
       /* which question card of the drawing on the card stands (an index
          into qList() — ONE QUESTION A CARD, 0.18.0); the answers a re-rate
-         prefilled and this sitting has not pressed ('slot|qid'); the answer
-         the next card echoes; whether the prompt stands unfolded */
-      qAt: 0, qPrefilled: {}, qEcho: null, briefOpen: false,
+         prefilled and this sitting has not pressed ('slot|qid'); whether
+         the prompt stands unfolded */
+      qAt: 0, qPrefilled: {}, briefOpen: false,
       /* a bench re-rating (0.17.0): the job's `rerating` — the owner's last
          sitting on this run was complete and is the prefill */
       rerating: false,
