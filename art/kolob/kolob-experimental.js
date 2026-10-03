@@ -30,6 +30,39 @@
 //                          plan, no audible glide) (kolob-calendar.js,
 //                          kolob-hymnal.js, kolob-voices-ground.js)
 //
+//   rungOut         OFF  — the ward's mouths parted from the room only once
+//                          they have rung out by the audio's own clock. Today
+//                          a mouth is parted by the ward's pump's clock, which
+//                          runs ahead of the audio's by the clock's lookahead,
+//                          so many are parted inside the crossfade that closes
+//                          them, while the voice still sounds through them: a
+//                          cut, not a fade (about 0.9 % of the ward's sound
+//                          with the page in view; most of it in a hidden tab,
+//                          whose lookahead is 1.6 s). Off because it changes
+//                          what is heard: the owner's to hear and decide
+//                          (PLAN-REFACTOR §4.6; kolob-voices-vocal.js, MOUTHS
+//                          RUNG OUT)
+//
+//   keptMouths      OFF  — the ward's mouths kept from line to line: each
+//                          singer's formant banks (a gate and three filters
+//                          for each vowel, consonant and tuned band) built
+//                          once and opened again by the singer's next lines,
+//                          instead of built new for every line and let go
+//                          (about 360 filters a line of the full ward). It
+//                          parts its mouths as rungOut does, always (a mouth
+//                          parted while it sounds would hold that sound until
+//                          the next line joined it). Off because it is the
+//                          owner's to decide, by ear (PLAN-REFACTOR §4.6):
+//                          nothing written moves — the same banks,
+//                          coefficients, gate moves and dice — but a line is
+//                          heard through a filter that has sounded before
+//                          (rung out to nothing under a closed gate) where it
+//                          was heard through a new one; heard against rungOut
+//                          alone, that is the whole difference. The A/B and
+//                          what to listen for: handoff/listen-kept-mouths.md.
+//                          Either switched on for every visitor only on the
+//                          owner's word (kolob-voices-vocal.js, KEPT MOUTHS)
+//
 // HOW TO SWITCH ONE (dev only; nothing on the page shows these):
 //
 //   · in the address:  ?exp=-singingSchool         switch it off for this visit
@@ -71,10 +104,14 @@ window.KOLOB.Experimental = (function () {
   var DEFAULTS = Object.freeze({
     singingSchool: true,
     reckoning: true,
+    rungOut: false,                // the owner's call, by ear: off until they have heard it (THE FEATURES, above)
+    keptMouths: false,             // the same
   });
   var ABOUT = Object.freeze({
     singingSchool: "the singing school: the choir still practising the first hymn in the prelude — one part goes wrong, the chorister stops them, that part sings it alone on the notes, and everyone sings it again (about one Sunday in ten)",
     reckoning: "the Kolob reckoning: the drone moves one note a section, spelling the opening of the tune the doxology will sing, and glides only under the joints (off: the drone on the day's keynote all meeting; the doxology and everything else the same)",
+    rungOut: "the ward's mouths parted from the room only once they have rung out by the audio's own clock, not inside the crossfade that closes them (no cut where the voice still sounds) — off until the owner has heard it (PLAN-REFACTOR §4.6)",
+    keptMouths: "the ward's mouths kept from line to line: each singer's formant banks built once and opened again by the next lines, not built new for every line (the same notes, filters and gate moves; a filter that has sounded before instead of a new one; parted as rungOut parts them) — off until the owner has heard it (PLAN-REFACTOR §4.6)",
   });
   var STORE_KEY = "kolob:experimental";
 

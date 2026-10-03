@@ -79,7 +79,10 @@
 // flanger is).
 //
 // SCORE §1: synthesis only. Every call takes a scheduled time t; nothing here
-// reads ctx.currentTime to decide when anything happens. Randomness is
+// reads ctx.currentTime to decide when anything happens. (One read stands
+// behind experiments that are off: MOUTHS RUNG OUT parts a mouth from the
+// room by the audio's own clock — when a node leaves the graph, never when
+// anything sounds.) Randomness is
 // sound-level only (SCORE §3 `synth:vocal`) and never touches musical choice
 // — except ornament(), which is a performer's decoration and takes its own
 // stream from the caller.
@@ -533,8 +536,59 @@ window.KOLOB.VoicesVocal = (function () {
   function arm(ctx, horizon, now) {
     var q = ctx && ctx.__kolobArm, p = ctx && ctx.__kolobPart, n = 0;
     while (q && q.length && q[0].at <= horizon) { q.shift().go(); n++; }
-    while (now != null && p && p.length && p[0].at <= now) p.shift().go();
+    while (now != null && p && p.length && p[0].at <= now) p.shift().go(now);
     return n;
+  }
+  // MOUTHS RUNG OUT — an experiment, OFF by default (KOLOB.Experimental's
+  // rungOut; ?exp=+rungOut), for the owner's ear (PLAN-REFACTOR §4.6). A
+  // mouth's parting waits for the caller's clock to pass the moment it has
+  // rung out (its span's end + RING). The ward's pump hands its own cue's
+  // time as that clock, and the clock fires a cue up to its lookahead early
+  // (0.25 s with the page in view, 1.6 s hidden), so a mouth is parted up to
+  // 0.13 s before it has rung out — inside the crossfade that closes it,
+  // while the voice still sounds through it: measured on seed 22's first ten
+  // minutes, 2,699 of 6,811 partings, about 0.9 % of the ward's sound, each a
+  // cut, not a fade; hidden, 55 % of it. Switched on, a parting due by the
+  // caller's clock waits, pump by pump, until the audio's own clock has
+  // passed it too. Nothing written moves; what is heard does — no cut — so
+  // it is the owner's to hear and decide (handoff/listen-kept-mouths.md).
+  function rungOutOn() { var X = window.KOLOB.Experimental; return !!(X && X.isOn && X.isOn("rungOut")); }
+  // KEPT MOUTHS — an experiment, OFF by default (keptMouths; ?exp=+keptMouths):
+  // the owner's call, by ear, not made here (PLAN-REFACTOR §4.6; the same
+  // packet). A line builds its mouths new — a gate and its bank's three
+  // filters for every vowel, consonant and tuned band it opens: about 360
+  // filters a line of the full ward — and lets them go when it is done.
+  // Switched on, a singer of the shared throat keeps them: a mouth an earlier
+  // line built is opened again by a later one, so long as its last move
+  // (rec.last) lies before the moment the new line could first touch it
+  // (born), so two lines never write on one gate at once; else a new one is
+  // built and kept beside it. THE HOUSE RULE stands — a bank is born with its
+  // formants and never retuned; it only lives on. Nothing written moves: the
+  // same banks, the same coefficients, the same gate moves at the same
+  // times, every die the same. What differs is the filter a line opens: it
+  // has sounded before, and rung out under a closed gate, where the line's
+  // own would be new. A kept mouth is parted only once it has rung out
+  // (MOUTHS RUNG OUT, always, for it): parted while it still sounds, a
+  // filter holds that sound, still, until it is joined again — and the next
+  // line would hear it. It joins the room around its spans as a line's own
+  // mouth does; its claims count on across the lines it serves, so a
+  // parting never parts a mouth a later line has joined; and a line done
+  // lets its people's envelopes go from the kept gates. Only the shared
+  // throat's deferred lines keep mouths (the ward, the Hosanna's crowd):
+  // elsewhere a line's mouths pour into the line's own out gain, which goes
+  // with it.
+  function keptMouths() { var X = window.KOLOB.Experimental; return !!(X && X.isOn && X.isOn("keptMouths")); }
+  // the singer's kept mouths into one way of the throat: { bank id: [rec, …] }
+  function keptAt(P, voiceIn) {
+    if (typeof WeakMap === "undefined") return null;
+    var w = P._kept || (P._kept = new WeakMap()), k = w.get(voiceIn);
+    if (!k) w.set(voiceIn, (k = {}));
+    return k;
+  }
+  // a kept mouth this line may open: its last move before the line is born
+  function openAgain(list, born) {
+    for (var i = 0; list && i < list.length; i++) if (list[i].last <= born) return list[i];
+    return null;
   }
   // spans [[a, z]…] → sorted, those closer than `gap` s merged
   function mergeSpans(spans, gap) {
@@ -733,6 +787,11 @@ window.KOLOB.VoicesVocal = (function () {
 
     // ---- the vowel banks: created on first use, fixed for life ----
     var banks = {}, gates = [];
+    // (KEPT MOUTHS: switched on, the singer's own, kept from line to line;
+    // `feeders`, what of this line pours into them, let go when it is done;
+    // `rung`, its mouths parted by the audio's own clock: MOUTHS RUNG OUT)
+    var kept = shared && opts.defer && keptMouths() ? keptAt(P, voiceIn) : null, feeders = [];
+    var rung = !!opts.defer && (!!kept || rungOutOn());
     function bankEnergy(key, f0) {
       var sp = bankSpec(key, P.tract, P.k, f0, P.bright);
       return mouthEnergy(throatChain.concat(sp.map(function (s) { return biquadCoefs(s.type, s.f, s.q, s.g, sr); })), f0, P.tilt, sr);
@@ -762,6 +821,14 @@ window.KOLOB.VoicesVocal = (function () {
     function bank(key, f0) {
       var id = bankKey(key, f0, P);
       if (banks[id]) return banks[id];
+      var again = kept ? openAgain(kept[id], born) : null;
+      if (again) {
+        again.mk = {}; again.spans = [];
+        if (feed) feed.connect(again.gate);
+        gates.push(again.gate);
+        links.push([again.out, voiceIn, again.spans, again.st]);
+        return (banks[id] = again);
+      }
       var spec = bankSpec(key, P.tract, P.k, f0, P.bright);
       var gate = mk(function () { return gainNode(ctx, 0); });   // shut, and silent, until its first opening
       if (feed) feed.connect(gate);
@@ -774,7 +841,11 @@ window.KOLOB.VoicesVocal = (function () {
       }
       var chain = throatChain.concat(spec.map(function (s) { return biquadCoefs(s.type, s.f, s.q, s.g, sr); }));
       var rec = { id: id, key: key, gate: gate, chain: chain, val: 0, last: born, mk: {}, used: false, spans: [] };
-      toRoom(prev, voiceIn, rec.spans);
+      if (kept) {
+        rec.out = prev; rec.st = { on: false, latest: -1, claims: 0 };
+        (kept[id] = kept[id] || []).push(rec);
+        links.push([prev, voiceIn, rec.spans, rec.st]);
+      } else toRoom(prev, voiceIn, rec.spans);
       return (banks[id] = rec);
     }
     // the gate's level for a note: the pre-attenuation (0.11) times the
@@ -928,6 +999,7 @@ window.KOLOB.VoicesVocal = (function () {
       var envG = mk(function () { return gainNode(ctx, 0); });
       osc.connect(envG); asp.connect(envG);
       if (sum) envG.connect(sum); else gates.forEach(function (gt) { envG.connect(gt); });   // (a lone singer in the shared throat)
+      if (kept) feeders.push(feed || envG);
       // the pitch is worked once a render quantum (2.7 ms), not once a
       // sample: a vibrato or a scoop moves a few cents a step, far under
       // hearing, and the oscillator keeps to its fast path (a third of the
@@ -1108,15 +1180,19 @@ window.KOLOB.VoicesVocal = (function () {
       // is joined a second or so ahead, so the next span's joining can come
       // before the last one's parting: a parting leaves alone a way that a
       // later span has already claimed.
-      var spans = l[2] ? mergeSpans(l[2], MERGE) : [[soundFrom, Infinity]], st = l.st = { on: false, latest: -1 };
+      var spans = l[2] ? mergeSpans(l[2], MERGE) : [[soundFrom, Infinity]], st = l.st = l[3] || { on: false, latest: -1 };
       spans.forEach(function (sp, i) {
+        var claim = l[3] ? ++l[3].claims : i;          // (a kept mouth's claims count on across its lines: KEPT MOUTHS)
         queueArm(ctx, sp[0] - 0.05, function () {
-          st.latest = i;
+          st.latest = claim;
           // (a way that will not join leaves a mouth out of the room: told)
           if (!st.on) { try { l[0].connect(l[1]); st.on = true; ctx.__kolobJoined = (ctx.__kolobJoined || 0) + 1; } catch (e) { confess("a mouth of the ward could not be joined to the room", e); } }
         });
-        if (sp[1] < Infinity) queuePart(ctx, sp[1] + RING, function () {
-          if (st.latest !== i || !st.on) return;
+        if (sp[1] < Infinity) queuePart(ctx, sp[1] + RING, function part(now) {
+          // (MOUTHS RUNG OUT: not before the audio's own clock has passed it
+          // too — asked again at the caller's next turn)
+          if (rung && ctx.currentTime < sp[1] + RING) { queuePart(ctx, now + 0.001, part); return; }
+          if (st.latest !== claim || !st.on) return;
           try { l[0].disconnect(l[1]); } catch (e) { /* not joined */ }
           st.on = false; ctx.__kolobJoined--;
         });
@@ -1126,9 +1202,12 @@ window.KOLOB.VoicesVocal = (function () {
     // its destination (or the shared panners) and can be collected
     if (firstOsc) firstOsc.onended = function () {
       links.forEach(function (l) {
+        if (l[3]) return;                        // (a kept mouth is parted once it has rung out, and kept: KEPT MOUTHS)
         try { l[0].disconnect(); } catch (err) { /* already gone */ }
         if (l.st && l.st.on) { l.st.on = false; ctx.__kolobJoined--; }
       });
+      // (and its people's envelopes leave the kept gates they fed)
+      feeders.forEach(function (n) { try { n.disconnect(); } catch (err) { /* already gone */ } });
     };
     budget.add(kind, nodes, soundFrom, dies);          // the span it sounds (and costs)
     return end;
