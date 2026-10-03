@@ -515,6 +515,10 @@
     closeZoom(true);
     headEl.innerHTML = headHTML();
     bodyEl.innerHTML = h;
+    /* the plates carry their drawings as slots (JD_svgSlot): parse them in
+       as XML now, before anything below fits, walks or replays them — the
+       inline parse, jd-core.js (never innerHTML for a drawing) */
+    if (window.JD_svgMount) window.JD_svgMount(bodyEl);
     /* the plates (reveal/bench/call) inline freshly-generated SVGs, which can
        overshoot the frame they declare — reframe them here, post-paint, on
        the live card (fitView needs the rendered DOM for getBBox). Views with
@@ -888,7 +892,7 @@
       '<div class="jd-turn-art-in" role="img" aria-label="drawing ' +
       slot.toUpperCase() + '" data-fit="gen:' +
       esc(s.gen_id || ((turn && turn.client_ref) || 'turn') + ':' + slot) + '">' +
-      window.JD_svgInst(s.svg, 'ju' + slot + (instSeq++) + '_') + '</div>' +
+      window.JD_svgSlot(s.svg, 'ju' + slot + (instSeq++) + '_') + '</div>' +
       /* the OVERLAY fittings (owner, 2026-08-26, best-to-worst prints):
          the Model label rides INSIDE the frame, top-centred over the
          artwork — bare text, no ground — and `spark` (pre-built by the
@@ -967,7 +971,7 @@
     return '<div class="rc-zoom-fig' + (window.JD_paper.get() === 'blueprint' ? ' is-blueprint' : '') + '" role="button" tabindex="0" ' +
       'aria-label="Shrink the artwork">' +
       '<div class="rc-zoom-art" data-fit="' + esc(fit) + '">' +
-      window.JD_svgInst(s.svg, 'juz' + slot + (instSeq++) + '_') +
+      window.JD_svgSlot(s.svg, 'juz' + slot + (instSeq++) + '_') +
       '</div>' +
       '<button type="button" class="rc-zoom-close rc-zoom-keep" aria-label="close">' +
       JD_X_MARK + '</button>' +
@@ -3743,7 +3747,7 @@
 
   function dropIntoPile(rec, animate, batch) {
     var pile = document.querySelector('.jd-pile');
-    if (!pile || !rec || !rec.svg || !window.JD_svgInst) return null;
+    if (!pile || !rec || !rec.svg || !window.JD_svgNode) return null;
     var id = recId(rec);
     if (pile.querySelector('[data-id="' + id + '"]')) return null;
     var title = rec.title || shortTitle(rec.prompt);
@@ -3761,8 +3765,12 @@
     el.setAttribute('aria-label', title);
     labelItem(el, rec);
     /* the same id-namespacing discipline as a curated item — non-negotiable
-       for any SVG that did not come from this repo (APP §4.12) */
-    el.innerHTML = window.JD_svgInst(rec.svg, 'juw' + (instSeq++) + '_');
+       for any SVG that did not come from this repo (APP §4.12) — and the
+       same inline parse: as XML, never innerHTML (JD_svgNode, jd-core.js).
+       A drawing that will not parse is not dropped in, like one with no svg. */
+    var art = window.JD_svgNode(rec.svg, 'juw' + (instSeq++) + '_');
+    if (!art) return null;
+    el.appendChild(art);
     pile.appendChild(el);
     /* reframe before sizing: a live-generated drawing can overshoot the
        frame it declares, and applySize's aspect read (svgAspect) must see

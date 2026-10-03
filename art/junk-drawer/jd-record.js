@@ -2,7 +2,7 @@
    THE JUNK DRAWER — jd-record.js
    The report card, and JD_barHTML's home (the gauge the bench reuses).
    Loaded after jd-core.js (JD_esc, JD_byId, JD_zoomLayer, JD_drawOn,
-   JD_fitAll, JD_svgInst). See jd-core.js for the file map.
+   JD_fitAll, JD_svgSlot, JD_svgMount). See jd-core.js for the file map.
    ========================================================================== */
 
 /* ---- THE FULL RECORD — the report card (Phase 3, promoted from mockup-7a).
@@ -130,8 +130,12 @@
   }
   /* prefix every id and url(#)/href reference so inlined copies never
      collide (same discipline as the rating instrument). One implementation,
-     shared with the pile — see JD_svgInst in jd-core.js. */
-  var svgInst = window.JD_svgInst;
+     shared with the pile — see JD_svgInst in jd-core.js. The markup carries
+     each drawing as a SLOT (JD_svgSlot), never as inline SVG text: every
+     innerHTML that writes one is followed by JD_svgMount, which parses the
+     drawing as XML and swaps it in (the inline parse, jd-core.js). */
+  var svgSlot = window.JD_svgSlot;
+  var svgMount = window.JD_svgMount;
   /* (the filed size tier shows nowhere in the UI any more — the specimen
      tag dropped it 2026-08-12, the report card 2026-08-13; the data keeps
      it, and window.JD_sizeLabel still serves the loader/legend) */
@@ -553,7 +557,7 @@
         /* data-fit is the artwork's key, not the thumbnail's: the strip
            shows the drawing the plate shows, at the frame the plate uses */
         '<span class="rc-alt-art" data-fit="' + esc(fitKey(entry, r)) + '">' +
-        svgInst(svgCache[cacheKey(entry, r)] || '', 'jt' + i + '_') +
+        svgSlot(svgCache[cacheKey(entry, r)] || '', 'jt' + i + '_') +
         '</span>' +
         '<span class="rc-alt-cap">' + esc(m.label) +
         /* the strip's little grades wear the same coloured pencils as the
@@ -716,7 +720,7 @@
       paperBtnHTML() +
       '<span class="rc-corner bl"></span><span class="rc-corner br"></span>' +
       '<div class="rc-plate-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
-      svgInst(artSrc, 'jr' + curIdx + '_') +
+      svgSlot(artSrc, 'jr' + curIdx + '_') +
       '</div>' +
       (live ? plateNavHTML(entry, curIdx) : '') +
       '<div class="rc-notes">' + notes + '</div>' +
@@ -852,7 +856,7 @@
     return '<div class="rc-zoom-fig' + paperCls() + '" role="button" tabindex="0" ' +
       'aria-label="Shrink the artwork">' +
       '<div class="rc-zoom-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
-      svgInst(svgCache[cacheKey(entry, resp)] || '', 'jz' + curIdx + '_') +
+      svgSlot(svgCache[cacheKey(entry, resp)] || '', 'jz' + curIdx + '_') +
       '</div>' +
       '<button type="button" class="rc-zoom-close rc-zoom-keep" aria-label="close">' +
       JD_X_MARK + '</button>' +
@@ -1172,6 +1176,7 @@
     markSeq = 0;
     var resp = curResponse();
     scrollEl.innerHTML = cardHTML(curEntry, resp, curResp, true);
+    svgMount(scrollEl);
     /* the prompt renders foldable, then earns it: measured here, after
        layout, because "three lines" depends on the column's real width —
        a character count lies in one orientation or the other. A prompt
@@ -1245,7 +1250,7 @@
       var plateEmpty = !scrollEl.querySelector('.rc-plate-art svg');
       if (drawUntil > Date.now() && !plateEmpty) {
         var ab = scrollEl.querySelector('.rc-alts-block');
-        if (ab) ab.innerHTML = altsHTML(curEntry, curResp);
+        if (ab) { ab.innerHTML = altsHTML(curEntry, curResp); svgMount(ab); }
         if (window.JD_fitAll) window.JD_fitAll(scrollEl);
         /* the replaced strip is a fresh node, so it takes the same wiring
            render() gives one — scrub, centring, nav sync */
@@ -1579,6 +1584,7 @@
         el.className = 'jd-record-scrim is-on';
         el.innerHTML = '<div class="jd-record" aria-label="report card">' +
           '<div class="rc-scroll">' + html + '</div></div>';
+        svgMount(el);
         return el;
       });
     }

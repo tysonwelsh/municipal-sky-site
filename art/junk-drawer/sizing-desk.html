@@ -174,6 +174,18 @@ below and hand it to a filing session.</p>
     var shape = Math.min(1, ELONG / Math.max(sq, 1 / sq));
     return box * sq * shape * fine * jitterOf(id);
   }
+  /* the inline parse — this page's copy of jd-core.js svgParse: an <svg>
+     element imported into this document, or null if the text will not
+     parse as an SVG document */
+  function svgParse(text) {
+    var NS = 'http://www.w3.org/2000/svg', doc;
+    try { doc = new DOMParser().parseFromString(String(text || ''), 'image/svg+xml'); } catch (e) { return null; }
+    var root = doc && doc.documentElement;
+    if (!root || root.namespaceURI !== NS || root.localName !== 'svg' || doc.getElementsByTagName('parsererror').length) return null;
+    var all = root.getElementsByTagName('*');
+    for (var i = 0; i < all.length; i++) if (all[i].namespaceURI !== NS) return null;
+    return document.importNode(root, true);
+  }
   /* same per-copy id-prefixing discipline as the pile (JD_svgInst) */
   function svgInst(svg, pfx) {
     return String(svg)
@@ -241,8 +253,8 @@ below and hand it to a filing session.</p>
     var a = aspects[item.id] || 1;
     var w = widthFor(boxes[sizing.sizeClass] || 15.5, sizing.sizeScale, a, item.id);
     return '<div class="spec' + (current ? ' is-current' : '') + '">' +
-      '<div class="art" style="--w:' + w.toFixed(2) + '">' +
-      svgInst(svgs[item.id] || '', 'sd' + seq + '_') + '</div>' +
+      '<div class="art" style="--w:' + w.toFixed(2) + '" data-art="' + item.id +
+      '" data-pfx="sd' + seq + '_"></div>' +
       '<div class="cap">' + item.title +
       '<span class="sz">' + labelOf(sizing) + '</span></div></div>';
   }
@@ -260,6 +272,13 @@ below and hand it to a filing session.</p>
     });
     html += specHTML(item, eff, true, seq++);
     $('row').innerHTML = html;
+    /* each drawing is parsed in as XML after the markup is written — never
+       through innerHTML, so the sanitizer's XML verdict and the DOM agree
+       (the inline parse, jd-core.js svgParse) */
+    document.querySelectorAll('#row .art[data-art]').forEach(function (holder) {
+      var s = svgParse(svgInst(svgs[holder.getAttribute('data-art')] || '', holder.getAttribute('data-pfx')));
+      if (s) holder.appendChild(s);
+    });
 
     /* nav + controls */
     $('pos').textContent = (idx + 1) + ' / ' + items.length;

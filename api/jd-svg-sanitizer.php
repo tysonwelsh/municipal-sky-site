@@ -25,6 +25,11 @@
 // byte-identical regime itself accepts. Only a normalized drawing is
 // re-serialized; every other input still passes byte-identical. Processing
 // instructions and comments inside the raw-text elements stay refused.
+//
+// THE CLIENT HALF (2026-10-02): the drawer inlines every drawing through
+// DOMParser('image/svg+xml') + importNode, never innerHTML, so the browser
+// builds the same XML tree this file judged — see "the inline parse" at
+// svgParse in art/junk-drawer/jd-core.js and art/junk-drawer/CLAUDE.md.
 
 const JD_SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -69,9 +74,11 @@ const JD_SVG_ALLOWED_ELEMENTS = [
 const JD_SVG_REF_ATTRS = ['href', 'src', 'style', 'values', 'from', 'to', 'by', 'base'];
 
 // Allowlisted elements whose contents the HTML parser reads as raw text.
-// The stored SVG is inlined with innerHTML, and inside an HTML integration
-// point (`desc`, `title`) these two are tokenized as HTML, not XML: whatever
-// bytes sit between the tags are literal source, so a `</style>` or
+// The drawer no longer inlines with innerHTML (the header's client half);
+// the rule stays for any reader that still might. Inlined with innerHTML,
+// inside an HTML integration point (`desc`, `title`) these two are
+// tokenized as HTML, not XML: whatever bytes sit between the tags are
+// literal source, so a `</style>` or
 // `</title>` buried in a comment — invisible to an element walk and to
 // textContent — closes the element and turns the rest into real HTML nodes;
 // comments inside them are refused. (A CDATA section was the other carrier:

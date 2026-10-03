@@ -487,6 +487,8 @@ function JD_zoomLayer() {
   function fill(html, plate) {
     if (!el) return;
     el.innerHTML = html;
+    /* the artwork arrives as a slot (JD_svgSlot) and is parsed in here */
+    if (window.JD_svgMount) window.JD_svgMount(el);
     if (window.JD_fitAll) window.JD_fitAll(el);
     gridScale(plate);
   }
@@ -695,6 +697,74 @@ var JD_admin = (function () {
   }
   window.JD_svgInst = svgInst;   /* the record card inlines copies too */
 
+  /* THE INLINE PARSE (2026-10-02): drawings are inlined through
+     DOMParser/importNode, NEVER innerHTML — the sanitizer's XML verdict and
+     the page's DOM must agree. api/jd-svg-sanitizer.php validates each
+     drawing as XML; the HTML parser reads some XML differently. The case
+     that forced this: `<desc><style/></desc>` is a complete, empty element
+     to the XML parser (and passes every sanitizer rule byte-identical), but
+     `desc` is an HTML integration point, so innerHTML's parser OPENS an HTML
+     <style> there that swallows the rest of the drawing as CSS — and CSS can
+     fetch remote URLs. `<title/>` is the same trick, and a `</style>` token
+     in a text node is its cousin. Parsed as image/svg+xml, the structure is
+     exactly the one the sanitizer judged: an empty <style/> stays empty.
+
+     svgParse(text) → an <svg> element imported into this document, or null
+     when the text will not parse (a <parsererror>), is not an SVG root, or
+     holds an element outside the SVG namespace (the sanitizer refuses those
+     too; checked again here because a visitor's won drawing comes back out
+     of their own storage). svgNode(text, pfx) is svgInst + svgParse, for a
+     caller that builds the node itself (the pile, a won drawing).
+
+     Surfaces that build their markup as an HTML string (the record card,
+     the turn card's plates, the enlargement) write svgSlot(text, pfx) where
+     they used to write svgInst(text, pfx): an inert <template> carrying the
+     id-prefixed text in an attribute (escaped, so the HTML parser hands it
+     back byte-exact and never reads it as markup). svgMount(root) swaps
+     every slot under root for the parsed drawing, and is called right after
+     the innerHTML that wrote the slots — before anything measures, fits,
+     walks or replays the artwork. JD_fitAll mounts first as well, so a
+     surface that fits after writing can never measure a slot. A slot whose
+     drawing will not parse is removed and its holder stays empty: the same
+     state as a drawing whose text never arrived. Empty text writes no slot,
+     as svgInst('') wrote nothing. */
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  function svgParse(text) {
+    var doc;
+    try { doc = new DOMParser().parseFromString(String(text || ''), 'image/svg+xml'); }
+    catch (e) { return null; }
+    var root = doc && doc.documentElement;
+    if (!root || root.namespaceURI !== SVG_NS || root.localName !== 'svg') return null;
+    if (doc.getElementsByTagName('parsererror').length) return null;
+    var all = root.getElementsByTagName('*');
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].namespaceURI !== SVG_NS) return null;
+    }
+    return document.importNode(root, true);
+  }
+  function svgNode(svg, pfx) { return svgParse(svgInst(svg, pfx)); }
+  function svgSlot(svg, pfx) {
+    if (!svg) return '';
+    return '<template data-jd-svg="' + svgInst(svg, pfx)
+      .replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\r/g, '&#13;') + '"></template>';
+  }
+  function svgMount(root) {
+    if (!root || !root.querySelectorAll) return;
+    var slots = root.querySelectorAll('template[data-jd-svg]');
+    for (var i = 0; i < slots.length; i++) {
+      var t = slots[i], node = svgParse(t.getAttribute('data-jd-svg'));
+      if (!t.parentNode) continue;
+      if (node) t.parentNode.replaceChild(node, t);
+      else t.parentNode.removeChild(t);
+    }
+  }
+  window.JD_svgParse = svgParse;
+  window.JD_svgNode = svgNode;
+  window.JD_svgSlot = svgSlot;
+  window.JD_svgMount = svgMount;
+
   /* REFRAME, never redraw (owner-approved, 2026-08-15). Models are prompted
      to fill the viewBox edge to edge and sometimes draw past it — a headstock
      at negative y, a glow bleeding past the frame. An inline <svg> clips at
@@ -803,6 +873,7 @@ var JD_admin = (function () {
      makes a 46px thumbnail and a 350px plate show the same drawing. */
   function fitAll(root) {
     if (!root) return;
+    svgMount(root);   /* a drawing still in its slot cannot be measured */
     Array.prototype.forEach.call(root.querySelectorAll('[data-fit]'), function (el) {
       fitView(el.querySelector('svg'), el.getAttribute('data-fit'));
     });
@@ -1185,7 +1256,18 @@ var JD_admin = (function () {
     })
     .then(function (loaded) {
       /* build + size every item first (sizeClass only; positions come next) */
-      var els = loaded.map(function (rec, i) {
+      /* every drawing is parsed as XML before it is placed (svgParse —
+         never innerHTML), under its per-item id prefix: the pile is many
+         independently-authored SVGs in one document, so each copy gets its
+         own id namespace. A drawing that will not parse is left out of the
+         pile and said so in the console; the rest of the drawer still
+         loads (the record card fetches its own copy if it is opened). */
+      loaded = loaded.filter(function (rec, i) {
+        rec.art = svgNode(rec.svg, 'jp' + i + '_');
+        if (!rec.art) console.warn('drawer: a drawing would not parse, left out:', rec.item.id);
+        return !!rec.art;
+      });
+      var els = loaded.map(function (rec) {
         var item = rec.item;
         /* a turn the visitor JUST won is already in the pile, dropped from
            their own storage the moment they filed — and since 2026-08-30 the
@@ -1220,9 +1302,7 @@ var JD_admin = (function () {
         el.dataset.url = item._url;
         el.setAttribute('role', 'img');
         el.setAttribute('aria-label', item.title);
-        /* per-item prefix: the pile is many independently-authored SVGs in
-           one document, so each copy gets its own id namespace */
-        el.innerHTML = svgInst(rec.svg, 'jp' + i + '_');
+        el.appendChild(rec.art);   /* parsed, never innerHTML — see svgParse */
         pile.appendChild(el);
         /* reframe BEFORE sizing: the fit needs the rendered copy (getBBox
            throws otherwise), and applySize reads aspect off the viewBox —

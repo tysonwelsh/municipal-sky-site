@@ -596,20 +596,38 @@
   }
 
   /* ---------- drawings ---------- */
+  /* drawings are inlined through DOMParser/importNode, never innerHTML — the
+     sanitizer's XML verdict and the DOM must agree (the inline parse,
+     jd-core.js svgParse; this page does not load jd-core.js, so it keeps its
+     own copy). null when the text will not parse as an SVG document. */
+  function svgParse(text) {
+    var NS = 'http://www.w3.org/2000/svg', doc;
+    try { doc = new DOMParser().parseFromString(String(text || ''), 'image/svg+xml'); } catch (e) { return null; }
+    var root = doc && doc.documentElement;
+    if (!root || root.namespaceURI !== NS || root.localName !== 'svg' || doc.getElementsByTagName('parsererror').length) return null;
+    var all = root.getElementsByTagName('*');
+    for (var i = 0; i < all.length; i++) if (all[i].namespaceURI !== NS) return null;
+    return document.importNode(root, true);
+  }
   function loadThumbs(root) {
     root.querySelectorAll('.thumb[data-url]').forEach(function (el) {
       var url = el.getAttribute('data-url');
       function place(t) {
-        el.innerHTML = t;
+        var s = svgParse(t);
+        if (!s) { el.className = 'thumb none'; el.textContent = 'not available'; return; }
+        el.textContent = '';
+        el.appendChild(s);
         el.classList.add('loaded');
-        var s = el.querySelector('svg'); if (s) { s.removeAttribute('width'); s.removeAttribute('height'); s.setAttribute('preserveAspectRatio', 'xMidYMid meet'); s.style.width = '100%'; s.style.height = '100%'; }
+        s.removeAttribute('width'); s.removeAttribute('height'); s.setAttribute('preserveAspectRatio', 'xMidYMid meet'); s.style.width = '100%'; s.style.height = '100%';
       }
       if (svgCache[url]) { place(svgCache[url]); return; }
       /* a draft's or a hidden prompt's drawing answers only the keyed
          request, so every drawing is fetched with the key and inlined */
       fetch(url, { headers: headers() }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+        /* the served text is parsed exactly as the sanitizer judged it: no
+           regex scrubbing in between (a text edit between the XML verdict
+           and the DOM is the differential the parse exists to close) */
         if (!/<svg/i.test(t)) { el.className = 'thumb none'; el.textContent = 'not available'; return; }
-        t = t.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/\son[a-z]+="[^"]*"/gi, '');
         svgCache[url] = t;
         place(t);
       }, function () { el.className = 'thumb none'; el.textContent = 'not available'; });
@@ -620,8 +638,9 @@
     closeLightbox();
     var box = document.createElement('div');
     box.className = 'lightbox'; box.id = 'lightbox';
-    box.innerHTML = '<div class="sheet">' + t + '</div><div class="cap">' + esc(cap) + ' · click or Esc to close</div>';
-    var s = box.querySelector('svg'); if (s) { s.removeAttribute('width'); s.removeAttribute('height'); s.setAttribute('preserveAspectRatio', 'xMidYMid meet'); }
+    box.innerHTML = '<div class="sheet"></div><div class="cap">' + esc(cap) + ' · click or Esc to close</div>';
+    var s = svgParse(t); if (s) box.querySelector('.sheet').appendChild(s);
+    if (s) { s.removeAttribute('width'); s.removeAttribute('height'); s.setAttribute('preserveAspectRatio', 'xMidYMid meet'); }
     box.addEventListener('click', closeLightbox);
     document.body.appendChild(box);
   }

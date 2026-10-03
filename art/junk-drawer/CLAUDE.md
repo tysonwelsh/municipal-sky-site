@@ -142,6 +142,11 @@ re-sanitizes every rejected row's `raw_response`, flips the ones that now
 pass to `ok`, and re-settles their runs. A recovered drawing is unrated, so
 a sitting already filed over its run reads incomplete until it is rated.
 
+**Inlining (2026-10-02).** Drawings are inlined through DOMParser/importNode,
+never innerHTML — the XML verdict and the DOM must agree (`svgParse`,
+`JD_svgSlot`/`JD_svgMount` and `JD_svgNode` in `jd-core.js`; `ledger.html`
+and `sizing-desk.html` keep their own copy of `svgParse`).
+
 The bench and the visitor card are ONE instrument (`JD_turn.curate`). A
 layout or behaviour change to the rating flow is made once, in the shared
 card, and never forked into a bench-only copy.
