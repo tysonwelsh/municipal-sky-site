@@ -127,15 +127,32 @@ the bench page follows it. The batch runner takes `--profile` (state keyed
 by profile and text), and a row whose text an owner prompt already has is
 filed as a RERUN of that prompt, so three settings make three runs of one
 prompt. `scripts/jd2-profile-probe.php` (`JD_PROFILE_LIVE=1`) checks that
-every model finishes an SVG under every profile.
+every model finishes an SVG under every profile (`--prompt "…"` for a real
+prompt, `--save DIR` to keep each served drawing and raw reply).
 
-**The sanitizer (`api/jd-svg-sanitizer.php`; rules changed 2026-10-02).**
-It still rejects rather than repairs, with one named exception: a CDATA
+**The drawing system prompt is the owner's text (harness v5, 2026-10-03).**
+`JD_SYSTEM_PROMPT` in `api/jd-config.php` is, byte for byte, the fenced block
+in `PLAN-DRAWING-PROMPT.md` §2 (gitignored; main checkout), whose change log
+gives the reason for every sentence. Agents propose wording there; the owner
+settles it; only then do the bytes move, with the diff check in the comment
+above the heredoc proving the two identical. Any byte change bumps EVERY
+harness id (`v5-web.1`, `v5-benchlow.1`, `v5-benchmed.1`, `v5-bench.1`
+today); runs under v4-* and v5-* are never pooled.
+
+**The sanitizer (`api/jd-svg-sanitizer.php`; rules changed 2026-10-02,
+2026-10-03).** It still rejects rather than repairs, with two named
+exceptions. The first: a CDATA
 section (Kimi K3 wrapped its `<style>` CSS in one, and the drawing was thrown
 away as `element_not_allowed`) is unwrapped into an ordinary text node before
 any rule runs, so its bytes meet the same checks as any other text, and the
 drawing is then re-serialized and re-checked. The change is recorded, not
-hidden: `jd2_generations.normalized` = `cdata_unwrapped`. Processing
+hidden: `jd2_generations.normalized` = `cdata_unwrapped`. The second
+(harness v5): every `<title>` and `<desc>` is stripped from the served svg —
+a model's own caption shows as a hover tooltip on the inlined drawing, a
+self-caption or signature leaking to the rater — AFTER every rule has
+passed on the whole document (a payload inside one still rejects as
+before), recorded as `title_desc_stripped` (both words comma-joined when
+both apply); `raw_response` keeps the model's text. Processing
 instructions and comments inside `<style>`/`<title>` stay rejected, and the
 14 reason strings are frozen. After a sanitizer change, recover the drawings
 the old rules rejected with `api/jd2-resanitize.php` (`?key=<jd_setup_key>`
@@ -143,6 +160,11 @@ on production; `?dry-run=1`, or `--dry-run` on the CLI, lists first): it
 re-sanitizes every rejected row's `raw_response`, flips the ones that now
 pass to `ok`, and re-settles their runs. A recovered drawing is unrated, so
 a sitting already filed over its run reads incomplete until it is rated.
+After a NEW normalization, re-serve the drawings already filed `ok` with
+`?recheck=ok` (CLI `--recheck=ok`): a dry run unless `&apply=1` (`--apply`);
+it rewrites only `svg` and `normalized` where they differ, never demotes an
+ok row the rules would now reject (it reports it), and leaves sittings
+complete (the drawing's id does not change).
 
 **Inlining (2026-10-02).** Drawings are inlined through DOMParser/importNode,
 never innerHTML — the XML verdict and the DOM must agree (`svgParse`,
