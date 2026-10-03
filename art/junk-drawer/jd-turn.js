@@ -1692,8 +1692,21 @@
     var seq = okSlots();
     if (seq.length > 1) seq = seq.concat(['call']).concat(gapsOn() ? ['gaps'] : pairSteps());
     if (sizeTiers().length) seq = seq.concat(['size']);
+    /* THE PREVIEW opens the sequence (0.15.0): all the drawings at once,
+       before the first question — see ALL FOUR, below */
+    if (previewOn()) seq = ['preview'].concat(seq);
     return seq;
   }
+
+  /* the preview's ring mark (0.15.0): four prints in a 2×2, the loading
+     cards' own arrangement */
+  var RAIL_FOUR =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" ' +
+    'aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="0.6"/>' +
+    '<rect x="13.5" y="3" width="7.5" height="7.5" rx="0.6"/>' +
+    '<rect x="3" y="13.5" width="7.5" height="7.5" rx="0.6"/>' +
+    '<rect x="13.5" y="13.5" width="7.5" height="7.5" rx="0.6"/></svg>';
 
   /* the size step's ring mark: two nested squares, the scale itself */
   var RAIL_SIZE =
@@ -1732,6 +1745,12 @@
       return { id: s, n: ok.indexOf(s) + 1, label: 'drawing ' + s.toUpperCase(),
         face: s.toUpperCase() };
     });
+    /* ALL FOUR heads the docket (0.15.0): the glance before the questions,
+       its ring the 2×2 of prints; its word counts what came back */
+    if (previewOn()) {
+      steps.unshift({ id: 'preview', n: 0, label: previewWord(ok.length),
+        face: RAIL_FOUR, word: previewWord(ok.length) });
+    }
     /* "best to worst" — the ranking step's public name (owner, 2026-08-26;
        it opened life as "the call", which survives in the internal ids).
        Its ring wears the one-word form RANKING where words are worn. */
@@ -1772,9 +1791,13 @@
             face: RAIL_SIZE, word: 'size' });
     }
     /* seven nodes outgrow a phone's sheet at the default link length: the
-       --long modifier shortens the connectors there (the CSS) */
+       --long modifier shortens the connectors there (the CSS); past seven
+       (the preview + the catalogue entry, 0.15.0) --longer lets the
+       preview's pill wear its mark alone on the wide bench */
+    /* the aria numbering follows the docket as drawn, preview included */
+    steps.forEach(function (st, i) { st.n = i + 1; });
     var h = '<div class="jd-rail' + (steps.length > 6 ? ' jd-rail--long' : '') +
-      '" role="list">';
+      (steps.length > 7 ? ' jd-rail--longer' : '') + '" role="list">';
     steps.forEach(function (st, i) {
       var pairsNode = st.id === 'pairs';
       var current = pairsNode ? isPairStep(work.step) : work.step === st.id;
@@ -1794,6 +1817,7 @@
       h += '<button type="button" role="listitem" class="jd-rail-step' +
         (st.id === 'call' ? ' jd-rail-step--call' : '') +
         (st.id === 'gaps' ? ' jd-rail-step--gaps' : '') +
+        (st.id === 'preview' ? ' jd-rail-step--preview' : '') +
         (pairsNode ? ' jd-rail-step--pairs' : '') +
         (current ? ' is-current' : reached ? ' is-done' : '') +
         '" data-act="step" data-step="' + st.id +
@@ -1845,6 +1869,69 @@
      the portrait flow, with the exhibit sticky at the top of the scroller.
      The card widens to carry the two columns and narrows again the moment it
      stops (see paint's data-view). */
+  /* ALL FOUR — THE PREVIEW (0.15.0, owner 2026-10-03). Before the first
+     question, one card shows every drawing that came back, together, in a
+     2×2: the darkroom's loading cards, developed. It files nothing and asks
+     nothing — its one control is the usual next. The cells are the seats in
+     their dealt order (the same blind deal every other step uses: on the
+     bench a shuffle, on a visitor's turn the darkroom's slots), each print
+     on the card's own graph-paper ground with its blind letter pencilled
+     over it the head to head's way, and each print is the card's existing
+     enlarge control (plate(): role="button", the delegated click and the
+     Enter/Space keydown both open openZoom — no second lightbox). A run
+     short of four leaves the remaining cells empty; where a machine's
+     drawing was lost (a visitor's turn), the empty cell says so in the
+     results card's own words. Same card for visitors and the bench (one
+     instrument); a one-survivor turn has no docket and no preview — one
+     panel, then file, as before. A bench resume opens HERE too (it is a
+     glance, not a question), and its next goes on to wherever the resume
+     would have opened (work.resume, set by curateOpen). */
+  function previewOn() { return !!work && okSlots().length > 1; }
+  function previewWord(n) {
+    return n >= 4 ? 'all four' : n === 3 ? 'all three' : 'both';
+  }
+  /* where the preview's next goes: the resume point a bench reopen set,
+     while it still stands in the sequence, else the first drawing */
+  function previewDest(seq) {
+    seq = seq || stepSeq();
+    var r = work.resume;
+    if (r === 'pairs') r = pairsEntry();
+    if (r && r !== 'preview' && seq.indexOf(r) !== -1) return r;
+    return seq[seq.indexOf('preview') + 1];
+  }
+  /* a step's name on a next button, in the words the other buttons use */
+  function stepWord(id) {
+    if (id === 'call') return 'ranking';
+    if (id === 'gaps') return 'by how much';
+    if (id === 'size') return catalogueOn() ? 'catalogue entry' : 'size';
+    if (isPairStep(id)) return 'head to head';
+    return 'drawing ' + String(id || '').toUpperCase();
+  }
+  function previewPanel(ok) {
+    var n = ok.length;
+    var lost = JD_SLOTS.filter(function (s) {
+      var st = work.slots[s] && work.slots[s].status;
+      return st && st !== 'ok' && st !== 'pending';
+    }).length;
+    var first = previewWord(n);
+    var h = '<p class="jd-turn-line jd-preview-line">' +
+      esc(first.charAt(0).toUpperCase() + first.slice(1)) +
+      ', side by side. Click one to enlarge.</p>' +
+      '<div class="jd-preview" role="list">';
+    ok.forEach(function (s) {
+      h += '<div class="jd-preview-cell" role="listitem" data-cell="' + s + '">' +
+        plate(s, { zoom: true, pin: true, label: 'Drawing ' + s.toUpperCase() }) + '</div>';
+    });
+    for (var k = n; k < JD_SLOTS.length; k++) {
+      h += '<div class="jd-preview-cell is-empty" aria-hidden="true">' +
+        (k - n < lost ? '<span class="jd-preview-lost">didn’t survive</span>' : '') +
+        '</div>';
+    }
+    h += '</div>';
+    return h + actions('<button type="button" class="jd-turn-go" data-act="next">next — ' +
+      esc(stepWord(previewDest())) + ' &rarr;</button>');
+  }
+
   function benchPanel(slot, ok, tiers) {
     var r = work.ratings[slot];
     var idx = ok.indexOf(slot);
@@ -1890,7 +1977,8 @@
          'for drawing ' + slot.toUpperCase() + '" data-role="flagnote" ' +
          'data-slot="' + slot + '" value="' + esc(r.flagNote || '') + '"></div>') */
     var acts = '';
-    if (idx > 0) {
+    /* (the first drawing's back is the preview's, when there is one) */
+    if (idx > 0 || previewOn()) {
       acts += '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>';
     }
     /* the gate: disabled until benchRated — onChange re-arms it live */
@@ -3205,8 +3293,10 @@
        place left empty, it is the podium that comes up */
     if (work.step === 'gaps' && !gapsOn()) work.step = ok.length > 1 ? 'call' : ok[0];
     if (work.step === 'gaps' && !callReady()) work.step = 'call';
+    /* a degraded turn down to one drawing has no preview */
+    if (work.step === 'preview' && !previewOn()) work.step = ok[0];
     if (work.step !== 'call' && work.step !== 'size' && work.step !== 'gaps' &&
-        !isPairStep(work.step) && ok.indexOf(work.step) === -1) {
+        work.step !== 'preview' && !isPairStep(work.step) && ok.indexOf(work.step) === -1) {
       work.step = ok[0];
     }
     if (work.step === 'call' && ok.length < 2) work.step = sizes ? 'size' : ok[0];
@@ -3215,6 +3305,7 @@
     var two = ok.length > 1;
     var call = work.step === 'call', size = work.step === 'size';
     var gaps = work.step === 'gaps';
+    var preview = work.step === 'preview';
     var pair = isPairStep(work.step);
     var deck = pair ? pairDeck() : null;
     /* entering the pedestal card: a podium re-ranked since the gaps were
@@ -3225,13 +3316,16 @@
     var entry = size && catalogueOn() && !!work.entry;
     return head(entry ? 'The catalogue entry' : size ? 'How big is it' : call ? 'Best to worst'
         : gaps ? 'By how much'
+        : preview ? previewWord(ok.length).replace(/^./, function (c) { return c.toUpperCase(); })
         : pair ? 'Head to head · ' + (deck.indexOf(pairOf(work.step)) + 1) + ' of ' + deck.length
         : 'Grade drawing ' + work.step.toUpperCase(),
       size ? 6 : (call || gaps || pair) ? 5 : 4,
-      { view: entry ? 'entry' : size ? 'size' : call ? 'call' : gaps ? 'gaps' : pair ? 'pair' : 'bench' }) +
+      { view: entry ? 'entry' : size ? 'size' : call ? 'call' : gaps ? 'gaps' : preview ? 'preview'
+        : pair ? 'pair' : 'bench' }) +
       (two || sizes ? railHTML(ok, tiers) : '') +
       (entry ? entryPanel(tiers) : size ? sizePanel(tiers) : call ? callPanel(ok, tiers)
         : gaps ? pedPanel(ok, tiers)
+        : preview ? previewPanel(ok)
         : pair ? pairPanel(work.step, ok, tiers) : benchPanel(work.step, ok, tiers));
   }
 
@@ -3532,6 +3626,12 @@
       if (act === 'next' && !stepAnswered(work.step)) return;
       var dest = act === 'step' ? b.getAttribute('data-step')
         : seq[at + (act === 'next' ? 1 : -1)];
+      /* the preview's next goes where a bench resume would have opened, once
+         (see ALL FOUR); afterwards it is the first drawing like any turn's */
+      if (act === 'next' && work.step === 'preview') {
+        dest = previewDest(seq);
+        work.resume = null;
+      }
       /* the docket's one head-to-head node stands for every pair card */
       if (dest === 'pairs') dest = pairsEntry();
       if (dest && seq.indexOf(dest) !== -1) {
@@ -3638,7 +3738,7 @@
      every margin on the pedestal card, a pair's one answer; the size card
      gates its own button */
   function stepAnswered(step) {
-    if (step === 'size') return true;
+    if (step === 'size' || step === 'preview') return true;
     if (step === 'call') return callReady();
     if (step === 'gaps') { pedSync(); return pedAllSet(); }
     if (isPairStep(step)) return pairLeftScore(pairOf(step)) != null;
@@ -3646,8 +3746,9 @@
   }
 
   function blankWork() {
-    var reached = {};
-    reached[JD_SLOTS[0]] = true;
+    /* the sitting opens on the preview (0.15.0); a one-drawing turn, which
+       has none, is sent on to its drawing by viewRate */
+    var reached = { preview: true };
     return {
       prompt: '', notice: '', slow: false,
       slots: blankSlots(),
@@ -3659,7 +3760,7 @@
          1st) and kept only because everything downstream — the unveil, the
          pile, the tracking beacon — was built to read a winner; `strength`
          survives as a permanent null, the podium having no margin. */
-      step: JD_SLOTS[0], reached: reached,
+      step: 'preview', reached: reached, resume: null,
       ranks: {},
       /* THE HEAD TO HEAD's answers (dataset v2): canonical pair key 'a|c'
          → score −3..+3, positive = the first slot preferred; pairDeck is
@@ -4616,6 +4717,14 @@
         work.reached.call = true;
       } else {
         work.step = ok[0];
+      }
+      /* …but every sitting, a resume included, OPENS on the preview (0.15.0:
+         a glance, not a question); the step worked out above is where its
+         next goes (previewDest), and every station it reached stays open */
+      if (previewOn()) {
+        work.resume = work.step;
+        work.step = 'preview';
+        work.reached.preview = true;
       }
       open();
     }, function () {

@@ -16,6 +16,11 @@
 // The checks, in order:
 //   seed   two owner prompts through jd2-generate (bench profile, four slots
 //          one after another on one client_ref each)
+//   preview  the sitting opens on THE PREVIEW (0.15.0): first docket station,
+//          four cells A–D carrying every drawing of the run once, the
+//          eight-station docket on one line, a click enlarging a print; the
+//          grading panels then show the same seats; a ?bench&prompt= resume
+//          opens on it too and its next goes on to the podium; 2×2 at 390
 //   rate   ?bench seats the newest; the card is rated end to end — four
 //          grading panels, the podium, THE PEDESTAL CARD (gaps 1, 0, 2 by
 //          ballot), the size, the "notes for the record" — and filed with
@@ -159,7 +164,8 @@ const view = (pg) => pg.evaluate(() => {
 });
 async function seated(pg, promptId, timeout) {
   await pg.waitForFunction((id) => window.JD_bench && window.JD_bench.current() === id &&
-    window.JD_turn.isOpen() && document.querySelector('.jd-turn[data-view="bench"], .jd-turn[data-view="call"]'),
+    window.JD_turn.isOpen() &&
+    document.querySelector('.jd-turn[data-view="preview"], .jd-turn[data-view="bench"], .jd-turn[data-view="call"]'),
   promptId, { timeout: timeout || 30000 });
 }
 const barText = (pg) => pg.$eval('.jd-bench-bar', (b) => b.textContent);
@@ -175,13 +181,47 @@ const pedState = (pg) => pg.evaluate(() => {
   };
 });
 
+// THE PREVIEW (0.15.0), read off the page: the view, the docket's stations,
+// each cell's seat, pencilled letter and frame key (data-fit = the
+// generation), the empties, and the button
+const previewState = (pg) => pg.evaluate(() => {
+  const go = document.querySelector('.jd-turn-actions .jd-turn-go');
+  return {
+    view: document.querySelector('.jd-turn').getAttribute('data-view'),
+    title: (document.querySelector('.jd-turn-title') || {}).textContent,
+    rail: [...document.querySelectorAll('.jd-rail-step')].map((b) => ({ step: b.getAttribute('data-step'),
+      current: b.classList.contains('is-current'), reached: !b.disabled })),
+    cells: [...document.querySelectorAll('.jd-preview-cell:not(.is-empty)')].map((c) => ({ seat: c.getAttribute('data-cell'),
+      tag: (c.querySelector('.jd-pair-tag') || {}).textContent,
+      fit: (c.querySelector('.jd-turn-art-in') || { getAttribute: () => null }).getAttribute('data-fit'),
+      svg: !!c.querySelector('.jd-turn-art-in svg') })),
+    empty: document.querySelectorAll('.jd-preview-cell.is-empty').length,
+    // the docket inside the sheet's printed border (inset 5px), on one line
+    railFits: (() => {
+      const card = document.querySelector('.jd-turn').getBoundingClientRect();
+      const st = [...document.querySelectorAll('.jd-rail-step')].map((b) => b.getBoundingClientRect());
+      return st.length > 0 && st.every((r) => r.left >= card.left + 6 && r.right <= card.right - 6) &&
+        new Set(st.map((r) => Math.round(r.top))).size === 1;
+    })(),
+    go: go ? { act: go.getAttribute('data-act'), text: go.textContent, disabled: go.disabled } : null,
+    text: document.querySelector('.jd-turn').textContent
+  };
+});
+const benchFit = (pg) => pg.$eval('.jd-bench .jd-turn-pin .jd-turn-art-in', (e) => e.getAttribute('data-fit'));
+
 // mode 'gaps' (the instrument) answers the pedestal card by ballot with
 // `gaps` (the card's stops: 0.5 = negligibly); mode 'pairs' (?pairs=1) runs
 // the six side-by-side cards
 async function rateThrough(pg, note, mode, gaps, atEntry) {
+  // every sitting opens on THE PREVIEW (0.15.0): read it, then next
+  await pg.waitForSelector('.jd-turn[data-view="preview"] .jd-preview', { timeout: 10000 });
+  const preview = await previewState(pg);
+  await pg.click('.jd-turn-actions [data-act="next"]');
+  const fits = [];
   // the four grading panels: every select answered (varied values)
   for (let d = 0; d < 4; d++) {
     await pg.waitForSelector('.jd-bench', { timeout: 10000 });
+    fits.push(await benchFit(pg));
     const sels = await pg.$$('.jd-bench select.jd-turn-select');
     for (let i = 0; i < sels.length; i++) {
       const n = await sels[i].evaluate((s) => s.options.length);
@@ -239,7 +279,7 @@ async function rateThrough(pg, note, mode, gaps, atEntry) {
   if (hasNote) await pg.fill('textarea[data-role="sitting-note"]', note);
   await shot(pg, '4-size-note');
   await pg.click('.jd-turn-actions [data-act="file"]');
-  return { cards, hasNote, preset, ped, rail, entry, edits };
+  return { cards, hasNote, preset, ped, rail, entry, edits, preview, fits };
 }
 
 // the catalogue entry card, read off the page: its heading, the view, the
@@ -340,7 +380,32 @@ async function main() {
     await page.evaluate((k) => localStorage.setItem('jd-admin-key', k), KEY);
     await page.goto(BASE + '/art/junk-drawer/?bench', { waitUntil: 'load' });
     await seated(page, P2.prompt_id);
+    await page.waitForTimeout(400);   // the sheet's width transition settles
     await shot(page, '1-seated');
+    // THE PREVIEW (0.15.0): the bench sitting opens on it — the same card a
+    // visitor gets — every drawing in the 2×2 in the card's blind seat order
+    const pv1 = await previewState(page);
+    const qItem = await page.evaluate((id) => window.JD_bench.queue().items.filter((x) => x.prompt_id === id)[0], P2.prompt_id);
+    const gens = (qItem ? qItem.responses : []).map((r) => 'gen:' + r.generation_id).sort();
+    check('?bench opens the sitting on the preview: first docket station, current; drawing A (the resume point) next, the rest unreached',
+      pv1.view === 'preview' && pv1.rail[0] && pv1.rail[0].step === 'preview' && pv1.rail[0].current &&
+      pv1.rail[1].step === 'a' && pv1.rail.slice(2).every((r) => !r.reached), JSON.stringify({ view: pv1.view, rail: pv1.rail }));
+    check('…four cells, seats A–D pencilled "Drawing A…D", every one of the run\'s drawings once, nothing empty',
+      pv1.cells.map((c) => c.seat).join() === 'a,b,c,d' && pv1.cells.every((c) => c.svg && c.tag === 'Drawing ' + c.seat.toUpperCase()) &&
+      pv1.cells.map((c) => c.fit).sort().join() === gens.join() && pv1.empty === 0,
+      JSON.stringify({ cells: pv1.cells, gens }));
+    check('…its eight-station docket (preview … catalogue entry) stands on one line inside the sheet at 1280px', pv1.railFits);
+    check('…and its next leads to drawing A, armed', pv1.go && pv1.go.act === 'next' && !pv1.go.disabled &&
+      /next — drawing A/.test(pv1.go.text), JSON.stringify(pv1.go));
+    await page.click('.jd-preview-cell[data-cell="c"] .jd-turn-plate');
+    const pvZoom = await page.waitForSelector('.jd-record-zoom.is-on .rc-zoom-cap-t', { timeout: 5000 })
+      .then((e) => e.textContent()).catch(() => null);
+    await page.waitForTimeout(500);   // the layer fades in
+    await shot(page, '1c-preview-enlarged');
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => !document.querySelector('.jd-record-zoom.is-on'), null, { timeout: 5000 }).catch(() => {});
+    check('…a click on a print enlarges it with the blind caption (drawing C), and Escape peels it',
+      !!pvZoom && / · drawing C$/.test(pvZoom) && (await view(page)) === 'preview', String(pvZoom));
     const bar1 = await barText(page);
     check('?bench seats the newest prompt first, blind, with "2 to go"', /2 to go/.test(bar1), bar1);
     check('the build stamp prints tax v<taxonomy> · instr <instrument>', /tax v\d+ · instr \S+/.test(bar1), bar1);
@@ -385,6 +450,9 @@ async function main() {
       return after;
     });
     const e0 = r.entry;
+    check('the preview dealt the same seats the grading panels use (each panel\'s drawing is its preview cell\'s)',
+      r.fits.length === 4 && r.fits.join() === r.preview.cells.map((c) => c.fit).join() &&
+      r.rail[0] === 'preview', JSON.stringify({ fits: r.fits, cells: r.preview.cells.map((c) => c.fit), rail: r.rail }));
     check('the closing card is THE CATALOGUE ENTRY (heading, data-view, its rail station replacing the size\'s)',
       e0.heading === 'The catalogue entry' && e0.view === 'entry' && e0.station && e0.station.step === 'size' &&
       /catalogue entry/.test(e0.station.word) && !r.rail.some((x) => x === 'entry'), JSON.stringify([e0.heading, e0.view, e0.station]));
@@ -487,9 +555,19 @@ async function main() {
     // --- direct ------------------------------------------------------------
     await page.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P2.prompt_id, { waitUntil: 'load' });
     await seated(page, P2.prompt_id);
+    // a resume opens on the PREVIEW too (a glance, not a question); its next
+    // goes where the resume would have opened — the podium, full
+    const v0 = await previewState(page);
+    await shot(page, '6a-direct-preview');
+    check('?bench&prompt=<closed id> opens on the preview, every answered station reachable, next toward the ranking',
+      v0.view === 'preview' && v0.rail[0].step === 'preview' && v0.rail[0].current &&
+      v0.rail.filter((x) => x.step !== 'size').every((x) => x.reached) &&
+      v0.cells.length === 4 && v0.go && /next — ranking/.test(v0.go.text), JSON.stringify({ view: v0.view, rail: v0.rail, go: v0.go }));
+    await page.click('.jd-turn-actions [data-act="next"]');
+    await page.waitForSelector('.jd-turn[data-view="call"]', { timeout: 10000 });
     const v = await view(page);
     const full = await page.$eval('.jd-turn-actions [data-act="next"]', (b) => !b.disabled).catch(() => false);
-    check('?bench&prompt=<closed id> seats it on the podium, full (prefilled ranks)', v === 'call' && full, v);
+    check('…and its next lands on the podium, full (prefilled ranks)', v === 'call' && full, v);
     await page.click('.jd-rail-step[data-step="a"]');
     await page.waitForSelector('.jd-bench select.jd-turn-select');
     const answered = await page.$$eval('.jd-bench select.jd-turn-select', (s) => s.length > 0 && s.every((x) => x.value !== ''));
@@ -528,6 +606,21 @@ async function main() {
     await ph.evaluate((k) => localStorage.setItem('jd-admin-key', k), KEY);
     await ph.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P2.prompt_id, { waitUntil: 'load' });
     await seated(ph, P2.prompt_id);
+    // the preview at 390×844: 2×2, nothing off the sheet
+    await ph.waitForSelector('.jd-turn[data-view="preview"] .jd-preview');
+    await ph.waitForTimeout(300);
+    await shot(ph, '12-preview-390');
+    const phPv = await ph.evaluate(() => {
+      const cells = [...document.querySelectorAll('.jd-preview-cell')].map((c) => c.getBoundingClientRect());
+      return { n: cells.length, cols: getComputedStyle(document.querySelector('.jd-preview')).gridTemplateColumns.split(' ').length,
+        rows: new Set(cells.map((r) => Math.round(r.top))).size,
+        inside: cells.every((r) => r.left >= 0 && r.right <= window.innerWidth),
+        wide: document.documentElement.scrollWidth <= window.innerWidth };
+    });
+    check('phone: the bench preview stacks 2×2 at 390px, every print on the sheet', phPv.n === 4 && phPv.cols === 2 &&
+      phPv.rows === 2 && phPv.inside && phPv.wide, JSON.stringify(phPv));
+    await ph.click('.jd-turn-actions [data-act="next"]');
+    await ph.waitForSelector('.jd-turn[data-view="call"]');
     await ph.click('.jd-turn-actions [data-act="next"]');
     await ph.waitForSelector('.jd-turn[data-view="gaps"] .jd-ped');
     await throughGaps(ph);
@@ -641,7 +734,7 @@ async function main() {
       const it = window.JD_bench && window.JD_bench.queue() && window.JD_bench.queue().items
         .filter((x) => x.prompt === t)[0];
       return it && window.JD_bench.current() === it.prompt_id && window.JD_turn.isOpen() &&
-        document.querySelector('.jd-turn[data-view="bench"]');
+        document.querySelector('.jd-turn[data-view="preview"]');
     }, NEWTEXT, { timeout: 60000 });
     await shot(page, '10-new-seated');
     const np = q('SELECT id, origin, title, category, visibility, size_class, size_by, tags, intake_model, intake_at FROM jd2_prompts WHERE text = ?', [NEWTEXT]);
@@ -669,7 +762,7 @@ async function main() {
     await page.waitForFunction((id) => {
       const it = window.JD_bench.queue().items.filter((x) => x.prompt_id === id)[0];
       return it && it.runs === 2 && window.JD_bench.current() === id && window.JD_turn.isOpen() &&
-        document.querySelector('.jd-turn[data-view="bench"]');
+        document.querySelector('.jd-turn[data-view="preview"]');
     }, np[0].id, { timeout: 60000 });
     const runs = q('SELECT id, kind, profile, requested_by FROM jd2_runs WHERE prompt_id = ? ORDER BY created DESC, id DESC', [np[0].id]);
     const seatedRun = await page.evaluate((id) => window.JD_bench.queue().items.filter((x) => x.prompt_id === id)[0].run_id, np[0].id);
