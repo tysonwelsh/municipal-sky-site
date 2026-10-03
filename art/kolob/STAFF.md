@@ -18,6 +18,9 @@ rules at q = 0…8, treble at 12…20 (`kolob-viz-intake.js`, `Q_MID`). A note i
 the burin near the right edge when it sounds, then travels left at **60 px/s**
 (`SCROLL_PX_S`), dries and dissolves before the clefs. The drying runs 31× in the
 sacrament and 6× in the postlude: in the sacrament the page dries almost blank.
+The page repaints at the display's rate while a meeting plays; at about 12 fps
+(`IDLE_FRAME_MS`) while none plays, and while one is held by PAUSE once the page and the
+wheel stand still (THE HELD PAGE: whatever the page is told wakes it at once).
 
 ## What is printed, and what is not
 
@@ -109,9 +112,10 @@ own constants):
   where it was set and is struck when the burin reaches it; a beam or a curve stops at the
   burin (`BURIN_EPS`).
 - **Slurs and ties settle once.** A curve is laid out whole when its last note is set and
-  then only travels with the page; on a shared staff the upper voice's curves lie above and
-  the lower's below; a slur curves as deep as 2.2 spaces to clear its heads and its ends
-  move at most one space (`SLUR_DEEP`, `SLUR_END`).
+  then only travels with the page (its notes read from its first note's place in whole device
+  pixels, `settleCurve`, so it settles the same in every run); on a shared staff the upper
+  voice's curves lie above and the lower's below; a slur curves as deep as 2.2 spaces to clear
+  its heads and its ends move at most one space (`SLUR_DEEP`, `SLUR_END`).
 - **The telegraph** is never punched where a note, ledger or stem has the gap; no stem ever
   crosses the gap's middle .
 
@@ -145,5 +149,12 @@ standing late where densest).
   gives a digest of everything drawn, frame by frame; two builds fed the same meeting draw the same
   page exactly when the digests agree (`KOLOB_DIR=<the other build>`). The cut into six files was
   proved so, and by `tools/samecode.js --split` (every statement moved whole).
+- **The calls, one by one** (`KOLOB_STAFF_TRACE=<file>` with `staff=`; `node
+  art/kolob/tools/tracediff.js --a git:HEAD --b worktree`): the calls one build draws and the other
+  does not, frame by frame — how a change that draws the same pixels by other calls (a gradient made
+  once, the wheel's still part kept on a canvas of its own: `--inline`) is proved.
+- **The wheel and a held page by pixel** (`screens.js --freeze --wheel --held`): the wheel's canvas
+  shot beside the staff, its facade and hand handed a fixed figure, and the page shot held by PAUSE
+  and stopped.
 
 Authority: kolob-viz.js and its five pieces (`_viz.php`)

@@ -853,7 +853,11 @@ scrollbar at 860 px; a held page is then painted again at that width). What
 the engine writes after the held moment waits until the page runs on, so the
 page is made of the same notes in every run. In `--full` only the staff is
 held: the wheel's organ is the live sound's spectrum and the console runs on.
-The page runs free again before the frame timing.
+The page runs free again before the frame timing. One grain of the engine's own
+is left between two runs of one build: the visiting band's barlines, whose
+shade follows how far its march is written (choose moments clear of the band);
+a tie or a slur settles the same in every run since PLAN-REFACTOR §4.2 (its
+notes read in whole device pixels from its first, `settleCurve`).
 
 **What the console prints (`--text`, PLAN-REFACTOR §4.3).** Beside the shots,
 `text-<width>.json` holds the console's text: the programme card (the day,
@@ -887,7 +891,12 @@ stands at that capture's moment, and the freeze then let go, so the page
 stands there because the meeting is paused — and shot after `secs` (default
 5; `paused-<width>.png`, and the wheel's beside it with `--wheel`), the frames
 it painted meanwhile counted and timed (unthrottled): how often a held page
-paints, and what each frame costs. Then, after the frame timing and STOP, a
+paints, and what each frame costs. A held page paints at the display's rate
+until it stands still — the wheel's turn done, its arc closed, the pipes
+settled on the held spectrum, some 13–15 s into a hold with the live spectrum —
+and then at the idle rate, about 12 frames a second (kolob-viz.js THE HELD
+PAGE): with `--held 40` the count in brackets, the hold's last half, is
+that rate. Then, after the frame timing and STOP, a
 last shot once the ink has drained from the plate (15 s after STOP,
 `stopped-<width>.png`). Two runs of one build give the same held and stopped
 shots, the wheel's too (seed 22 at 30 and 75 s, both widths: AE 0 on all

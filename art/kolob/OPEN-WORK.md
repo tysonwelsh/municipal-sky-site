@@ -7,7 +7,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a), §3.5, §4.0(b), §4.0(c), §4.1, §4.3, §4.4 and §4.5 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a), §3.5, §4.0(b), §4.0(c), §4.1, §4.2, §4.3, §4.4 and §4.5 built): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
@@ -37,8 +37,14 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   writes them on change and stands still while the meeting is stopped; one note object goes to every
   listener, which never writes into it (the harness freezes it to hold them to that), a piece's notes
   are found by line, the phrase queue kept in order by an insert; and the noise tape is drawn from the
-  page's load, not inside the PLAY press. What remains is §3.5's tail (the composer's steps in order)
-  and §4 (the page's frame, the audio graph with the owner, memory), in §6's order.
+  page's load, not inside the PLAY press; and §4.2, the staff's frame (commits 01c7e74 to 91a8259):
+  the ink's strings built once for each alpha, the layers' fades made at the resize, the wheel's still
+  part kept on a canvas of its own and drawn again only when it changes, a held page painted at the
+  idle rate once it stands still, and the tie grain made exact (a curve settles the same in every
+  run); its items 3 and 4 (a group's engraving and layout kept with it) were measured to cost more
+  than they saved and left out. What remains is §3.5's tail (the composer's steps in order) and §4
+  (the audio graph with the owner, memory), in §6's order — and the frame's real cost, the proof
+  sheet's stamps, which §4.2 found (its builder's first follow-up below).
   The §2 builders' follow-ups, not done:
   - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
   - a cue's fault that repeats is now logged at each of the net's retries (every 5 s for a layer), not once (§2.1);
@@ -134,9 +140,12 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     `shapeKey` and `anchorOf` are called through one-line wrappers from `kolob-viz.js`, and the atlas
     reads `VS.dpr` through a getter, per head per frame — measured, nothing the screens can see
     (seed 22 at 860 px, 4× throttled, 60 s from 90 s, builds alternated twice: p50 16.7 and 14.2 ms
-    before, 17.0 and 16.7 after); §4.2 is the place to weigh it closer;
+    before, 17.0 and 16.7 after); §4.2 is the place to weigh it closer — weighed by §4.2's profile
+    (860 px, CPU 4×): `headSprite` with all it calls 0.2–0.3 % of the page's CPU, the other wrappers
+    and the getter under 0.03 % each; not worth a change while the stamps are 55 %;
   - the frame-exact capture holds the staff only: the wheel's organ is the live spectrum and its arc
-    the console's last poll, and the console and the broadside run on, so a `--full` page is not
+    the console's last poll (`screens.js --wheel`, since 89fa621, hands both a fixed figure, so the
+    wheel's own drawing compares by pixel), and the console and the broadside run on, so a `--full` page is not
     comparable by pixel (the staff's rows in it are); in the sacrament and the postlude the drying
     follows the section the console last reported, so a page there can differ by a shade; and the
     harness's `staff=` does not exercise the hook (`?kolobFreeze` is proved in Chrome only);
@@ -171,16 +180,19 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     `cost.js` keep half the cores, at most eight, a set, and `cost.js` renders its builds one after
     the other — each could take the tally's shared pool;
   - with both builds on one pool, the tally's progress dots of the two sides interleave on stderr;
-  - `tools/selftest.js` §18's "a set that fails stops the pool" expects the failure it names to be
+  - ~~`tools/selftest.js` §18's "a set that fails stops the pool" expects the failure it names to be
     seed 1's; on a pool of two both of the bad set's renders start at once, and on a busy machine
-    seed 2's can fail first (seen once beside two Chromes and the tally): the check could take either.
+    seed 2's can fail first (seen once beside two Chromes and the tally): the check could take either~~
+    — done, commit f80c038 (either seed; 20 of 20 loaded runs pass).
   The §4.1 builder's follow-ups, not done:
-  - a frozen capture still has a device pixel of grain in a tie: its far end is laid once, about
+  - ~~a frozen capture still has a device pixel of grain in a tie: its far end is laid once, about
     `X()` rounded to the device pixel at the live frame its second note first prints
     (`kolob-viz.js` `settleCurve`, `tieShape`), so from run to run it lands a pixel either way (seed
     1847, 860 px, 224 s: eight runs in three classes, AE 98–211, on 12dd962 as on the worktree).
     Settling it on unrounded offsets, or at the held moment, would make the capture exact there
-    too — a page change for §4.2's pixel proofs, which a moment clear of ties avoids meanwhile;
+    too — a page change for §4.2's pixel proofs, which a moment clear of ties avoids meanwhile~~ —
+    done, commit 91a8259: a curve's notes are read from its first note in whole device pixels, and
+    the three moments that showed it give one picture in ten runs each;
   - the parse still waits on the Google Fonts stylesheet at the first inline script after it (the
     page's tracking script: an inline script waits for the stylesheets above it), as it did; where
     the fonts are refused (this container) that wait is most of `domInteractive` (315 ms with them
@@ -218,6 +230,54 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     `performance.now()` pair a callback); `--text`'s compare has two grains not the page's — the
     band's "a band approaches" row at 00:07 or 00:08 (the band's own run-to-run grain) and the STOP
     row's second (when the tool pressed it).
+  The §4.2 builder's follow-ups, not done:
+  - **the next frame item: the proof sheet** (found by §4.2's profile; not in the plan). The seven
+    items §4.2 named were about 2 % of the page's CPU (`drawWheel` 1.4 %, `layoutGroup` 0.5 %, the
+    rest under 0.1 %), while the frame is about 74 % and nine tenths of the frame is two `drawImage`s
+    (seed 22 at 860 px, 60–80 s, CPU 4×, this container's headless Chrome, whose 2D canvas is
+    software; a CPU profile with the frames' stacks, two runs): `stamp`'s copy of a patch of the proof
+    sheet onto its layer, 55 % of all the page's CPU (`impress`, the ward's and the guests' notes,
+    32–34 %; `drawBand` 22–23 %), and the frame's laying of the layers on the plate, 12 %. What the
+    stamp pays for is not the patch: a canvas just drawn on and then read by `drawImage` is copied
+    whole (snapshotted) as it is read, so each note struck on the page-sized sheet and stamped costs
+    a copy of the sheet. A bench in muted headless Chrome (a quiet machine, three runs: 60 notes a
+    frame, each a filled circle struck on a 1720 × 480 sheet and its 24 × 24 patch stamped at alpha
+    0.6) gives 86–91 ms a frame as the page does it (strike, stamp, wipe), 84–92 without the wipe,
+    0.38–0.39 ms with a 32 × 32 sheet a note, and 0.09 ms drawn straight — the sheet's size is the
+    whole cost. **The change:** strike each impression on a sheet the patch's size (kept at the
+    largest patch asked and cleared, or one an impression), at the patch's own device-pixel offset
+    so its strokes fall on the same pixel grid as on the page-sized sheet, and lay that on the layer
+    at the impression's alpha — the same one even tone a note (the owner's one clean strike), the
+    same pixels; the frozen screens (AE 0 on every pair) and `tools/tracediff.js` (the same strokes,
+    moved by the patch's offset) prove it, the frame-time table and a profile say what it saved.
+    On a GPU canvas (the owner's Mac, any phone) the copy is the GPU's and its share is not known: no
+    browser with a GPU has been measured here, and that should be measured first. The layers'
+    composite (12 %) is the next after it;
+  - items 3 and 4 of §4.2 (a group's `inkOpts` kept on it, `layoutGroup`'s layout kept with its
+    heads) were built, proved pixel-exact and digest-identical, and left out for their cost (the
+    harness's CPU profile, seed 22, 300 s: `layoutGroup` 254–267 → 422–481 ms, `inkOpts` 8–14 →
+    48–51 ms, the collector 1,159–1,234 → 1,288–1,436 ms): writing down and checking what a kept
+    layout was made from cost more than laying it out again, 91,119 of 207,277 layouts were asked
+    with a heads array never seen before (the band's notes, for one, are laid out from a fresh array
+    every frame), and making `inkOpts`'s small object costs less than comparing the twelve fields it
+    is made from. Worth another try only with a cheaper key (a group's own count of its writes, say)
+    and a profile that says so; the layout is under 1 % of the frame;
+  - a held page slows only once the wheel draws exactly what it drew the frame before: with the
+    live spectrum the pipes reach a float's fixed point about 13 s into a hold (Chrome here), so a
+    hold shorter than that is painted at the display's rate throughout; a stillness judged at the
+    pixel (a pipe's top moving less than a device pixel's 1/256) would slow it sooner, but is not
+    exact by construction. And a held page that stands still still repaints all of itself 12 times a
+    second (35–39 ms a frame at 860 px here, unthrottled — the same stamps): it could draw nothing
+    while nothing changed, if the frame knew its last drawing was still on the plate;
+  - the wheel's turn and its arc run on the frame's dt, capped at 0.1 s, so on a machine too busy
+    for ten frames a second they run slower than the clock: the wheel's shots (`screens.js
+    --wheel`) are exact on a machine running two or so pages at once, not eight (at a load of about
+    30 the shots of an unchanged wheel differed, and one frozen staff shot was caught blank — the
+    held shot at that moment was the page's);
+  - the wheel's shot holds the facade and the hand at a fixed figure (the tool's AnalyserNode and
+    conductor's report): the live spectrum and the live hand are still compared by eye only;
+  - the 860 px p99 did not move with §4.2 (207 → 214 ms, within its spread over three runs a side):
+    what makes the worst frames is not what §4.2 cut.
 
 ## Ideas approved, not built
 
