@@ -776,6 +776,37 @@ async function main() {
       [1, 3, 4].indexOf(lab4[lay[0].mark]) !== -1 && new RegExp('\\brc-q' + lab4[lay[0].mark] + '\\b').test(lay[0].bar) &&
       /^Rated “(No|Small|Big) problems” on the 3-point scale/.test(lay[0].tip || ''),
       JSON.stringify(rcm));
+    // AN ITEM THAT JOINED THE PILE AFTER THE PAGE LOADED (owner, 2026-10-03):
+    // the owner files a prompt on the bench, it drops into the pile, its tag
+    // offers REPORT CARD — and the record's payload, read at page load, has
+    // never heard of it. Simulated here: hand the record the drawer's data
+    // with P2 removed, then ask for P2's card; it must fetch that one item
+    // (data.php?item=) and open. An id the server does not know stays a no-op.
+    await rcPage.evaluate(() => window.JD_record.close());
+    const late = await rcPage.evaluate(async (pid) => {
+      const res = await fetch('/art/junk-drawer/data.php', { cache: 'no-store' });
+      const data = await res.json();
+      const before = data.items.length;
+      const had = data.items.some((it) => it.id === pid);   // (P2 may already be absent: it went live after this page loaded)
+      data.items = data.items.filter((it) => it.id !== pid);
+      const removed = before - data.items.length;   // (a successful late fetch pushes it back into this same array)
+      window.JD_record.setData(data);
+      window.JD_record.open(pid);
+      const t0 = Date.now();
+      while (!document.documentElement.classList.contains('jd-record-open') && Date.now() - t0 < 8000) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      const open = document.documentElement.classList.contains('jd-record-open');
+      const title = (document.querySelector('.jd-record .rc-title, .jd-record h2, .jd-record .rc-head') || {}).textContent || '';
+      const rows = document.querySelectorAll('table.rc-subj tbody tr:not(.rc-axdesc)').length;
+      window.JD_record.close();
+      window.JD_record.open('01NOSUCHITEM00000000000000');
+      await new Promise((r) => setTimeout(r, 1500));
+      const ghost = document.documentElement.classList.contains('jd-record-open');
+      return { before, had, removed, restored: data.items.some((it) => it.id === pid), open, rows, title: title.slice(0, 80), ghost };
+    }, P2.prompt_id);
+    check('report card: an item the payload did not know (filed after the page loaded) is fetched on demand and opens; an unknown id is a no-op',
+      late.removed === (late.had ? 1 : 0) && late.restored === true && late.open === true && late.rows >= 5 && late.ghost === false, JSON.stringify(late));
     await rcCtx.close();
     check('mapped: reading moved nothing — the four judgments are still axis layering at 2 / 1 / 2 / 3',
       JSON.stringify(q("SELECT generation_id, axis_id, value FROM jd2_judgments WHERE session_id = ? AND axis_id IN ('layering', 'layering-2') ORDER BY generation_id", [sid2])) ===

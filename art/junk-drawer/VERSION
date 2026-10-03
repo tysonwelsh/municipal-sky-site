@@ -151,3 +151,4 @@
 0.14.1 — the bench keeps up with the batch: when the backlog runs dry while prompts are still drawing, the strip re-reads the queue every twenty seconds and seats the next prompt as it lands
 0.15.0 — every sitting opens on all four: before the first question one card shows the drawings together in the darkroom's 2×2, in their blind seats with the letters pencilled over them, any one enlarged by clicking it; it asks nothing — next goes on to drawing A, or on the bench to wherever a resume left off
 0.16.0 — Layering on four points: No / Minor / Moderate / Major problems, like the other issue axes; earlier three-point Layering answers read onto it (Small as Minor, Big as Major), marked where they show, never rewritten
+0.16.1 — the report card opens for a prompt filed since the page loaded: the bench's pile tag asked for a card the record had never heard of and got nothing; now it fetches that one item and opens
