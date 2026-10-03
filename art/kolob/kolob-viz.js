@@ -1004,14 +1004,27 @@ window.KolobViz = (function () {
   }
   function setNow(gr, g) { return gr.noCol ? gr.dueSp === g.sp : !!(gr.col && gr.col.sp === g.sp); }
   function prints(gr) { return gr.lastA >= 0.02 && !(gr.alone && gr.aloneOk === false); }
-  // (a set note as it is struck: its layout about x 0, and its x)
+  // (a set note as it is struck, while a curve is settled: its layout about
+  // x 0, and its x — the curve's first note's place on the page, and from
+  // there the whole device pixels the music between them makes. X rounds
+  // each note to the device pixel at the frame it is read in, so two notes'
+  // distance came out a pixel either way by the frame a curve happened to
+  // settle in, and two runs of a seed could settle one a pixel apart; read
+  // from the curve's own note, it is the distance a frame whose first note
+  // stands on a whole pixel gives, in every run)
+  var settling = null;                             // (the curve's first note: its time and its x, while settleCurve runs)
   function struck(gr, g) {
     var pg = prepGroup(gr, g);
-    return { L: inkLayout(gr, g, pg.heads, pg.o), o: pg.o, x: X(gr.tp) + (gr.noCol ? coDx(gr, g) : gr.col.dx) };
+    var x = settling.x + Math.round((gr.tp - settling.tp) * SCROLL_PX_S * dpr) / dpr;
+    return { L: inkLayout(gr, g, pg.heads, pg.o), o: pg.o, x: x + (gr.noCol ? coDx(gr, g) : gr.col.dx) };
   }
   // (the curve's one layout: its ends and side about its first note's own
   // time's x, its depth; ok false where it is too short to draw)
   function settleCurve(g, m) {
+    settling = { tp: m.tp, x: X(m.tp) };
+    try { return settleAbout(g, m); } finally { settling = null; }
+  }
+  function settleAbout(g, m) {
     var s = g.sp, tie = m.kind === "tie", A = struck(m.g1, g), B = struck(m.g2, g);
     function fq(gr) { var f = gr.fold && gr.fold.sp === s ? gr.fold : null; return f && f.oct ? (m.st === "T" ? -7 : 7) * f.oct : 0; }
     var side = m.vside || 0;                       // (+1: below the heads; the voice's own side, where two share the staff)
@@ -1051,7 +1064,7 @@ window.KolobViz = (function () {
         if (!curveCross(g, pre, near)) sh = pre;
       }
     }
-    var x0 = X(m.tp);
+    var x0 = settling.x;
     return { sp: s, ok: true, side: side, x1: sh.x1 - x0, y1: sh.y1, x2: sh.x2 - x0, y2: sh.y2, h: sh.h, th: sh.th };
   }
   // A slur passes over every head between its ends. The
