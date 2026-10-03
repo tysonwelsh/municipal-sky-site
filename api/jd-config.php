@@ -431,9 +431,16 @@ const JD_CONSENT_VERSION = 'jd-consent-6';
 // counts DRAWINGS (jd_generations rows), four to a turn, so 200 is 50
 // turns; it resets at midnight UTC. The per-visitor caps stay off by the
 // owner's choice; the providers' own spend limits sit behind this.
+//
+// RAISED FOR THE CAMPAIGN 2026-10-03: the owner's 128-prompt batch is 512
+// drawings in one sitting of the runner (plus a resume pass for any slot a
+// bare host 503 strands), and the breaker counts the owner's drawings too.
+// 560 covers it with a margin. DROP IT BACK TO 200 once the campaign batch
+// has run — a line here, a commit, a push; the visitor-facing fail-safe is
+// the 200.
 const JD_LIMIT_HOURLY = 100000;
 const JD_LIMIT_DAILY = 100000;
-const JD_LIMIT_GLOBAL_DAILY = 200;   // 50 turns x 4 drawings
+const JD_LIMIT_GLOBAL_DAILY = 560;   // campaign window; 200 (50 turns x 4) otherwise
 
 // The rating bench's auth, in one switch.
 //
