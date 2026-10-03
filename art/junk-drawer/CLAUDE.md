@@ -224,6 +224,24 @@ NEW PROMPT form lost its size select (the clerk sizes every new prompt; this
 card is where the owner confirms or changes it), so intake now runs on every
 new prompt.
 
+**Every sitting opens on THE PREVIEW** (0.15.0, owner 2026-10-03;
+`previewPanel` and ALL FOUR in `jd-turn.js`). Before the first question one
+card shows every drawing that came back, together, in the darkroom's 2×2
+(the loading cards, developed): the seats in their dealt order (the bench's
+blind shuffle, a visitor's darkroom slots), each print on the card's plate
+with its blind letter pencilled over it the head-to-head way, and each print
+the card's existing enlarge control (`plate()` with `zoom`, so click and
+Enter both open `openZoom`; no second lightbox). It files nothing and asks
+nothing: its step id is `preview`, its rail station the first ("all four",
+"all three", "both"; the 2×2 mark), its one control the usual next. A run
+short of four leaves the remaining cells empty; where a visitor's machine
+failed, the empty cell says "didn't survive", the results card's words. Visitors and the
+bench both get it (one instrument). A bench resume (`?bench&prompt=<id>`)
+opens on it too, since it is a glance and not a question; `curateOpen` keeps
+the step it would have opened as `work.resume`, and the preview's next goes
+there (`previewDest`). A one-drawing turn has no rail and no preview. The
+/about/ walkthrough's card opens on it as well.
+
 ## How ratings work
 
 - **What is rated is what is served.** The drawing served is the sanitized

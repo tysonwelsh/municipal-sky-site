@@ -8,7 +8,10 @@
 // Against a LOCAL server only (the origin allowlist admits 127.0.0.1:8000 in
 // dev): it refuses any base URL that is not loopback. With the mock provider
 // it takes two visitor turns, one at 390×844 (phone) and one at 1280×800 —
-// prompt → four drawings → the four grading panels → the podium → THE
+// prompt → four drawings → THE PREVIEW (0.15.0: the sitting's first step,
+// the drawings in a 2×2 in seat order with their blind letters, a click or
+// Enter enlarging one, next going to drawing A's first axis; above the fold
+// at 1280×800, 2×2 at 390) → the four grading panels → the podium → THE
 // PEDESTAL CARD ("by how much", owner 2026-10-02) → file → the unveil —
 // screenshotting each (the INTAKE clerk sizes a visitor's turn, so there is
 // NO size step: the rail carries no size node, the pedestal card files, and
@@ -21,7 +24,9 @@
 // and reads the SQLite (through php, as the bench test does) for six
 // DERIVED pairs with the right signed scores; then a two-drawing turn (one
 // question, the button files straight on) and a three-drawing turn (two
-// slips), the failures dealt by the mock's [fail:<provider>] tokens. Then it
+// slips), the failures dealt by the mock's [fail:<provider>] tokens — each
+// opening on a preview of two / three cells, the rest empty and saying the
+// drawing didn't survive. Then it
 // reloads the phone page, finds the item in the pile
 // once, opens its report card and reads the strip's head-to-head line; then opens it under ?admin with
 // the dev box's bench key (read from config/secrets.php by php, never
@@ -121,6 +126,42 @@ async function toPodium(pg, text, tag, shots) {
   const intake = await (await intakeAnswered).json();
   if (shots) await shot(pg, tag + '-1-results');
   await pg.click('[data-act="rate"]');
+  // ALL FOUR (0.15.0): the sitting opens on the preview — every drawing in
+  // the 2×2, in the seat order the docket deals, blind letters pencilled
+  await pg.waitForSelector('.jd-turn[data-view="preview"] .jd-preview', { timeout: 10000 });
+  await pg.waitForTimeout(300);
+  const preview = await previewState(pg);
+  if (shots) await shot(pg, tag + '-1b-preview');
+  // a click on a print opens the card's own enlargement (the shared zoom
+  // layer, captioned by the blind letter); Escape peels it
+  const firstSeat = preview.cells[0] && preview.cells[0].seat;
+  await pg.click('.jd-preview-cell[data-cell="' + firstSeat + '"] .jd-turn-plate');
+  await pg.waitForSelector('.jd-record-zoom.is-on .rc-zoom-cap-t', { timeout: 5000 }).catch(() => {});
+  preview.zoomClick = await zoomCap(pg);
+  await pg.waitForTimeout(500);   // the layer fades in
+  if (shots) await shot(pg, tag + '-1c-preview-enlarged');
+  await pg.keyboard.press('Escape');
+  await pg.waitForFunction(() => !document.querySelector('.jd-record-zoom.is-on'), null, { timeout: 5000 }).catch(() => {});
+  preview.zoomClosed = await pg.evaluate(() => !document.querySelector('.jd-record-zoom.is-on') &&
+    document.querySelector('.jd-turn').getAttribute('data-view') === 'preview');
+  // …and the keyboard: a cell's print takes focus, Enter enlarges it
+  const lastSeat = preview.cells[preview.cells.length - 1].seat;
+  await pg.focus('.jd-preview-cell[data-cell="' + lastSeat + '"] .jd-turn-plate');
+  await pg.keyboard.press('Enter');
+  await pg.waitForSelector('.jd-record-zoom.is-on .rc-zoom-cap-t', { timeout: 5000 }).catch(() => {});
+  preview.zoomKey = await zoomCap(pg);
+  await pg.keyboard.press('Escape');
+  await pg.waitForFunction(() => !document.querySelector('.jd-record-zoom.is-on'), null, { timeout: 5000 }).catch(() => {});
+  // next goes on to the first drawing's grading panel
+  await pg.click('.jd-turn-actions [data-act="next"]');
+  await pg.waitForSelector('.jd-bench', { timeout: 10000 });
+  preview.after = await pg.evaluate(() => ({
+    view: document.querySelector('.jd-turn').getAttribute('data-view'),
+    title: (document.querySelector('.jd-turn-title') || {}).textContent,
+    firstAxis: (document.querySelector('.jd-bench select[data-role="axis"]') || { getAttribute: () => null }).getAttribute('data-axis'),
+    back: !!document.querySelector('.jd-turn-actions [data-act="back"]'),
+    previewDone: !!document.querySelector('.jd-rail-step[data-step="preview"].is-done')
+  }));
   let panel = null;
   for (let d = 0; ; d++) {
     await pg.waitForSelector('.jd-bench', { timeout: 10000 });
@@ -159,7 +200,72 @@ async function toPodium(pg, text, tag, shots) {
     await pg.click('.jd-pod-tier[data-rank="' + k + '"] .jd-pod-block');
     await pg.click('.jd-pod-print[data-pod="' + order[k - 1] + '"]');
   }
-  return { intake, order, panel };
+  return { intake, order, panel, preview };
+}
+// the preview card, read off the page: the view and heading, the docket's
+// stations, each cell's seat, pencilled letter and enlarge fitting, the
+// empty cells, the line, the button, and anything that could name a model
+const previewState = (pg) => pg.evaluate(() => {
+  const go = document.querySelector('.jd-turn-actions .jd-turn-go');
+  const grid = document.querySelector('.jd-preview');
+  const cs = grid && getComputedStyle(grid);
+  return {
+    view: document.querySelector('.jd-turn').getAttribute('data-view'),
+    title: (document.querySelector('.jd-turn-title') || {}).textContent,
+    rail: [...document.querySelectorAll('.jd-rail-step')].map((b) => ({ step: b.getAttribute('data-step'),
+      current: b.classList.contains('is-current'), word: (b.querySelector('.jd-rail-word') || {}).textContent })),
+    cells: [...document.querySelectorAll('.jd-preview-cell:not(.is-empty)')].map((c) => {
+      const f = c.querySelector('.jd-turn-plate');
+      const r = c.getBoundingClientRect();
+      return { seat: c.getAttribute('data-cell'), tag: (c.querySelector('.jd-pair-tag') || {}).textContent,
+        button: !!f && f.getAttribute('role') === 'button' && f.getAttribute('tabindex') === '0',
+        svg: !!c.querySelector('.jd-turn-art-in svg'), box: [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.bottom)] };
+    }),
+    empty: [...document.querySelectorAll('.jd-preview-cell.is-empty')].map((c) => c.textContent),
+    cols: cs ? cs.gridTemplateColumns.split(' ').length : 0,
+    line: (document.querySelector('.jd-preview-line') || {}).textContent,
+    go: go ? { act: go.getAttribute('data-act'), disabled: go.disabled, text: go.textContent } : null,
+    back: !!document.querySelector('.jd-turn-actions [data-act="back"]'),
+    titles: document.querySelectorAll('.jd-preview [title]').length,
+    stamps: document.querySelectorAll('.jd-turn [class*="stamp"]').length,
+    text: document.querySelector('.jd-turn').textContent,
+    vh: window.innerHeight, overflow: document.documentElement.scrollWidth > window.innerWidth
+  };
+});
+const zoomCap = (pg) => pg.evaluate(() => {
+  const c = document.querySelector('.jd-record-zoom.is-on .rc-zoom-cap-t');
+  return c ? c.textContent : null;
+});
+// the preview's checks, shared by every turn the test takes
+function checkPreview(tag, P, n, models) {
+  const seats = P.rail.filter((r) => /^[a-d]$/.test(r.step)).map((r) => r.step);
+  const words = { 4: 'all four', 3: 'all three', 2: 'both' }[n];
+  check(tag + ': the sitting opens on the preview — the docket\'s FIRST station, current, before the first drawing',
+    P.view === 'preview' && P.rail[0] && P.rail[0].step === 'preview' && P.rail[0].current &&
+    P.rail[0].word === words && P.rail[1] && P.rail[1].step === seats[0] &&
+    P.title.toLowerCase() === words, JSON.stringify({ view: P.view, title: P.title, rail: P.rail }));
+  check(tag + ': ' + n + ' cells in the dealt seat order, each a drawing with its blind letter pencilled over it',
+    P.cells.length === n && P.cells.map((c) => c.seat).join() === seats.join() &&
+    P.cells.every((c) => c.svg && c.tag === 'Drawing ' + c.seat.toUpperCase()),
+    JSON.stringify({ cells: P.cells.map((c) => [c.seat, c.tag, c.svg]), seats }));
+  check(tag + ': ' + (4 - n) + ' empty cell' + (4 - n === 1 ? '' : 's') + (n < 4 ? ', each saying the drawing didn\'t survive' : ''),
+    P.empty.length === 4 - n && P.empty.every((t) => t === 'didn’t survive'), JSON.stringify(P.empty));
+  check(tag + ': the one-line instruction, no back, next armed toward drawing ' + (seats[0] || '').toUpperCase(),
+    P.line === words.charAt(0).toUpperCase() + words.slice(1) + ', side by side. Click one to enlarge.' &&
+    !P.back && P.go && P.go.act === 'next' && !P.go.disabled &&
+    P.go.text.indexOf('drawing ' + (seats[0] || '').toUpperCase()) !== -1, JSON.stringify({ line: P.line, go: P.go, back: P.back }));
+  check(tag + ': nothing on the preview names a model, carries a tooltip or a stamp',
+    !models.some((m) => m && P.text.indexOf(m) !== -1) && P.titles === 0 && P.stamps === 0,
+    JSON.stringify({ hit: models.filter((m) => m && P.text.indexOf(m) !== -1), titles: P.titles, stamps: P.stamps }));
+  check(tag + ': every print is the enlarge control (role=button, focusable)', P.cells.every((c) => c.button));
+  check(tag + ': a click on a print enlarges it (the card\'s own zoom, blind caption); Escape shrinks it back to the preview',
+    !!P.zoomClick && / · drawing [A-D]$/.test(P.zoomClick) && P.zoomClick.slice(-1) === P.cells[0].seat.toUpperCase() &&
+    P.zoomClosed, JSON.stringify({ cap: P.zoomClick, closed: P.zoomClosed }));
+  check(tag + ': Enter on a focused print enlarges it',
+    !!P.zoomKey && P.zoomKey.slice(-1) === P.cells[P.cells.length - 1].seat.toUpperCase(), String(P.zoomKey));
+  check(tag + ': next goes to the first drawing\'s grading panel (its first axis), with back to the preview',
+    P.after.view === 'bench' && P.after.title === 'Grade drawing ' + (seats[0] || '').toUpperCase() &&
+    !!P.after.firstAxis && P.after.back && P.after.previewDone, JSON.stringify(P.after));
 }
 // the pedestal card's state, read off the DOM and the hooks
 const ped = (pg) => pg.evaluate(() => {
@@ -223,10 +329,27 @@ async function main() {
   const near = (a, b) => Math.abs(a - b) < 0.6;
   const gapsOf = (ans) => (ans && ans.ranking || []).slice(0, -1).map((p) => p.gap).join(',');
   const filed = {};
+  // every name the registry knows, for the preview's blindness check
+  const models = [];
+  (taxonomy.models || []).forEach((m) => [m.label, m.id, m.api_model, m.vendor, m.provider].forEach((x) => {
+    if (typeof x === 'string' && x.length > 2) models.push(x);
+  }));
   for (const [pg, tag] of [[page, 'phone'], [deskPage, 'desk']]) {
     await pg.goto(BASE + '/art/junk-drawer/', { waitUntil: 'load' });
     const t = await toPodium(pg, prompt + ' ' + tag, tag, true);
     const intake = t.intake;
+    checkPreview(tag, t.preview, 4, models);
+    const PV = t.preview;
+    if (tag === 'phone') {
+      // 2×2 at 390px: two columns, the second row under the first
+      check('phone: the preview stacks 2×2 at 390px, no sideways scroll',
+        PV.cols === 2 && PV.cells.length === 4 && PV.cells[0].box[1] === PV.cells[1].box[1] &&
+        PV.cells[2].box[1] > PV.cells[0].box[3] && !PV.overflow, JSON.stringify({ cols: PV.cols, boxes: PV.cells.map((c) => c.box) }));
+    } else {
+      check('desk: all four stand above the fold at 1280×800 (2×2)',
+        PV.cols === 2 && PV.cells.every((c) => c.box[3] <= PV.vh) && PV.cells[0].box[1] === PV.cells[1].box[1],
+        JSON.stringify({ cols: PV.cols, boxes: PV.cells.map((c) => c.box), vh: PV.vh }));
+    }
     // THE FIVE-AXIS RATING CARD (taxonomy v35) and the house rule over it
     const live = taxonomy.axes.filter((a) => !a.defunct);
     const P = t.panel || { axes: [] };
@@ -442,7 +565,8 @@ async function main() {
   for (const [fails, n, answers] of [['[fail:kimi] [fail:google]', 2, ['1']], ['[fail:google]', 3, ['3', '0.5']]]) {
     const pg = deskPage;
     await pg.goto(BASE + '/art/junk-drawer/', { waitUntil: 'load' });
-    await toPodium(pg, 'a tin whistle on a red cord ' + fails + ' (jd2 card test n=' + n + ' ' + Date.now() + ')', 'n' + n, false);
+    const tn = await toPodium(pg, 'a tin whistle on a red cord ' + fails + ' (jd2 card test n=' + n + ' ' + Date.now() + ')', 'n' + n, n === 3);
+    checkPreview('n=' + n, tn.preview, n, models);
     await pg.click('.jd-turn-actions [data-act="next"]');
     await pg.waitForSelector('.jd-ped', { timeout: 10000 });
     let s2 = await ped(pg);

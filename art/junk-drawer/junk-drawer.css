@@ -3346,6 +3346,57 @@ html.jd-turn-open { overflow: hidden; }
   justify-content: center;
   margin-top: var(--sp-4); margin-bottom: var(--sp-2);
 }
+/* ALL FOUR — THE PREVIEW (0.15.0, owner 2026-10-03; previewPanel in
+   jd-turn.js). The first step of every sitting: the drawings together in
+   the darkroom's 2×2, the loading cards developed — the same grid, the same
+   gutter-to-print ratio as the Results pile above (5.5% / 6% of a ~46%
+   print: about an eighth of a print each way), each print the card's own
+   graph-paper plate with its blind letter pencilled over it (.jd-pair-tag,
+   the head to head's). The sheet stands at the bench's measure so nothing
+   changes size at the step that follows. --pv is the print: half of what
+   the padded viewport leaves after the masthead, docket, line and button
+   (≈290px), so both rows stand above the fold on a desktop; the tracks
+   shrink to the column's width before they ever overflow it. A run short
+   of four leaves its last cells empty paper. */
+.jd-turn[data-view="preview"] {
+  --pv: clamp(120px, calc((100dvh - var(--banner-h) - 290px) / 2), 380px);
+  width: min(960px, 100%);
+}
+/* on the bench the strip takes the scrim's foot (its padding is the strip's
+   measured height, jd-bench.js), so the prints give that back */
+html.jd-bench-on .jd-turn[data-view="preview"] {
+  --pv: clamp(120px, calc((100dvh - var(--banner-h) - var(--jd-bench-bar-h, 46px) - 280px) / 2), 380px);
+}
+.jd-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, var(--pv)));
+  justify-content: center;
+  gap: calc(var(--pv) * 0.12) calc(var(--pv) * 0.13);
+  padding: 2px 0 var(--sp-2);
+}
+.jd-preview-cell { position: relative; min-width: 0; }
+.jd-preview-cell .jd-turn-plate { width: 100%; }
+.jd-preview-cell .jd-turn-corner { width: 18px; height: 18px; }
+.jd-preview-cell.is-empty {
+  aspect-ratio: 1 / 1;
+  display: flex; align-items: center; justify-content: center;
+}
+/* a lost drawing's cell says so in the results card's words, pencilled */
+.jd-preview-lost {
+  font-family: var(--thand); font-size: 0.95rem; line-height: 1.1;
+  color: var(--graphite);
+}
+.jd-turn-line.jd-preview-line { text-align: center; }
+.jd-turn[data-view="preview"] .jd-turn-actions { justify-content: center; }
+@media (max-width: 700px) {
+  .jd-turn[data-view="preview"] { width: min(680px, 100%); }
+  .jd-preview-cell .jd-turn-corner { width: 15px; height: 15px; }
+}
+/* one column only on the narrowest phones */
+@media (max-width: 359px) {
+  .jd-preview { grid-template-columns: minmax(0, var(--pv)); }
+}
+
 /* the paper, border and shadow are .rc-plate's (one rule, report card section) */
 .jd-turn-art { position: relative; width: 100%; aspect-ratio: 1 / 1; }
 .jd-turn-art-in { position: absolute; inset: 7%; }
@@ -3425,12 +3476,15 @@ html.jd-turn-open { overflow: hidden; }
   letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap;
 }
 /* (the head to head's sheet, data-view="pair", stands at the bench's 960
-   measure, so it wears the pills too — dataset v2, 2026-10-01) */
+   measure, so it wears the pills too — dataset v2, 2026-10-01 — and so does
+   the preview's, data-view="preview", 0.15.0; its 2×2 mark rides inside its
+   pill the way the scales do) */
 @media (min-width: 769px) {
   .jd-turn[data-view="bench"] .jd-rail-step,
   .jd-turn[data-view="call"] .jd-rail-step,
   .jd-turn[data-view="gaps"] .jd-rail-step,
-  .jd-turn[data-view="pair"] .jd-rail-step {
+  .jd-turn[data-view="pair"] .jd-rail-step,
+  .jd-turn[data-view="preview"] .jd-rail-step {
     min-height: 26px; padding: 0 12px;
     background: rgba(255, 250, 232, 0.35);
     border: 1px solid var(--trule); border-radius: 999px;
@@ -3438,39 +3492,51 @@ html.jd-turn-open { overflow: hidden; }
   .jd-turn[data-view="bench"] .jd-rail-word,
   .jd-turn[data-view="call"] .jd-rail-word,
   .jd-turn[data-view="gaps"] .jd-rail-word,
-  .jd-turn[data-view="pair"] .jd-rail-word { display: inline; }
+  .jd-turn[data-view="pair"] .jd-rail-word,
+  .jd-turn[data-view="preview"] .jd-rail-word { display: inline; }
   .jd-turn[data-view="bench"] .jd-rail-ring,
   .jd-turn[data-view="call"] .jd-rail-ring,
   .jd-turn[data-view="gaps"] .jd-rail-ring,
-  .jd-turn[data-view="pair"] .jd-rail-ring { display: none; }
+  .jd-turn[data-view="pair"] .jd-rail-ring,
+  .jd-turn[data-view="preview"] .jd-rail-ring { display: none; }
   /* the scales — and the head to head's two prints — keep their icon
      inside the pill, unringed */
   .jd-turn[data-view="bench"] .jd-rail-step--call .jd-rail-ring,
   .jd-turn[data-view="call"] .jd-rail-step--call .jd-rail-ring,
   .jd-turn[data-view="gaps"] .jd-rail-step--call .jd-rail-ring,
   .jd-turn[data-view="pair"] .jd-rail-step--call .jd-rail-ring,
+  .jd-turn[data-view="preview"] .jd-rail-step--call .jd-rail-ring,
   .jd-turn[data-view="bench"] .jd-rail-step--gaps .jd-rail-ring,
   .jd-turn[data-view="call"] .jd-rail-step--gaps .jd-rail-ring,
   .jd-turn[data-view="gaps"] .jd-rail-step--gaps .jd-rail-ring,
   .jd-turn[data-view="pair"] .jd-rail-step--gaps .jd-rail-ring,
+  .jd-turn[data-view="preview"] .jd-rail-step--gaps .jd-rail-ring,
   .jd-turn[data-view="bench"] .jd-rail-step--pairs .jd-rail-ring,
   .jd-turn[data-view="call"] .jd-rail-step--pairs .jd-rail-ring,
   .jd-turn[data-view="gaps"] .jd-rail-step--pairs .jd-rail-ring,
-  .jd-turn[data-view="pair"] .jd-rail-step--pairs .jd-rail-ring {
+  .jd-turn[data-view="pair"] .jd-rail-step--pairs .jd-rail-ring,
+  .jd-turn[data-view="preview"] .jd-rail-step--pairs .jd-rail-ring,
+  .jd-turn[data-view="bench"] .jd-rail-step--preview .jd-rail-ring,
+  .jd-turn[data-view="call"] .jd-rail-step--preview .jd-rail-ring,
+  .jd-turn[data-view="gaps"] .jd-rail-step--preview .jd-rail-ring,
+  .jd-turn[data-view="pair"] .jd-rail-step--preview .jd-rail-ring,
+  .jd-turn[data-view="preview"] .jd-rail-step--preview .jd-rail-ring {
     display: flex; width: auto; height: auto;
     border: 0; background: none;
   }
   .jd-turn[data-view="bench"] .jd-rail-step.is-done,
   .jd-turn[data-view="call"] .jd-rail-step.is-done,
   .jd-turn[data-view="gaps"] .jd-rail-step.is-done,
-  .jd-turn[data-view="pair"] .jd-rail-step.is-done {
+  .jd-turn[data-view="pair"] .jd-rail-step.is-done,
+  .jd-turn[data-view="preview"] .jd-rail-step.is-done {
     background: var(--graphite); border-color: var(--graphite);
     color: var(--tpaper-hi);
   }
   .jd-turn[data-view="bench"] .jd-rail-step.is-current,
   .jd-turn[data-view="call"] .jd-rail-step.is-current,
   .jd-turn[data-view="gaps"] .jd-rail-step.is-current,
-  .jd-turn[data-view="pair"] .jd-rail-step.is-current {
+  .jd-turn[data-view="pair"] .jd-rail-step.is-current,
+  .jd-turn[data-view="preview"] .jd-rail-step.is-current {
     border: 2px solid var(--tred); background: var(--tpaper-hi);
   }
   /* seven pills (four drawings, ranking, head to head, size) run ~900px:
@@ -3481,7 +3547,12 @@ html.jd-turn-open { overflow: hidden; }
   .jd-turn[data-view="bench"] .jd-rail--long .jd-rail-step,
   .jd-turn[data-view="call"] .jd-rail--long .jd-rail-step,
   .jd-turn[data-view="gaps"] .jd-rail--long .jd-rail-step,
-  .jd-turn[data-view="pair"] .jd-rail--long .jd-rail-step { padding: 0 9px; }
+  .jd-turn[data-view="pair"] .jd-rail--long .jd-rail-step,
+  .jd-turn[data-view="preview"] .jd-rail--long .jd-rail-step { padding: 0 9px; }
+  /* eight (the preview ahead of the bench's catalogue entry, 0.15.0) ran
+     past the 960 sheet's border: the preview's pill wears its 2×2 mark
+     alone (its aria-label still says "all four") */
+  .jd-rail--longer .jd-rail-step--preview .jd-rail-word { display: none; }
 }
 /* …and between the pills' breakpoint and ~1000px the sheet is narrower
    than 960, so the long docket's words close their tracking a step */
@@ -3490,7 +3561,17 @@ html.jd-turn-open { overflow: hidden; }
   .jd-turn[data-view="bench"] .jd-rail--long .jd-rail-step,
   .jd-turn[data-view="call"] .jd-rail--long .jd-rail-step,
   .jd-turn[data-view="gaps"] .jd-rail--long .jd-rail-step,
-  .jd-turn[data-view="pair"] .jd-rail--long .jd-rail-step { padding: 0 7px; }
+  .jd-turn[data-view="pair"] .jd-rail--long .jd-rail-step,
+  .jd-turn[data-view="preview"] .jd-rail--long .jd-rail-step { padding: 0 7px; }
+  /* eight stations close up another step here (0.15.0) */
+  .jd-rail--longer { gap: 2px; }
+  .jd-rail--longer .jd-rail-lnk { flex-basis: 6px; }
+  .jd-turn[data-view="bench"] .jd-rail--longer .jd-rail-step,
+  .jd-turn[data-view="call"] .jd-rail--longer .jd-rail-step,
+  .jd-turn[data-view="gaps"] .jd-rail--longer .jd-rail-step,
+  .jd-turn[data-view="pair"] .jd-rail--longer .jd-rail-step,
+  .jd-turn[data-view="preview"] .jd-rail--longer .jd-rail-step { padding: 0 5px; }
+  .jd-rail--longer .jd-rail-word { letter-spacing: 0.04em; }
 }
 /* the head-to-head node's count — "3/6" — rides its word, in the pencil's
    weight rather than the form's tracking */

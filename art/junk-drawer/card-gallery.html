@@ -209,6 +209,7 @@
     'darkroom', 'darkroom-mixed', 'darkroom-slow', 'confirm',
     'apology',
     'reveal', 'reveal-degraded',
+    'preview',
     'bench',
     'call-likert', 'call-pills',
     'unveil-kept', 'unveil-tie',
@@ -278,6 +279,10 @@
     snap('reveal', '§3 · THE RESULTS',
       'The 2×2 reveal on the darkroom’s measure — straight prints, pencilled slot letters, GRADE THEM centred. The clone replays the draw-on once.');
     click('[data-act="rate"]'); await sleep(250);
+    /* the sitting opens on the preview (0.15.0): all four in the 2×2 */
+    snap('preview', '§4 · ALL FOUR — the preview',
+      'The first step of every sitting: the four drawings in the darkroom’s 2×2, blind letters pencilled over them, each print the enlarge control; next goes to drawing A.');
+    click('[data-act="next"]'); await sleep(150);
     /* one answered row, so the in-place gauge shows in the layout */
     var sel = q('select[data-role="axis"]');
     if (sel && sel.options.length > 1) {
@@ -328,6 +333,7 @@
            c: fail('sanitizer_rejected'), d: ok('d') });
     await sleep(900);
     click('[data-act="rate"]'); await sleep(250);
+    click('[data-act="next"]'); await sleep(150);   /* the preview */
     click('[data-act="next"]'); await sleep(150);
     click('[data-act="next"]'); await sleep(150);
     snap('call-likert', '§5 · THE CALL — two survivors (the likert rail)',
@@ -355,6 +361,7 @@
     send({ a: ok('a'), b: ok('b'), c: fail('provider_failed'), d: fail('provider_failed') });
     await sleep(900);
     click('[data-act="rate"]'); await sleep(250);
+    click('[data-act="next"]'); await sleep(150);   /* the preview */
     click('[data-act="next"]'); await sleep(150);
     click('[data-act="next"]'); await sleep(150);
     var w2 = q('input[data-role="call"]');   /* first likert stop: a decisively */
