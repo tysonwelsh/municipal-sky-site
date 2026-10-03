@@ -476,6 +476,12 @@ share `local-dev/jd-dev.sqlite`, and the flow and reads tests empty the
   own `php -S`.
 - `php scripts/test-jd-sanitizer.php`: the sanitizer fixtures.
 - `python3 scripts/validate-junk-drawer.py`: the v1 archive in `legacy/items/`.
+- `node scripts/test-jd-legacy.js`: the legacy exhibit is byte-identical to
+  `legacy/CHECKSUMS.sha256` and still answers with v1's rubric (its
+  `README-LEGACY.md` lists the shared files that can bend it). Run it after
+  touching `api/jd-config.php`, `api/jd-analytics.php`, `api/jd-gen-svg.php`,
+  `api/jd-usage.php`, `api/page-event-tracking.php`, the site header/footer
+  or `css/style.css`.
 
 Always run `php -l` and `node --check` on what you touch.
 `scripts/jd-regress/` (the 56-scene byte-for-byte harness) holds v1 captures

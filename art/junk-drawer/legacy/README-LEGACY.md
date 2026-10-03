@@ -45,3 +45,25 @@ unchanged), `analytics-folder.svg`, `items/` (whole, real files, no symlink).
 
 The v1 write endpoints are frozen separately by `JD_V1_FROZEN` in
 `api/jd-config.php`, on since the cutover (2026-10-01).
+
+## What the exhibit still shares, and the guard (2026-10-03)
+
+Nothing in this folder is edited, but the page still leans on a few files
+outside it: `includes/header.php` and `footer.php`, `css/style.css`,
+`api/jd-config.php` (constants and helpers; `legacy/data.php` requires it),
+`api/jd-analytics.php` (the folder's numbers — since 2026-10-03 it reads THIS
+folder's `taxonomy.json`, not the live one: the v35 and v36 rubric changes had
+emptied two of its panels), `api/jd-gen-svg.php` (rated v1 turns' drawings),
+`api/jd-usage.php` and `api/page-event-tracking.php`. An edit to any of those
+can bend the exhibit without touching this folder.
+
+`CHECKSUMS.sha256` fingerprints every file here. `scripts/test-jd-legacy.js`
+(one of the one-at-a-time suites; Playwright) fails if any file differs from
+the manifest, if a file appears that the manifest does not know, if the page
+throws, if `?bench` turns the key gate on, or if `data.php` or
+`jd-analytics.php` answer with anything but v1's rubric. Run it after
+touching any shared file above. If a change to this folder is ever
+deliberate (the owner's call), regenerate the manifest in the same commit:
+
+    cd art/junk-drawer/legacy && find . -type f ! -name CHECKSUMS.sha256 -print0 | sort -z | xargs -0 shasum -a 256 > CHECKSUMS.sha256
+
