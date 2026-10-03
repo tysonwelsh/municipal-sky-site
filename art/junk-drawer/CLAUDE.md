@@ -208,7 +208,9 @@ new prompt.
 - **A session is one sitting** of one rater over one run. It carries a grade
   and every live axis per drawing, a strict ranking (with optional gaps
   0..3), and pairs. Each session is stamped with its role, taxonomy version,
-  instrument version, `blind`, `seat_order` and an optional `note`.
+  instrument version, `required_cells` (the live axis ids + `grade` its
+  rubric asked for, JSON, since v35), `blind`, `seat_order` and an optional
+  `note`.
 - **Sessions are append-only.** A re-rating, the admin editor and the ledger's
   SAVE all file a NEW session. Nothing is deleted or replaced. The admin
   editor and the ledger refuse to save over a VISITOR's sitting (data.php's
@@ -223,9 +225,14 @@ new prompt.
   pedestal card is the instrument (every visitor sitting, and the bench by
   default), or `direct` when the bench's `?pairs=1` audit asks them on the
   side-by-side cards. One session uses one method or the other.
-- **Complete** = every ok, unhidden drawing has a grade and every live axis,
-  the ranking places them all, and every pair has a score. Completeness is
-  computed from the taxonomy at the session's version, never from a constant.
+- **Complete** = every ok, unhidden drawing has a grade and every axis the
+  sitting's own rubric required, the ranking places them all, and every pair
+  has a score. The cells are the session's `required_cells`
+  (`jd2_session_cells`; the live axes when a row has none), never a constant
+  and never today's taxonomy for a sitting filed under an older one: adding
+  an axis asks the NEXT sitting for it and leaves every filed sitting
+  complete. The runner backfilled the sittings filed before v35 with the v34
+  cells (`JD2_CELLS_BEFORE_V35`, a one-off rule).
 - **Hiding.** `jd2-curate` sets `visibility` to `live`, `hidden` or `draft`.
   This is the ONE switch: HIDE FROM DRAWER, the bench's scrap, and the
   ledger all set it. `hidden` on a generation drops a single drawing from
@@ -239,7 +246,31 @@ new prompt.
   every v2 session refer to them.
 - **Retire, never delete:** set `"defunct": true` on an axis. A defunct axis
   stays for the ratings filed under it, is never asked again, and drops out
-  of completeness.
+  of completeness for new sittings (an older sitting's `required_cells`
+  still names it). The bench prefill drops a value on a defunct axis or off
+  its axis's current scale (`prefill_pruned`) and the card says so.
+- **A scale change is a new id, not a wording edit** (v17, and v35's
+  `structural-coherence` → `structural-coherence-2`): one id always means
+  one scale. Labels, descriptions and summaries are free data edits at any
+  time (bump `version`, add a changelog line); a different number of points
+  is a new axis id with the old one marked defunct. Say so when an owner
+  "refinement" would change a scale.
+- **The live axes as of v35 (2026-10-02)**, in display order (array order):
+  `understanding-assignment` (4), `structural-coherence-2` (4), `layering`
+  (3), `paintwork` (4), `jnsq` (3). Each issue axis is named by the edit
+  that fixes it — redraw / move on x-y / restack or erase / repaint in
+  place — and the descriptions carry the boundary rulings (framing is
+  Structural Coherence's; an unrequested setting is Layering's, an added
+  thing Understanding Assignment's; every cast shadow is Paintwork's).
+  The 4-point issue axes read No / Minor / Moderate / Major problems,
+  Layering No / Small / Big. `JD_axisCls` gives every 4-point axis the
+  `rc-q*` ramp. The analytics folder and the about page chart one panel
+  per live axis (`JD_axisRates` + `JD_axisBuckets`, which names each
+  panel's two segments from the value labels).
+- **`houseRule`** is the drawing system prompt's house rules in one
+  rater-facing sentence; the rating card prints it above the axes and the
+  report card above its grades table. Display only: no axis reads it, and
+  it is not in the intake prompt.
 - **`comparison`** is the 7-point head-to-head scale (+3 = the first much
   better; "About the same" at 0), rendered by the `?pairs=1` audit cards.
   **`gaps`** is the 0..3 margin between adjacent places, rendered by the

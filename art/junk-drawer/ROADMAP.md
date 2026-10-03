@@ -15,8 +15,24 @@ pedestal session) derived from the podium's gaps — one `jd2_pairs` table.
 **Before the rating campaign starts** (each is a data edit or a small
 back-end change; the owner decides the wording):
 
-- **Settle the scales — A HARD GATE before the first bench sitting (owner,
-  2026-10-02, re-raised).** The owner is reconsidering: possibly NOT a
+- **Settle the scales — CLOSED 2026-10-02 (taxonomy v35, VERSION 0.14.0).**
+  The outcome (owner, PLAN-PAINTWORK-HANDOFF §1/§2a): Understanding
+  Assignment 4-point, Structural Coherence 4-point under a NEW id
+  (`structural-coherence-2`; the 3-point `structural-coherence` is defunct,
+  kept for the sittings rated on it), Layering 3-point, Je ne sais quoi
+  3-point — and a fifth axis, **Paintwork** (`paintwork`, 4-point: light and
+  shadow, colour, line, texture, lettering, judged in the drawing's own
+  style; every cast shadow is its). The 4-point issue axes read No / Minor /
+  Moderate / Major problems; Layering keeps No / Small / Big. Boundaries
+  redrawn (framing → Structural Coherence; an unrequested setting →
+  Layering, an added thing → Understanding Assignment; shadows →
+  Paintwork), the benefit-of-the-doubt sentence is in Understanding
+  Assignment's description, and the house rule prints on the rating card
+  (`houseRule`). Production held one filed sitting by then (the owner's
+  trial), so every sitting now carries the cells it was required to carry
+  (`jd2_sessions.required_cells`) and the runner backfilled the trial's;
+  after the first campaign sitting a scale change is still a new id.
+  The original entry, for the record: the owner is reconsidering: possibly NOT a
   4-point scale for understanding-assignment, and possibly 4-point scales
   for layering and structural coherence (jnsq undecided). Why it is a gate:
   no v2 rating session exists in production yet, so a scale change today
@@ -40,7 +56,8 @@ back-end change; the owner decides the wording):
   reading the owner had in mind. Suggested sentence for the description:
   "If the prompt is ambiguous, any reasonable reading counts as
   understanding it; do not penalise a drawing for choosing a different
-  reasonable reading than you had in mind."
+  reasonable reading than you had in mind." (In understanding-assignment's
+  description since taxonomy v35.)
 - **Rationale notes.** A free-text comment per sitting (and per cell where
   wanted), kept on hand for taxonomy tweaks, not necessarily shown on the
   card. Schema: add `jd2_sessions.note` (additive; judgments already carry

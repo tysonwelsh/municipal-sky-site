@@ -241,6 +241,7 @@ Keys: `uq_jd2g_run_slot (run_id, slot)` (also the `run_id` index),
 | `client` | `web` \| `ios` \| `android` (`JD_CLIENTS`) |
 | `taxonomy_version` | `taxonomy.json` `version`, stamped server-side |
 | `instrument_version` | `JD2_INSTRUMENT_VERSION` (`v2.0`), stamped server-side |
+| `required_cells` | JSON list: the axis ids, then `grade`, that this sitting had to carry to be complete — `jd2_required_cells()` (the live axes of the taxonomy) at filing, stamped by `jd2-rate` since taxonomy v35. Readers judge completeness against it (`jd2_session_cells`); NULL = judged on the live axes. TEXT NULL (2026-10-02) |
 | `blind` | 1 unless the rater could see model names |
 | `seat_order` | JSON: the slot letters in the order they were dealt to this rater |
 | `note` | the rater's free-text rationale for the sitting — the owner's taxonomy notes, kept on hand, not necessarily shown (2026-10-01) |
@@ -311,8 +312,23 @@ index), `idx_jd2pr_gen_a`, `idx_jd2pr_gen_b`.
   current owner session, else the current visitor session. Both stay on file
   and are reported separately.
 - **Complete** = every non-hidden `ok` generation of the run carries every
-  cell `jd2_required_cells()` names for the session's taxonomy version (the
-  live axes plus the grade), computed from the taxonomy, never from a constant.
+  cell the SESSION's rubric required — its own `required_cells`
+  (`jd2_session_cells()`), else, for a row with none, `jd2_required_cells()`
+  of the taxonomy handed in (the live axes plus the grade) — never a
+  constant. **This is what lets an axis be added mid-campaign without
+  emptying the drawer:** a new axis asks the next sitting for it, while
+  every sitting already filed is still judged by the cells it was asked
+  for, stays complete, and keeps its prompt in the drawer. (Taxonomy v35
+  added Paintwork and the 4-point Structural Coherence while production
+  held one filed sitting.)
+- **The one-off backfill rule (taxonomy < 35).** Sessions filed before the
+  column existed carry no stamp. From the v2 baseline (v26) through v34 the
+  v2 rubric's required cells were exactly `understanding-assignment`,
+  `structural-coherence`, `layering`, `jnsq` and `grade`
+  (`JD2_CELLS_BEFORE_V35`), so `setup-jd2-tables.php` writes that list onto
+  every session with `taxonomy_version < 35` and `required_cells` NULL
+  (idempotent: a re-run has nothing to backfill). No judgment, ranking or
+  pair is touched.
 - **Derived pairs are a cache.** The ranking and its gaps are the raw answer;
   `jd2_derive_pairs()` recomputes the pairs from them, and a `method` bump
   re-derives. The score between places i < j is the sum of the gaps from i to
@@ -446,8 +462,9 @@ with `jd2_display_pick`, the same rules over rows already read):
    be complete: the owner's current session if complete, else the visitor's
    current session if complete (an incomplete sitting never displaces a
    complete one).
-3. **Complete** — every non-hidden ok drawing has a grade and every live axis
-   of the taxonomy; with more than one drawing, a ranking places them all in
+3. **Complete** — every non-hidden ok drawing has a grade and every axis the
+   session's own rubric required (`required_cells`, else the live axes);
+   with more than one drawing, a ranking places them all in
    distinct places and every unordered pair of them has a score (direct or
    derived).
 
@@ -469,7 +486,7 @@ owner session.
 | --- | --- | --- |
 | `GET api/jd2-queue.php` | origin + bench key; `no-store` | the bench's backlog → `{build, taxonomy_version, instrument_version, axes[], grades[], size_tiers[], facets[], comparison, gaps, models{id: label}, items[], progress{prompts, complete, drawing, cells_filed, cells_total}}`; `?prompt=<id>` one prompt in any state, `?all=1` every prompt, `?reveal=1` adds `model_id`, `?count=1` only `{today:{generations, limit, remaining, since, resets_in_s}}` |
 | `GET api/jd2-ledger.php` | origin + bench key; `no-store` | one row per prompt, every visibility → `{build, taxonomy_version, instrument_version, axes[], grades{}, models{}, counts{prompts, live, hidden, draft, bench_open}, items[]}`; `?prompt=<id>` one prompt |
-| `GET api/jd2-analytics.php` | origin; public; `Cache-Control: no-cache`, ETag and 304 (as data.php) | v1's `jd-analytics.php` keys and shapes (`totals, models, cost, firsts, grades, axes, spend, turns`) from the jd2 tables, plus `pairs{models, matrix, wins, bt}`, `margins[]` and `tags{facet: {heading: {label, n, by_model{model: {mean, n}}}}}`; `?origin=owner\|visitor`; `?tag=<facet>:<heading>` keeps the prompts filed under that heading (population and spend; 400 for a heading the taxonomy lacks) |
+| `GET api/jd2-analytics.php` | origin; public; `Cache-Control: no-cache`, ETag and 304 (as data.php) | v1's `jd-analytics.php` keys and shapes (`totals, models, cost, firsts, grades, axes, spend, turns`) from the jd2 tables, each `axes[]` entry also carries `values [{rank, label}]` best first (v35), plus `pairs{models, matrix, wins, bt}`, `margins[]` and `tags{facet: {heading: {label, n, by_model{model: {mean, n}}}}}`; `?origin=owner\|visitor`; `?tag=<facet>:<heading>` keeps the prompts filed under that heading (population and spend; 400 for a heading the taxonomy lacks) |
 
 **The bench run and "open".** A prompt's bench run is `shown_run_id`, else its
 newest run (`jd2_bench_view`). The prompt is OPEN on the bench when that run
@@ -482,7 +499,14 @@ axes unanswered, ranked k of n, pairs scored k of n). The bench is blind: a
 queue response carries `generation_id, slot, svg_url, hidden`, the owner's
 latest sitting as `prefill {grade, axes, rank_pos, gap_after}` and the
 visitor's current one as `visitor {grade, axes, rank_pos}`; the item carries
-`pairs_prefill [{slot_a, slot_b, score, source}]`.
+`pairs_prefill [{slot_a, slot_b, score, source}]` and `prefill_pruned`. The
+prefill carries only what a sitting filed now can file: a value on a defunct
+axis, or off its axis's current scale (a grade off the grade scale), is
+dropped, and `prefill_pruned: true` says it was (the card prints "earlier
+answers on a retired or rescaled axis were not carried over"; `curateOpen`
+applies the same rule). DONE and `needs` judge the owner's sitting by its
+own `required_cells`, and `progress` counts each prompt's cells against
+them.
 
 **The ledger's states.** `drawer.state`: `shown` (live, and a run stands —
 `shown_run_id`, else the newest run with a complete display session),
@@ -491,8 +515,8 @@ visitor's current one as `visitor {grade, axes, rank_pos}`; the item carries
 is in the run, else 1st place, else first by slot). `bench.state`: `done`,
 `open`, or `off` (hidden, still drawing, nothing survived). Every run lists
 every generation (any status, with its `cost_usd` snapshot and latency), every
-session filed on it (`current` and `complete` per session — history, not folded
-away), and `display`: the run's display session (`jd2_display_session` with its
+session filed on it (`current`, `required_cells` and `complete` per session —
+history, not folded away; `complete` against its own cells), and `display`: the run's display session (`jd2_display_session` with its
 owner-first fallback; `complete` says which) as grades, axes, notes, ranks,
 gaps and pairs keyed by generation id. The ledger page's SAVE files a new
 owner session through `jd2-rate.php` carrying that standing with the edited
@@ -618,3 +642,13 @@ after the drawings, stand over the clerk's.
   `gpt-5-1` leave the pool and stay registered); harness ids `v4-web.4` and
   `v4-bench.5`; `jd-prices.json` rows for the two new wire ids. No schema
   change.
+- 2026-10-02 — taxonomy v35 (Paintwork; `structural-coherence` →
+  `structural-coherence-2`, 4-point): `jd2_sessions.required_cells` (TEXT
+  NULL, JSON), a guarded additive migration in both dialects (in the CREATE
+  too), stamped by `jd2-rate`; the runner's one-off backfill of sessions
+  `< v35` (see "Rules readers rely on"); every completeness/display reader
+  judges a sitting by its own cells. `jd2-analytics` axes gain `values`
+  (`{rank, label}`, best first); `jd2-queue` items gain `prefill_pruned`;
+  `jd2-ledger` sessions gain `required_cells`; the export carries each
+  session's `required_cells` and keeps a column for every retired axis a v2
+  rubric required (`structural-coherence`).

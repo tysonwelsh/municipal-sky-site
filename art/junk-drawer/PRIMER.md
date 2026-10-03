@@ -57,7 +57,7 @@ two are never pooled. The full reasoning and every owner decision are in
 | v2 schema runner + doc | `api/setup-jd2-tables.php`, `db/junk-drawer-v2-schema.md` |
 | v1 endpoints (frozen, reads only) | `api/jd-*.php`; `JD_V1_FROZEN = true` in `api/jd-config.php` |
 | v1 archive | `~/Media/junk-drawer-v1/2026-10-01/` (dump, JSONL, CSVs, items); runbook `db/junk-drawer-v1-archive.md`; git tag `junk-drawer-v1-final` |
-| the rubric | `art/junk-drawer/taxonomy.json` (v28) — grades, axes, size tiers, model registry + pool, comparison and gap scales, the intake facets, `intakeVersion` and the intake model |
+| the rubric | `art/junk-drawer/taxonomy.json` (v35) — grades, axes, the house rule, size tiers, model registry + pool, comparison and gap scales, the intake facets, `intakeVersion` and the intake model |
 | the curator's ledger | `art/junk-drawer/ledger.html` |
 | the owner's bench | `index.php?bench` (`?bench&prompt=<id>` for one prompt; `?admin` for the card editor) |
 | owner scripts | `scripts/jd2-batch-run.php` (CSV batch generation), `scripts/jd2-export.py` (JSONL + CSVs) |
@@ -77,7 +77,8 @@ jd2_runs         one execution of a prompt against the pool: kind (initial|rerun
 jd2_generations  one drawing per model per run: raw response, sanitized svg, status, latency,
                  usage, cost_usd snapshotted at write time, hidden flag
 jd2_sessions     one SITTING of one rater over one run: role (owner|visitor), taxonomy and
-                 instrument versions, blind flag, seat order, note. Append-only.
+                 instrument versions, required_cells (the cells its rubric asked for),
+                 blind flag, seat order, note. Append-only.
 jd2_judgments    the sitting's grade and per-axis values per drawing (+ notes)
 jd2_rankings     the sitting's strict 1..n order per drawing, with gap_after (0..3)
 jd2_pairs        the sitting's head-to-head scores, −3..+3, source direct|derived
@@ -88,8 +89,11 @@ re-derive them):
 
 - **Current session** = the latest filed session per (run, rater role).
 - **Display** = the owner's current complete session, else the visitor's.
-- **Complete** = a grade and every live axis for every shown drawing, a
-  strict ranking when there is more than one, and a score for every pair.
+- **Complete** = a grade and every axis the sitting's own rubric required
+  (`required_cells`, stamped at filing; the live axes when a row has none)
+  for every shown drawing, a strict ranking when there is more than one,
+  and a score for every pair. So an axis added mid-campaign asks the next
+  sitting for it and leaves the filed ones complete.
 - **One session, one method**: pairs sent directly are stored as `direct`
   and nothing is derived; a ranking with gaps and no pairs derives all
   pairs (`spaced-rank-v1`: sum the gaps between two places, clamp to 3).
@@ -102,8 +106,17 @@ re-derive them):
 ## 5. The instrument
 
 Per drawing: an overall grade (Prime / Choice / Select / Standard /
-Utility, filed as 5..1) and four axes — Understanding Assignment (4-point),
-Structural Coherence, Layering, Je ne sais quoi (3-point). Then the
+Utility, filed as 5..1) and five axes (taxonomy v35, 2026-10-02, the
+scales settled) — Understanding Assignment (4-point), Structural Coherence
+(4-point, `structural-coherence-2`; the 3-point `structural-coherence` is
+defunct), Layering (3-point), Paintwork (4-point, new), Je ne sais quoi
+(3-point). Each issue axis is named by the edit that fixes it: redraw
+(Understanding Assignment, including any added thing), move on x/y
+(Structural Coherence, including framing), restack or erase (Layering,
+including an unrequested setting), repaint in place (Paintwork, including
+every cast shadow). The 4-point issue axes read No / Minor / Moderate /
+Major problems; Layering No / Small / Big. Above the axes the card prints
+the house rule (`houseRule`: what every model was told). Then the
 podium: drag or tap the drawings into 1st..4th. Then the **pedestal card**
 is live (0.12.0): one card asks each adjacent pair "how much better?"
 (negligibly / slightly / better / much better, a brass shim = gap 0) and
@@ -162,12 +175,13 @@ The drawer is **empty on purpose**. It fills through the campaign below.
 4. **The rating campaign** on `?bench`: grades, axes, podium, pairs, size,
    note, per prompt. Definitions get sharpened as the owner works; they
    must be solid before the piece is shared. Includes the benefit-of-the-
-   doubt rule for ambiguous prompts (any reasonable reading counts).
+   doubt rule for ambiguous prompts (any reasonable reading counts — in
+   Understanding Assignment's description since v35).
 5. **The pedestal card** lands from the other session and is integrated
    as the podium's output (strict ranks + gaps); the side-by-side card
    stays as the alternate and the audit.
-6. **Then the roadmap** (`ROADMAP.md`): scale and naming decisions
-   (4-point issue axes? "ratings" vs "grades"?), one-question-at-a-time
+6. **Then the roadmap** (`ROADMAP.md`): the scales are settled (v35);
+   naming decisions ("ratings" vs "grades"?), one-question-at-a-time
    card, pedestal summary on the unveil (blocked on #5), darkroom and
    instructions copy, blurry instructions fix, typography, model-assigned
    size at title time, over-18 consent, visitor-chosen drawing count and
