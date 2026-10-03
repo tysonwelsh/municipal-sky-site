@@ -499,12 +499,12 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
 .jd-about .jd-inline-card .jd-turn[data-view="bench"] .jd-turn-scroll {
   padding: var(--ab-pad);
 }
-/* NO row-gap on the grid. Every rating row is a grid row of its own, so a
-   row-gap is not the band's seam — it is 40px inserted between every pair
-   of rows, which is exactly the "way too tall and awkward" the owner
-   reported. The seam is a margin on the one element that starts the
-   full-width zone: */
-.jd-about .jd-inline-card .jd-bench-r > .jd-row--head { margin-top: var(--ab-gap-band); }
+/* NO row-gap on the grid. Every piece of the question is a grid row of its
+   own, so a row-gap is not the band's seam — it would be inserted between
+   every pair of rows ("way too tall and awkward", the owner, of the select
+   rows this card carried before 0.18.0). The seam is a margin on the one
+   element that starts the full-width zone, the question's progress line: */
+.jd-about .jd-inline-card .jd-bench-r > .jd-q-step { margin-top: var(--ab-gap-band); }
 /* the bench keeps its control INSIDE the plate, under the artwork — same
    step away from the picture as the record card's */
 .jd-about .jd-inline-card .jd-turn-plate > .jd-filmstrip {
@@ -704,13 +704,9 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
    ~31px, so the compaction swapped one mismatch for its mirror image. Both
    are brought to the same pitch instead — the instrument loosened a little,
    the record's table tightened a little, meeting in the middle. */
-.jd-about .jd-inline-card .jd-row { padding: 2px 0; }
-.jd-about .jd-inline-card .jd-turn-select {
-  min-height: 25px;
-  padding: 0.12rem 1.5rem 0.12rem 0.5rem;
-}
+/* (the instrument's half — its select rows at 25px — retired with the
+   selects in 0.18.0: the card now asks one question at a time) */
 .jd-about .jd-inline-card table.rc-subj td { padding: 0.16em 0.5em 0.2em; }
-.jd-about .jd-inline-card .jd-row--head > span { padding: 0.2em 0.5em; }
 
 /* ---- THE SIBLING STRIP, SMALLER (owner, 2026-09-17) --------------------
    In the drawer the strip is the paperwork column's width and each thumbnail

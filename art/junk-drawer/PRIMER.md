@@ -117,7 +117,9 @@ quoi (3-point). Each issue axis is named by the edit that fixes it: redraw
 (Structural Coherence, including framing), restack or erase (Layering,
 including an unrequested setting), repaint in place (Paintwork, including
 every cast shadow). The four issue axes read No / Minor / Moderate /
-Major problems. Above the axes the card prints
+Major problems. Since 0.18.0 they are asked ONE QUESTION A CARD: six cards
+per drawing (the five axes, then the grade), each a list of radio rows that
+goes on by itself when one is pressed; each drawing's first card prints
 the house rule (`houseRule`: what every model was told). Then the
 podium: drag or tap the drawings into 1st..4th. Then the **pedestal card**
 is live (0.12.0): one card asks each adjacent pair "how much better?"
@@ -185,8 +187,8 @@ The drawer is **empty on purpose**. It fills through the campaign below.
    as the podium's output (strict ranks + gaps); the side-by-side card
    stays as the alternate and the audit.
 6. **Then the roadmap** (`ROADMAP.md`): the scales are settled (v35);
-   naming decisions ("ratings" vs "grades"?), one-question-at-a-time
-   card, pedestal summary on the unveil (blocked on #5), darkroom and
+   naming decisions ("ratings" vs "grades"?), the one-question-at-a-time
+   card (done 0.18.0), pedestal summary on the unveil (blocked on #5), darkroom and
    instructions copy, blurry instructions fix, typography, model-assigned
    size at title time, over-18 consent, visitor-chosen drawing count and
    models (default two), the moderation/approval queue, flipping the
