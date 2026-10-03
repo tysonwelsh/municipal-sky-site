@@ -67,7 +67,8 @@ SEVEN files, loaded in order by `_scripts.php`. They are IIFEs talking through
 
 **Runners:** `api/setup-jd2-tables.php` (v2 DDL, idempotent, both dialects)
 and `api/setup-jd-tables.php` (v1). `api/jd-backfill-curated.php` answers
-"done" while v1 is frozen.
+"done" while v1 is frozen. `api/jd2-resanitize.php` re-checks rejected
+drawings after a sanitizer change (below).
 
 **Owner tools:**
 
@@ -126,6 +127,21 @@ filed as a RERUN of that prompt, so three settings make three runs of one
 prompt. `scripts/jd2-profile-probe.php` (`JD_PROFILE_LIVE=1`) checks that
 every model finishes an SVG under every profile.
 
+**The sanitizer (`api/jd-svg-sanitizer.php`; rules changed 2026-10-02).**
+It still rejects rather than repairs, with one named exception: a CDATA
+section (Kimi K3 wrapped its `<style>` CSS in one, and the drawing was thrown
+away as `element_not_allowed`) is unwrapped into an ordinary text node before
+any rule runs, so its bytes meet the same checks as any other text, and the
+drawing is then re-serialized and re-checked. The change is recorded, not
+hidden: `jd2_generations.normalized` = `cdata_unwrapped`. Processing
+instructions and comments inside `<style>`/`<title>` stay rejected, and the
+14 reason strings are frozen. After a sanitizer change, recover the drawings
+the old rules rejected with `api/jd2-resanitize.php` (`?key=<jd_setup_key>`
+on production; `?dry-run=1`, or `--dry-run` on the CLI, lists first): it
+re-sanitizes every rejected row's `raw_response`, flips the ones that now
+pass to `ok`, and re-settles their runs. A recovered drawing is unrated, so
+a sitting already filed over its run reads incomplete until it is rated.
+
 The bench and the visitor card are ONE instrument (`JD_turn.curate`). A
 layout or behaviour change to the rating flow is made once, in the shared
 card, and never forked into a bench-only copy.
@@ -146,6 +162,9 @@ sitting (`jd2-queue` `prefill.gap_after`); `JD_turn.pedestal.answer()` /
 
 ## How ratings work
 
+- **What is rated is what is served.** The drawing served is the sanitized
+  one (`svg`); `raw_response` is byte-exact model output; `normalized` names
+  what the sanitizer changed between them (NULL: nothing, byte-identical).
 - **A session is one sitting** of one rater over one run. It carries a grade
   and every live axis per drawing, a strict ranking (with optional gaps
   0..3), and pairs. Each session is stamped with its role, taxonomy version,

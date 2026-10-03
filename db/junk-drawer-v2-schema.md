@@ -57,6 +57,29 @@ re-run both runners. (For `jd2_runs.profile` the runner says so itself: a
 `ADD COLUMN` in the runner's "additive migrations" block, in v1's
 `jd_ensure_column` shape, and a line in History below.
 
+**After a sanitizer change** that lets more through, recover the drawings the
+old rules rejected (their `raw_response` is kept byte-exact, so no model is
+asked again):
+
+```
+https://municipalsky.com/api/jd2-resanitize.php?key=<jd_setup_key>&dry-run=1   (lists)
+https://municipalsky.com/api/jd2-resanitize.php?key=<jd_setup_key>             (applies)
+JD_DEV_MOCK=1 php api/jd2-resanitize.php [--dry-run]                            (dev)
+```
+
+Every `rejected` generation with a `raw_response` is re-extracted and
+re-sanitized under the current rules. One that now passes gets `status` `ok`,
+`svg`, `normalized`, `disobedience` (recomputed by `jd2-generate`'s rule, the
+value already on file for a sanitizer rejection) and `reject_reason` NULL;
+usage, latency, cost, `priced`, `params`, `hidden` and `created` stay as
+filed. One that still fails is left untouched. Each touched run is
+re-settled by `jd2-generate`'s rule (`jd2_run_settled_status`: once every
+dealt slot has settled, `generated` if any drawing is ok), so `failed` can
+become `generated`. One line per row (run, slot, model, old reason →
+result). Idempotent. It never touches a `jd_*` table or a session, judgment,
+ranking or pair; a recovered drawing is unrated, so a sitting filed over its
+run reads incomplete until the drawing is rated (the output names those runs).
+
 ## The shape in one paragraph
 
 A **prompt** is the subject, filed once. Each time it is drawn against the
@@ -173,11 +196,12 @@ SVG (one tiny prompt each, no database; `JD_PROFILE_LIVE=1` to spend).
 | `api_model` | the exact wire model string sent |
 | `provider` | the provider slug (`taxonomy.json` `models` `provider`) |
 | `params` | JSON: the request parameters as sent |
-| `raw_response` | the provider's body (`MEDIUMTEXT`) |
-| `svg` | the sanitized artwork (`MEDIUMTEXT`); NULL unless `ok` |
+| `raw_response` | the provider's body (`MEDIUMTEXT`), byte-exact model output |
+| `svg` | the sanitized artwork (`MEDIUMTEXT`) — the drawing served and rated; NULL unless `ok` |
 | `status` | `pending` \| `ok` \| `failed` \| `rejected` (`JD2_GEN_STATUS`) |
 | `reject_reason` | the sanitizer's frozen reason when `rejected` |
 | `disobedience` | 1 = the SVG had to be dug out of the reply |
+| `normalized` | `VARCHAR(64)`: what the sanitizer changed between `raw_response` and `svg`, a comma-joined list of `JD2_GEN_NORMALIZED` words (today only `cdata_unwrapped`: CDATA sections turned into text and the drawing re-serialized); NULL = nothing, `svg` is the extracted span byte for byte |
 | `latency_ms` | wall time of the provider call |
 | `usage_json` | JSON: the provider's usage object in its own key names, kept so the row can be re-priced |
 | `cost_usd` | `DECIMAL(10,6)`, snapshotted at write time; NULL when unpriced |
@@ -558,3 +582,9 @@ after the drawings, stand over the clerk's.
   `v4-bench.4`, `v4-benchmed.1`, `v4-benchlow.1`. No MySQL change (VARCHAR);
   dev SQLite files are recreated. The batch runner gains `--profile` and
   reruns of prompts already on file.
+- 2026-10-02 — `jd2_generations.normalized` (`VARCHAR(64) NULL`), a guarded
+  additive migration (in the CREATE too); the word list `JD2_GEN_NORMALIZED`
+  in `jd2-config.php`. The sanitizer unwraps CDATA sections instead of
+  rejecting them (`element_not_allowed` before) and reports it;
+  `jd2-generate` files it. `api/jd2-resanitize.php` recovers drawings the
+  old rules rejected (Runbook).
