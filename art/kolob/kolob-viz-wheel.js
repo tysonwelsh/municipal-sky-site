@@ -126,6 +126,7 @@ window.KOLOB = window.KOLOB || {};
   // its shape. At rest the minimum heights alone draw the stepped skyline of
   // the hymnbook cover. Drawn on the wheel canvas by drawWheel, after the
   // ring and the seat labels and before the fixed arc and the horizon rule.
+  var pipeH = [];                                  // (each pipe's height as last drawn: does the wheel stand still? drawWheel)
   function drawFacade(c, g) {
     var baseY = g.horizonY, cx = g.cx, cy = g.cy, rIn = g.rHour;
     var dy = cy - baseY;                                       // the wheel's centre is this far below the horizon
@@ -135,6 +136,7 @@ window.KOLOB = window.KOLOB || {};
     var x0 = cx - span / 2 + step / 2;
     var CEIL = 6;                                              // paper between the tallest cap and the ring's crown
     var maxH = Math.max(50, baseY - (cy - rIn) - CEIL);        // one ceiling for every pipe: the crown of the hour ring
+    var same = pipeH.length === NPIPES;
     for (var k = 0; k < NPIPES; k++) {
       var seat = seatOf[k];
       var x = x0 + seat * step;
@@ -142,9 +144,11 @@ window.KOLOB = window.KOLOB || {};
       var centerness = 1 - Math.abs(seat - (NPIPES - 1) / 2) / ((NPIPES - 1) / 2);
       var w = step * (0.5 + centerness * 0.34);
       var minH = 18 + centerness * 22;
-      var h = minH + bands[k] * (maxH - minH) * (0.55 + centerness * 0.45);
-      drawPipe(c, x, baseY, w, Math.min(h, maxH));
+      var h = Math.min(minH + bands[k] * (maxH - minH) * (0.55 + centerness * 0.45), maxH);
+      if (pipeH[k] !== h) { same = false; pipeH[k] = h; }
+      drawPipe(c, x, baseY, w, h);
     }
+    return same;                                   // (every pipe as tall as the frame before)
   }
 
   // ---- the wheel — the order of service round the crown -----------------------
@@ -234,8 +238,14 @@ window.KOLOB = window.KOLOB || {};
     c.stroke();
   }
   var liveEl = null;                               // the live region (looked up until it is found, then kept)
+  // drawWheel draws the wheel's frame, and says whether it drew exactly what
+  // it drew the frame before — no turn, the still part kept, every pipe as
+  // tall, the arc as full and as strong, its marks the same — which a held
+  // page asks before it slows (THE HELD PAGE, kolob-viz.js); a page with no
+  // wheel has none to wait for
+  var drawn = [];
   function drawWheel(dt) {
-    if (!VS.xctx) return;
+    if (!VS.xctx) return true;
     var c = VS.xctx, st = wheelState();
     // a new seat is up: turn to it — always anticlockwise, always forward round
     // the wheel, so postlude → prelude is one seat and a rehearsal skip back
@@ -272,14 +282,15 @@ window.KOLOB = window.KOLOB || {};
     // the still part, drawn again only if it must be, and laid down whole:
     // one device pixel to one, under no clip (it was clipped to the horizon
     // where it was drawn)
-    if (!stillKept(turning)) drawStill(g, turning);
+    var kept = stillKept(turning);
+    if (!kept) drawStill(g, turning);
     c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(still, 0, 0); c.restore();
 
     c.save();
     c.beginPath(); c.rect(0, 0, VS.XW, g.horizonY); c.clip();  // the wheel lives above the horizon
     // the organ, standing on the horizon inside the hour ring
     updateBands(dt);
-    drawFacade(c, g);
+    var pipesSame = drawFacade(c, g);
     // THE arc — one, fixed to the page at the crown; the wheel turns beneath it.
     // It runs from the left neighbour's tick to the right neighbour's: the whole
     // crown of the wheel is the bar, and each section refills it.
@@ -320,6 +331,9 @@ window.KOLOB = window.KOLOB || {};
           : "";
       }
     }
+    var marks = VS.playing && st.count > 1 ? st.count : 0, same = drawn[0] === wh.fill && drawn[1] === fillAlpha && drawn[2] === marks;
+    drawn = [wh.fill, fillAlpha, marks];
+    return !turning && kept && pipesSame && same;
   }
   // ---- the wheel's still part -------------------------------------------------
   // What does not move while a section plays — the sun's gilt, the rim and
