@@ -241,15 +241,25 @@ window.KOLOB.VoicesOrgan = (function () {
     var created = 0, standing = 0;
     // the stats are kept as they go: the spans still sounding, the peak and
     // the last stop — so a meeting-long instance never sorts an ever-growing
-    // history on every stats() call
+    // history on every stats() call. The spans stand in the order they end
+    // ([end, nodes]): a new one is put in its place from the back, so the
+    // ones ended before a key begins are the front of the list, let go
+    // without a look at the rest — the same count as filtering the whole
+    // list at every key (ended at or before it, gone; the rest kept,
+    // whatever their order), without the walk
     var live = [], liveN = 0, peakN = 0, untilT = 0;
     function count(n, t0, t1) {
       created += n;
       if (t1 > untilT) untilT = t1;
       // plays arrive in (nearly) time order: what ended before this one
-      // began has left the case
-      live = live.filter(function (s) { if (s[0] > t0) return true; liveN -= s[1]; return false; });
-      live.push([t1, n]); liveN += n;
+      // began has left the case, and this one's place is a step or two from
+      // the back
+      var k = 0;
+      while (k < live.length && live[k][0] <= t0) liveN -= live[k++][1];
+      if (k) live.splice(0, k);
+      var i = live.length;
+      while (i > 0 && live[i - 1][0] > t1) i--;
+      live.splice(i, 0, [t1, n]); liveN += n;
       if (liveN > peakN) peakN = liveN;
     }
     var t0 = opts.t0 != null ? opts.t0 : 0;           // when the standing nodes wake (scheduled, not read)
