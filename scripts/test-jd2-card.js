@@ -12,8 +12,9 @@
 // the drawings in a 2×2 in seat order with their blind letters, a click or
 // Enter enlarging one, next going to drawing A's first axis; above the fold
 // at 1280×800, 2×2 at 390) → ONE QUESTION A CARD (0.18.0: each drawing's
-// six cards — the five live axes, then the grade — answered by a press that
-// goes on by itself; back across and within drawings; the keyboard; the
+// six cards — the five live axes, then the grade — each answered by a tap
+// that only selects (0.18.1), then NEXT; a tap never advances, a second tap
+// re-selects; back across and within drawings; the keyboard; the
 // layout at 390×844 and 1280×800; the filing's ratings and the judgment rows
 // exactly the cards' answers) → the podium → THE
 // PEDESTAL CARD ("by how much", owner 2026-10-02) → file → the unveil —
@@ -172,8 +173,8 @@ async function toPodium(pg, text, tag, shots, opts) {
     previewDone: !!document.querySelector('.jd-rail-step[data-step="preview"].is-done')
   }));
   // ONE QUESTION A CARD (0.18.0): every drawing's six cards, answered in
-  // turn by a press that goes on by itself; the walk back and forward, the
-  // keyboard and the reduced-motion advance are tried on the way
+  // turn by a tap that only selects and then NEXT; the walk back and
+  // forward, the keyboard and reduced motion are tried on the way
   await qLogInstall(pg);
   const drawings = [];
   let nav = null;
@@ -181,7 +182,6 @@ async function toPodium(pg, text, tag, shots, opts) {
     if (d === 1) {
       // across drawings: back from drawing B's first card is drawing A's
       // grade, its answer pre-selected and nothing advancing; next returns
-      await pg.waitForTimeout(Q_SETTLE);
       nav = { at: await qState(pg) };
       await pg.click('.jd-turn-actions [data-act="back"]');
       await pg.waitForFunction(() => /· 6 of 6$/.test((document.querySelector('.jd-q-step > span') || {}).textContent || ''), null, { timeout: 5000 }).catch(() => {});
@@ -204,10 +204,7 @@ async function toPodium(pg, text, tag, shots, opts) {
   }
   return { intake, order, drawings, nav, preview };
 }
-// ---- ONE QUESTION A CARD (0.18.0) -------------------------------------------
-// the card's double-tap guard ignores a press within 400 ms of a question
-// being painted, so the driver lets every card stand that long first
-const Q_SETTLE = 460;
+// ---- ONE QUESTION A CARD (0.18.0; a tap only selects since 0.18.1) ---------
 // the question card as drawn: which drawing and question, the words, the
 // options (label, description, value, radio state, ramp class, box), the
 // house rule, the plate, the buttons, where focus is, and the layout facts —
@@ -307,17 +304,17 @@ const qTo = (pg, step) => pg.waitForFunction((s) => {
 // visible band (no scrolling)?
 const qFits = (c) => !!(c && c.opts.length && c.opts.every((o) => o.box.t >= c.vis.t && o.box.b <= c.vis.b) &&
   (!c.back || (c.backBox.t >= c.vis.t && c.backBox.b <= c.vis.b)));
-// one drawing's question cards, each read, then answered by a press (the
-// value (i + d) mod n, varied), and the card's own advance awaited. On the
-// way: drawing B's third card walks back and forward; on the desk, drawing
-// C's first card is answered by the keyboard; drawing D's first press is
-// followed at once by a second tap (the double-tap guard); with
-// opts.instant (reduced motion), the first press advances at once and a
-// second tap in the same task lands on nothing.
+// one drawing's question cards, each read, then answered by a TAP (the
+// value (i + d) mod n, varied) — which only selects — and then NEXT (0.18.1:
+// nothing advances by itself). On the way: each drawing's first tap is
+// watched for half a second to show the card stays; drawing B's third card
+// walks back and forward; on the desk, drawing C's first card is answered
+// by the keyboard (↓ moves, Enter selects, Enter again goes on); drawing
+// D's first card is tapped twice (the second tap re-selects); with
+// opts.instant (reduced motion), a tap does not advance either.
 async function answerDrawing(pg, d, tag, shots, opts) {
   const out = { cards: [], chosen: {}, slot: null, after: null };
   for (let i = 0; i < 12; i++) {
-    await pg.waitForTimeout(Q_SETTLE);
     const c = await qState(pg);
     if (c.none || (out.slot && c.slot !== out.slot)) break;
     out.slot = c.slot;
@@ -329,7 +326,6 @@ async function answerDrawing(pg, d, tag, shots, opts) {
       await pg.click('.jd-turn-actions [data-act="next"]');
       await qMoved(pg, out.backIn.step).catch(() => {});
       out.fwdIn = await qState(pg);
-      await pg.waitForTimeout(Q_SETTLE);
     }
     const k = (i + d) % Math.max(1, c.opts.length);
     out.cards.push(c);
@@ -349,40 +345,58 @@ async function answerDrawing(pg, d, tag, shots, opts) {
     }
     if (shots && d === 0 && i === 0) await shot(pg, tag + '-2-question');
     if (shots && d === 0 && c.q === 'grade') await shot(pg, tag + '-2b-grade');
+    let advanced = false;
     if (opts.instant && d === 0 && i === 0) {
-      // reduced motion: the press goes on at once, inside the same task, and
-      // a second tap there lands on the new card's first row — and is ignored
+      // reduced motion: a tap selects and the card stays, as anywhere else
       c.instant = await pg.evaluate((n) => {
         const step = () => (document.querySelector('.jd-q-step > span') || {}).textContent || null;
         const before = step();
         document.querySelectorAll('.jd-q-opt')[n].click();
-        const after = step();
-        const first = document.querySelector('.jd-q-opt');
-        if (first) first.click();
-        return { before, after, again: step(),
-          checked: [...document.querySelectorAll('.jd-q-opt')].filter((o) => o.getAttribute('aria-checked') === 'true').length };
+        return { before, after: step(),
+          checked: [...document.querySelectorAll('.jd-q-opt')].filter((o) => o.getAttribute('aria-checked') === 'true').map((o) => o.getAttribute('data-v')) };
       }, k);
+      await pg.waitForTimeout(500);
+      c.instant.later = (await qState(pg)).step;
     } else if (tag === 'desk' && d === 2 && i === 0) {
       // the keyboard: focus is on the group's tab stop; ↓ moves it without
-      // choosing; Enter chooses (and the card goes on)
+      // choosing; Enter selects (the card stays); Enter on the selected row
+      // goes on
       c.kbd = { start: c.focus };
       await pg.keyboard.press('ArrowDown');
       c.kbd.moved = await pg.evaluate(() => ({ focus: document.activeElement.getAttribute('data-v'),
         checked: [...document.querySelectorAll('.jd-q-opt')].filter((o) => o.getAttribute('aria-checked') === 'true').length }));
       await pg.keyboard.press('Enter');
       c.picked = await qLogLast(pg);
+      await pg.waitForTimeout(450);
+      c.kbd.selected = await qState(pg);
+      await pg.keyboard.press('Enter');
+      await qMoved(pg, c.step).catch(() => {});
+      c.kbd.after = (await qState(pg)).step;
+      advanced = true;
     } else {
       await pg.click('.jd-q-opt:nth-child(' + (k + 1) + ')');
       c.picked = await qLogLast(pg);
     }
-    out.chosen[c.q] = c.picked ? Number(c.picked.v) : (c.instant ? Number(c.opts[k].v) : null);
-    await qMoved(pg, c.step).catch(() => {});
     if (d === 3 && i === 0) {
-      // THE DOUBLE TAP (critic, round 2): a second tap right after the card
-      // moved on lands on the next card's first row — and must answer nothing
-      await pg.click('.jd-q-opt:nth-child(1)');
-      await pg.waitForTimeout(120);
-      out.dbl = await qState(pg);
+      // A SECOND TAP RE-SELECTS: another row, the first one let go, the card
+      // still standing
+      const k2 = (k + 1) % c.opts.length;
+      await pg.click('.jd-q-opt:nth-child(' + (k2 + 1) + ')');
+      c.picked = await qLogLast(pg);
+      out.retap = await qState(pg);
+      out.retapFirst = c.opts[k].v;
+    }
+    if (!advanced && i === 0) {
+      // the tap does not advance: half a second later the card still stands,
+      // answered, NEXT armed
+      await pg.waitForTimeout(500);
+      c.stay = await qState(pg);
+      if (shots && d === 0) await shot(pg, tag + '-2s-selected');
+    }
+    out.chosen[c.q] = c.picked ? Number(c.picked.v) : (c.instant ? Number(c.opts[k].v) : null);
+    if (!advanced) {
+      await pg.click('.jd-turn-actions [data-act="next"]');
+      await qMoved(pg, c.step).catch(() => {});
     }
   }
   await pg.waitForTimeout(150);
@@ -406,10 +420,8 @@ function checkQuestions(tag, T, taxonomy, models) {
       c.title === 'Grade drawing ' + dr.slot.toUpperCase())), JSON.stringify(A.cards.map((c) => [c.step, c.title])));
   const label = (c, v) => { const ax = live.find((a) => a.id === c.q);
     const l = (ax ? ax.values : taxonomy.grades).find((x) => String(x.rank) === String(v)); return l ? lt(l.label) : null; };
-  check(tag + ': the next card\'s progress line echoes the answer just pressed ("✓ <value label>"), the first card none',
-    A.cards[0].echo === null && D.every((dr) => dr.cards.slice(1).every((c, i) => {
-      const prev = dr.cards[i]; return c.echo === '✓ ' + label(prev, prev.picked ? prev.picked.v : dr.chosen[prev.q]);
-    })), JSON.stringify(D.map((dr) => dr.cards.map((c, i) => [c.echo, i ? label(dr.cards[i - 1], dr.chosen[dr.cards[i - 1].q]) : null]))));
+  check(tag + ': no card echoes the card before (0.18.1: with NEXT doing the moving, a "✓" there would read as this card\'s answer)',
+    D.every((dr) => dr.cards.every((c) => c.echo === null)), JSON.stringify(D.map((dr) => dr.cards.map((c) => c.echo))));
   check(tag + ': each axis card asks its label as the heading and its summary as the question; its description waits behind "more", ' +
     'in the body face — and for ' + ruled.join(', ') + ' the house rule after it',
     A.cards.slice(0, live.length).every((c, i) => c.label === lt(live[i].label) && c.sum === live[i].summary &&
@@ -448,13 +460,20 @@ function checkQuestions(tag, T, taxonomy, models) {
       return i >= 0 && c.picked.checked.every((x, j) => x === (j === i ? 'true' : 'false')) &&
         /\bis-on\b/.test(c.picked.klass) && new RegExp('\\b' + ramp(c, c.opts[i]) + '\\b').test(c.picked.klass) && c.picked.next;
     }), JSON.stringify(picks.slice(0, 3).map((c) => c.picked)));
-  check(tag + ': each press went on by itself — card to card, drawing to drawing, and the last grade to the ranking',
+  const stays = [].concat(...D.map((dr) => dr.cards.filter((c) => c.stay)));
+  check(tag + ': A TAP DOES NOT ADVANCE — half a second after it the card still stands, its row checked, NEXT armed',
+    stays.length >= 3 && stays.every((c) => c.stay.step === c.step && c.stay.go && !c.stay.go.disabled &&
+      c.stay.opts.filter((o) => o.checked === 'true').length === 1),
+    JSON.stringify(stays.map((c) => [c.step, c.stay.step, c.stay.go && c.stay.go.disabled])));
+  check(tag + ': NEXT is what goes on — card to card, drawing to drawing, and from the last grade to the ranking',
     D.every((dr, k) => dr.cards.length === order.length && dr.after === (k < D.length - 1 ? 'bench' : 'call')),
     JSON.stringify(D.map((dr) => [dr.slot, dr.cards.length, dr.after])));
-  const DB = (D[3] || {}).dbl;
-  check(tag + ': THE DOUBLE TAP — a second tap right after a press moved the card on answers nothing (the next card stays unanswered, nothing advances)',
-    !!(DB && DB.step === 'Drawing ' + D[3].slot.toUpperCase() + ' · 2 of 6' && DB.opts.every((o) => o.checked === 'false') && DB.go.disabled),
-    JSON.stringify(DB && [DB.step, DB.opts.map((o) => o.checked)]));
+  const RT = (D[3] || {}).retap;
+  check(tag + ': A SECOND TAP RE-SELECTS — another row checked alone, the first let go, the card still standing',
+    !!(RT && RT.step === 'Drawing ' + D[3].slot.toUpperCase() + ' · 1 of 6' &&
+      RT.opts.filter((o) => o.checked === 'true').map((o) => o.v).join() === String(D[3].chosen[RT.q]) &&
+      String(D[3].chosen[RT.q]) !== String(D[3].retapFirst)),
+    JSON.stringify(RT && [RT.step, RT.opts.map((o) => o.checked), D[3].retapFirst]));
   check(tag + ': the house rule is on no question card (it is the preview\'s, and in the "more" of the axes it governs)',
     D.every((dr) => dr.cards.every((c) => c.rule === null)), JSON.stringify(D.map((dr) => dr.cards.map((c) => !!c.rule))));
   check(tag + ': the drawing tops every card, its blind letter pencilled on, the enlarge control',
@@ -491,9 +510,11 @@ function checkQuestions(tag, T, taxonomy, models) {
         c.go && c.go.box.b <= c.vh)), JSON.stringify(D.map((dr) => dr.cards.map((c) => [c.opts.length && c.opts[c.opts.length - 1].box.b, c.go && c.go.box.b]))));
     check('desk: every row shows its description', A.cards.every((c) => c.opts.every((o) => o.descShown)));
     const K = (D[2] || { cards: [] }).cards[0] || {};
-    check('desk: the keyboard — ↓ moves between rows without choosing, Enter chooses (and the card goes on)',
+    check('desk: the keyboard — ↓ moves between rows without choosing, Enter selects (the card stays), Enter on the selected row goes on',
       !!(K.kbd && K.kbd.start === K.opts[0].v && K.kbd.moved.focus === K.opts[1].v && K.kbd.moved.checked === 0 &&
-        K.picked && K.picked.v === K.opts[1].v), JSON.stringify(K.kbd) + ' ' + JSON.stringify(K.picked));
+        K.picked && K.picked.v === K.opts[1].v && K.kbd.selected.step === K.step &&
+        K.kbd.selected.opts.filter((o) => o.checked === 'true').map((o) => o.v).join() === K.opts[1].v &&
+        K.kbd.after === K.step.replace('1 of 6', '2 of 6')), JSON.stringify(K.kbd && [K.kbd.start, K.kbd.moved, K.kbd.selected && K.kbd.selected.step, K.kbd.after]));
   }
   const N = T.nav || {};
   check(tag + ': back from drawing B\'s first card is drawing A\'s grade, its answer pre-selected (its description shown), next armed toward drawing B; next returns',
@@ -883,8 +904,8 @@ async function main() {
   for (const [fails, n, answers] of [['[fail:kimi] [fail:google]', 2, ['1']], ['[fail:google]', 3, ['3', '0.5']]]) {
     const pg = deskPage;
     await pg.goto(BASE + '/art/junk-drawer/', { waitUntil: 'load' });
-    // the three-drawing turn runs under prefers-reduced-motion: a press goes
-    // on at once, with no beat
+    // the three-drawing turn runs under prefers-reduced-motion: a tap still
+    // only selects
     if (n === 3) await pg.emulateMedia({ reducedMotion: 'reduce' });
     const tn = await toPodium(pg, 'a tin whistle on a red cord ' + fails + ' (jd2 card test n=' + n + ' ' + Date.now() + ')', 'n' + n, n === 3,
       { instant: n === 3 });
@@ -895,10 +916,9 @@ async function main() {
       tn.drawings.length === n && tn.drawings.every((dr) => dr.cards.length === 6) && tn.drawings[n - 1].after === 'call',
       JSON.stringify(tn.drawings.map((dr) => [dr.slot, dr.cards.length, dr.after])));
     if (n === 3) {
-      check('n=3, reduced motion: a press goes on at once, inside the same task (no beat) — and a second tap there answers nothing (the guard holds without the beat)',
-        !!(I.instant && /^Drawing [A-D] · 1 of 6$/.test(I.instant.before) &&
-          I.instant.after === I.instant.before.replace('1 of 6', '2 of 6') && I.instant.again === I.instant.after &&
-          I.instant.checked === 0), JSON.stringify(I.instant));
+      check('n=3, reduced motion: a tap selects and the card stays — at once and half a second later',
+        !!(I.instant && /^Drawing [A-D] · 1 of 6$/.test(I.instant.before) && I.instant.after === I.instant.before &&
+          I.instant.later === I.instant.before && I.instant.checked.length === 1), JSON.stringify(I.instant));
     }
     await pg.click('.jd-turn-actions [data-act="next"]');
     await pg.waitForSelector('.jd-ped', { timeout: 10000 });
@@ -949,11 +969,13 @@ async function main() {
     await qLogInstall(pg);
     const cards1 = [];
     for (let i = 0; i < 6; i++) {
-      await pg.waitForTimeout(Q_SETTLE);
       const c = await qState(pg);
       cards1.push(c);
       await pg.click('.jd-q-opt:nth-child(1)');
-      if (i < 5) await qMoved(pg, c.step).catch(() => {});
+      if (i < 5) {
+        await pg.click('.jd-turn-actions [data-act="next"]');
+        await qMoved(pg, c.step).catch(() => {});
+      }
     }
     await pg.waitForTimeout(800);
     const end1 = await qState(pg);
@@ -962,7 +984,7 @@ async function main() {
       cards1.length === 6 && !cards1[0].back && cards1[5].q === 'grade' &&
       (await pg.$$('.jd-rail-step[data-step="preview"], .jd-rail-step[data-step="call"]')).length === 0,
       JSON.stringify(cards1.map((c) => [c.step, c.q, c.back])));
-    check('n=1: the grade\'s press does not file or move on: the card stands, answered, its "file the grades" armed and in view',
+    check('n=1: the grade\'s tap does not file: the card stands, answered, its "file the grades" armed and in view',
       end1.step === cards1[5].step && end1.opts[0].checked === 'true' && end1.go && end1.go.act === 'file' && !end1.go.disabled &&
       end1.go.box.t >= end1.vis.t && end1.go.box.b <= end1.vis.b, JSON.stringify({ step: end1.step, go: end1.go, vis: end1.vis }));
     const b1p = rateBody(pg);

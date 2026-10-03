@@ -23,7 +23,7 @@
 //          opens on it too and its next goes on to the podium; 2×2 at 390
 //   rate   ?bench seats the newest; the card is rated end to end — four
 //          drawings of six question cards each (ONE QUESTION A CARD, 0.18.0:
-//          the live axes then the grade, each press going on by itself; the
+//          the live axes then the grade, each a tap that selects, then NEXT; the
 //          judgment rows exactly the presses), the podium, THE PEDESTAL CARD (gaps 1, 0, 2 by
 //          ballot), the size, the "notes for the record" — and filed with
 //          the gaps on the ranking and `pairs: null`; the unveil names the
@@ -272,7 +272,6 @@ const qCard = (pg) => pg.evaluate(() => {
   };
 });
 const qChecked = (c) => (c && c.opts.filter((o) => o.checked === 'true').map((o) => o.v)) || [];
-const Q_SETTLE = 460;   // the card's double-tap guard is 400 ms from a paint
 const qMoved = (pg, step) => pg.waitForFunction((s) => {
   const e = document.querySelector('.jd-q-step > span');
   return !e || e.textContent !== s;
@@ -280,17 +279,19 @@ const qMoved = (pg, step) => pg.waitForFunction((s) => {
 // every option row and back inside the card's visible band (no scrolling)
 const qFits = (c) => !!(c && c.opts.length && c.opts.every((o) => o.box.t >= c.vis.t && o.box.b <= c.vis.b) &&
   (!c.back || (c.back.t >= c.vis.t && c.back.b <= c.vis.b)));
-// one drawing's six cards, each answered by a press (the value (i + d) mod
-// n, varied) that goes on by itself after its beat; `each` sees every card
-async function answerCards(pg, d, each) {
+// one drawing's six cards, each answered by a tap (the value (i + d) mod
+// n, varied) — which only selects (0.18.1) — then NEXT; `each` sees every
+// card before its tap, and `after` the card as the tap left it
+async function answerCards(pg, d, each, after) {
   const seen = [];
   for (let i = 0; i < 12; i++) {
-    await pg.waitForTimeout(Q_SETTLE);
     const c = await qCard(pg);
     if (!c || (seen.length && c.slot !== seen[0].slot)) break;
     seen.push(c);
     if (each) await each(c, i);
     await pg.click('.jd-q-opt:nth-child(' + (((i + d) % c.opts.length) + 1) + ')');
+    if (after) await after(c, i);
+    await pg.click('.jd-turn-actions [data-act="next"]');
     await qMoved(pg, c.step).catch(() => {});
   }
   return seen;
@@ -355,7 +356,7 @@ async function rateThrough(pg, note, mode, gaps, atEntry) {
   await pg.click('.jd-turn-actions [data-act="next"]');
   const fits = [], qcards = [];
   // the four drawings, ONE QUESTION A CARD (0.18.0): six cards each, every
-  // one answered by a press (varied values) that goes on by itself — the
+  // one answered by a tap (varied values) that only selects, then NEXT — the
   // last grade on to the podium
   for (let d = 0; d < 4; d++) {
     await pg.waitForSelector('.jd-bench .jd-q-opts', { timeout: 10000 });
@@ -583,7 +584,7 @@ async function main() {
       return after;
     });
     const e0 = r.entry;
-    check('ONE QUESTION A CARD on the bench: each drawing asked six cards — the live axes in taxonomy order, then the grade — each going on by itself, no select',
+    check('ONE QUESTION A CARD on the bench: each drawing asked six cards — the live axes in taxonomy order, then the grade — each answered by a tap then NEXT, no select',
       r.qcards.length === 4 && r.qcards.every((dr, d) => dr.length === LIVE_Q.length && dr.every((c, i) => c.q === LIVE_Q[i] &&
         c.step === 'Drawing ' + 'ABCD'[d] + ' · ' + (i + 1) + ' of ' + LIVE_Q.length && qChecked(c).length === 0 && c.selects === 0)),
       JSON.stringify(r.qcards.map((dr) => dr.map((c) => c.q + ':' + c.step))));
@@ -779,7 +780,18 @@ async function main() {
     const stripBefore = await ph.evaluate(() => Math.round(document.querySelector('.jd-bench-bar').getBoundingClientRect().height));
     await ph.click('.jd-turn-actions [data-act="next"]');
     await ph.waitForSelector('.jd-bench .jd-q-opts', { timeout: 10000 });
-    const phCards = await answerCards(ph, 0, async (c, i) => { await shot(ph, '12q-' + (i + 1) + '-card-390'); });
+    const phStay = [];
+    const phCards = await answerCards(ph, 0, async (c, i) => { await shot(ph, '12q-' + (i + 1) + '-card-390'); },
+      async (c, i) => {
+        // a tap only selects (0.18.1): the card stands, NEXT armed and on screen
+        if (i > 1) return;
+        await ph.waitForTimeout(500);
+        const s2 = await qCard(ph);
+        phStay.push({ was: c.step, now: s2.step, checked: qChecked(s2).length, next: s2.go && !s2.go.disabled, fits: qFits(s2) });
+        await shot(ph, '12s-' + (i + 1) + '-selected-390');
+      });
+    check('phone on the bench: a tap selects and the card stays — half a second later the same card, one row checked, NEXT armed, everything still on screen',
+      phStay.length === 2 && phStay.every((x) => x.was === x.now && x.checked === 1 && x.next && x.fits), JSON.stringify(phStay));
     check('phone 390×844 on the bench: drawing A is six cards, each with every option row and back in the card\'s visible area (the strip mounted)',
       phCards.length === LIVE_Q.length && phCards.every(qFits),
       JSON.stringify(phCards.filter((c) => !qFits(c)).map((c) => [c.step, c.vis, c.opts.map((o) => [o.box.t, o.box.b]), c.back])));
@@ -863,8 +875,8 @@ async function main() {
     await page.click('.jd-turn-actions [data-act="next"]');
     await qMoved(page, prB1.step).catch(() => {});
     const prL = await qCard(page);
-    await page.waitForTimeout(Q_SETTLE);
     await page.click('.jd-q-opt:nth-child(1)');
+    await page.click('.jd-turn-actions [data-act="next"]');
     await qMoved(page, prL.step).catch(() => {});
     const prAfter = await walkCards(page);
     check('pruned: the docket lands on the Layering card, unanswered (next shut), and the card notes it in one line',
