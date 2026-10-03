@@ -8,12 +8,13 @@
  *   php scripts/jd2-batch-run.php prompts.csv --profile bench-low   # the same rows, low effort
  *   php scripts/jd2-batch-run.php prompts.csv --resume           # carry on after a stop
  *   php scripts/jd2-batch-run.php --rate-url                     # where to rate what ran
+ *   php scripts/jd2-batch-run.php --forget-state                 # delete the state file (after the reset)
  *
  * Options: --base URL (default https://municipalsky.com), --dry-run, --resume,
  * --profile bench-medium|bench-low|bench-max (default bench-medium, the
  * owner's default, JD2_OWNER_DEFAULT_PROFILE; `bench` means that default),
  * --rate-url (print the bench URLs at the end), --local (see below),
- * --state PATH (default local-dev/jd2-batch-state.json).
+ * --state PATH (default local-dev/jd2-batch-state.json), --forget-state (below).
  *
  * WHAT IT DOES. The owner curates the campaign's prompts into a CSV. For each
  * row this files the prompt and draws it against the whole pool under the
@@ -80,6 +81,14 @@
  * by text alone, the retired `bench` profile) are never resumed; their
  * prompts are on file, so those rows become reruns.
  *
+ * --forget-state (2026-10-03) prints how many rows the state file holds (per
+ * base URL) and deletes it, then exits; it takes no CSV and draws nothing.
+ * It exists for the one-shot PRE-CAMPAIGN RESET (api/jd2-reset.php): once
+ * the trial rows are deleted from the database, a state file that still
+ * lists them would make the runner refuse (or --resume skip) every CSV row
+ * it remembers as drawn. Run it in the checkout that ran the batch (the
+ * state file is that checkout's local-dev/), right after the reset.
+ *
  * THE SPEND GUARD. Before anything is drawn it asks the server how many
  * drawings today's global breaker has left (jd2-queue.php?count=1;
  * JD_LIMIT_GLOBAL_DAILY counts every drawing since UTC midnight, the owner's
@@ -113,13 +122,14 @@ $root = realpath(__DIR__ . '/..');
 // --- arguments ------------------------------------------------------------
 $args = array_slice($argv, 1);
 $opt = ['base' => 'https://municipalsky.com', 'dry-run' => false, 'resume' => false, 'rate-url' => false,
-        'local' => false, 'state' => $root . '/local-dev/jd2-batch-state.json', 'profile' => JD2_OWNER_DEFAULT_PROFILE];
+        'local' => false, 'state' => $root . '/local-dev/jd2-batch-state.json', 'profile' => JD2_OWNER_DEFAULT_PROFILE,
+        'forget-state' => false];
 $csvPath = null;
 for ($i = 0; $i < count($args); $i++) {
     $a = $args[$i];
     if ($a === '--base' || $a === '--state' || $a === '--profile') {
         $opt[substr($a, 2)] = $args[++$i] ?? bail("$a needs a value.");
-    } elseif (in_array($a, ['--dry-run', '--resume', '--rate-url', '--local'], true)) {
+    } elseif (in_array($a, ['--dry-run', '--resume', '--rate-url', '--local', '--forget-state'], true)) {
         $opt[substr($a, 2)] = true;
     } elseif ($a !== '' && $a[0] === '-') {
         bail("Unknown option $a. See the header of scripts/jd2-batch-run.php.");
@@ -127,8 +137,16 @@ for ($i = 0; $i < count($args); $i++) {
         $csvPath = $a;
     }
 }
+if ($opt['forget-state']) {
+    if ($csvPath !== null) {
+        bail('--forget-state takes no CSV: it only deletes the state file. Run it on its own.');
+    }
+    forget_state($opt['state']);
+    exit(0);
+}
 if ($csvPath === null && !$opt['rate-url']) {
-    bail('Usage: php scripts/jd2-batch-run.php prompts.csv [--profile bench-medium|bench-low|bench-max] [--base URL] [--dry-run] [--resume] [--rate-url] [--local]');
+    bail('Usage: php scripts/jd2-batch-run.php prompts.csv [--profile bench-medium|bench-low|bench-max] [--base URL] [--dry-run] [--resume] [--rate-url] [--local]'
+        . "\n       php scripts/jd2-batch-run.php --forget-state [--state PATH]");
 }
 // the profile: one of the bench rungs (`bench` is the owner's default, named)
 $benchProfiles = array_values(array_filter(JD2_OWNER_PROFILES, fn ($p) => $p !== 'web'));
@@ -412,6 +430,34 @@ print_summary($tally, $spent, $ran, $base, $state, $opt['rate-url']);
 exit($tally['other'] > 0 ? 1 : 0);
 
 // ===========================================================================
+
+/**
+ * --forget-state: say how many rows the state file holds, per base URL, then
+ * delete it (the pre-campaign reset, api/jd2-reset.php, cannot reach it).
+ */
+function forget_state(string $path): void
+{
+    if (!is_file($path)) {
+        echo "No state file at $path: nothing to forget.\n";
+        return;
+    }
+    $all = json_decode((string) file_get_contents($path), true);
+    if (is_array($all) && is_array($all['bases'] ?? null)) {
+        $total = 0;
+        foreach ($all['bases'] as $base => $rows) {
+            $n = is_array($rows) ? count($rows) : 0;
+            $total += $n;
+            echo sprintf("  %-40s %d row(s)\n", $base, $n);
+        }
+        echo "The state file $path held $total row(s).\n";
+    } else {
+        echo "The state file $path is not in the runner's shape (" . filesize($path) . " bytes); deleting it anyway.\n";
+    }
+    if (!@unlink($path)) {
+        bail("Could not delete $path — delete it by hand.");
+    }
+    echo "Deleted. The next run files every CSV row afresh.\n";
+}
 
 function bail(string $msg): never
 {
