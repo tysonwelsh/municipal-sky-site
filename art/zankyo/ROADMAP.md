@@ -155,6 +155,9 @@ designed. Open: Norway (a fetch the owner has to rule on), Aparat (by hand).
 - **A mobile listen** of the second set and the button on a real iPhone
   (media-element priming inside the PLAY gesture is unverified on a device).
 - **2.2.0 release**: drop the -rc, semver from there.
-- **390 px overflow:** the panel overflows a 390 px viewport by 116 px
-  (predates the far tail; unchanged by rc.47). Fix if a phone width is a
-  real target — it is, since the second set is "the event" on a phone.
+- ~~**390 px overflow.**~~ Re-measured 2026-10-02 (rc.119) with a real mobile
+  viewport at 320 / 375 / 390 / 430 / 700 px: nothing passes the right edge.
+  A headless desktop window cannot go that narrow and still shows a false
+  overflow, so measure with device emulation. rc.119 also takes the phone
+  edge to edge: no paper margin, and the site banner hidden until the visitor
+  scrolls half a screen down (the Junk Drawer's immersive mode).

@@ -589,6 +589,12 @@
   function clearBoot() {
     var boot = document.getElementById("zankyo-boot");
     if (boot && boot.parentNode) boot.parentNode.removeChild(boot);
+    // 題辞 the epigraph on the second set goes with it, on the same starts:
+    // the tube drops the caption card (zk-set.js), and the screen reader's
+    // copy of the text leaves the page
+    try { if (window.ZankyoSet && ZankyoSet.epigraph) ZankyoSet.epigraph(null); } catch (e) {}
+    var epi = document.getElementById("zankyo-epi");
+    if (epi && epi.parentNode) epi.parentNode.removeChild(epi);
   }
 
   function wireFarSwitch() {

@@ -1,7 +1,7 @@
 /* ===========================================================================
    ZANKYŌ 残響 — the machine faceplate.
    A scuffed vending-machine / rack-terminal hybrid, year 3042: brushed-metal
-   panel with rust and screws, a CRT in a plastic bezel, a segmented jo-ha-kyū
+   panel with rust and grime, a CRT in a plastic bezel, a segmented jo-ha-kyū
    LED bargraph, rotary knobs, rocker switches, arcade transport, a VFD log.
    All texture is procedural (gradients + inline-SVG turbulence/scratches);
    the neon accents are the machine's lit elements.
@@ -123,26 +123,6 @@
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 .zankyo-frame > * { position: relative; z-index: 1; }
-
-/* --- corner screws --- */
-.zk-screw {
-  position: absolute; z-index: 7; width: 17px; height: 17px; border-radius: 50%;
-  background: radial-gradient(circle at 34% 28%, #6e6e7a, #30303a 55%, #0c0c0f);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.3),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.85),
-    0 1px 2px rgba(0, 0, 0, 0.7),
-    0 0 0 2px rgba(0, 0, 0, 0.35);
-}
-.zk-screw::before {
-  content: ""; position: absolute; left: 12%; right: 12%; top: 50%; height: 2.5px; margin-top: -1.25px;
-  background: linear-gradient(180deg, #050506, #3d3d45); border-radius: 2px;
-  transform: rotate(var(--slot, 20deg));
-}
-.zk-screw-tl { top: 9px; left: 10px; }
-.zk-screw-tr { top: 9px; right: 10px; }
-.zk-screw-bl { bottom: 9px; left: 10px; }
-.zk-screw-br { bottom: 9px; right: 10px; filter: sepia(0.5) brightness(0.85); } /* the rusty one */
 
 /* --- ventilation slots --- */
 .zk-vent {
@@ -1209,6 +1189,12 @@
   transform: rotate(-30deg) scaleX(0.8); opacity: 0.8;
 }
 
+/* 題辞 THE EPIGRAPH (owner, 2026-10-02) — Ulysses 2.377-86. The tube shows it
+   (zk-set.js draws it into the source picture, through the phosphor); this
+   figure is the text's source and the screen reader's copy, so it is kept in
+   the page but not painted. The first start removes it. */
+.zk-epi { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
+
 /* ---------------------------------------------------------------------------
    操作段 THE CONTROL LEDGE (owner's pick: mockups/set-R2-ledge.html).
    R2's detailing kept — the recess, the well lip, faces that sit BELOW the
@@ -1560,13 +1546,33 @@
    MOBILE — the machine simplifies: monitor + transport + reduced strip
 --------------------------------------------------------------------------- */
 @media (max-width: 700px) {
-  .zankyo-scene { padding: 6px 8px 40px; overflow-x: hidden; }
-  .zankyo-frame { padding: 20px 13px 30px; }
+  /* THE WHOLE PHONE (owner, 2026-10-02): the station takes the screen edge
+     to edge. The paper behind the machine goes the station's black, and the
+     casing loses its rounded corners, side walls and drop shadow so it meets
+     the glass. The footer keeps its paper so it still reads as the site's,
+     below the machine.
+     The site banner follows the Junk Drawer's immersive mode: slid off the
+     top while the first screen is in view, back once the visitor has
+     scrolled half a screen down (html.zk-chrome, set by the script at the
+     foot of index.php). This page only. */
+  body:has(.zankyo-scene) { padding-top: 0; background: #121317; }   /* the chassis's own foot colour (rc.120) */
+  body:has(.zankyo-scene) .site-banner { transform: translateY(-100%); transition: transform 0.25s ease; }
+  html.zk-chrome body:has(.zankyo-scene) .site-banner { transform: translateY(0); }
+  body:has(.zankyo-scene) .site-footer { margin-top: 0; background: var(--paper); }
+  .zankyo-scene { padding: 0; overflow-x: hidden; }
+  .zankyo-frame {
+    padding: 20px 13px 30px;
+    border-width: 0 0 1px; border-radius: 0;
+    box-shadow:
+      inset 0 -3px 8px rgba(0, 0, 0, 0.65),
+      inset 4px 0 10px rgba(0, 0, 0, 0.3),
+      inset -2px 0 8px rgba(0, 0, 0, 0.22);
+  }
   .zankyo-title { letter-spacing: 0.06em; }
   .zk-vent, .zk-warn, .zk-warn-small { display: none; }
   /* 逸脱: the long vents go on a small panel, but the switch needs something to
      hide in — so a three-slat stub of the bottom-left vent stays, just wide
-     enough to hold the slot and read as louvre, clear of the corner screw. */
+     enough to hold the slot and read as louvre. */
   .zk-vent-bl { display: block; width: 46px; left: 32px; bottom: 10px; }
   .zk-far-sw { left: 43px; bottom: 10px; }
   .zk-boot { gap: 6px; }
@@ -1629,6 +1635,9 @@
   .zk-pin-r { right: 12px; }
   .zk-ledge-brand em { display: none; }
 }
+@media (prefers-reduced-motion: reduce) {
+  body:has(.zankyo-scene) .site-banner { transition: none; }
+}
 @media (max-width: 430px) {
   /* the 200 px wheel stops fitting beside the grown keys here, so it steps
      back down before it would be pushed out of the panel */
@@ -1639,4 +1648,404 @@
 }
 @media (max-width: 380px) {
   .zk-unit-vol .zk-unit-meta { display: none; }
+}
+
+/* ===========================================================================
+   ONE GRAPHITE PLASTIC (owner's pick, 2026-10-02: mockups/casing-2-graphite.html,
+   from four options; rc.120). The machine had been assembled over many rounds
+   — a warm brown set, four slightly different cool blacks, two radii, cyan,
+   magenta and two ambers with no rule between them. This layer makes it one
+   object: one plastic in five levels, one set of radii, one highlight and
+   shadow recipe, and four lamps by function (signal green, one readout amber,
+   alarm red, focus ice), plus the scope's own neon (二管, below).
+   It is ported as written — an override layer over the rules above, tokens
+   first. Folding it into those rules (and renaming the legacy --red / --cyan
+   / --magenta / --amber / --green, re-pointed here) is a later cleanup.
+   =========================================================================== */
+.zankyo-scene {
+  /* ---- MATERIAL · one cool graphite plastic, five levels --------------- */
+  --chassis-base: #17181c;
+  --chassis:  linear-gradient(180deg, #1e1f24 0, #18191d 40%, #121317 100%);          /* L0  pressed-steel chassis, powder-coated */
+  --plastic-base: #1f2127;
+  --plastic:  linear-gradient(180deg, #2c2e35 0, #26282e 14px, #1f2127 130px, #17181d 100%);   /* L1  moulded casings */
+  --sheen:    radial-gradient(80% 30% at 70% 0%, rgba(255,255,255,.05), transparent 70%);       /* the one soft top light */
+  --cap-base: #2c2e36;
+  --cap:      linear-gradient(180deg, #4a4c57 0%, #363841 12%, #2c2e36 60%, #1d1f25 100%);      /* L2  key caps, rocker ends, plates */
+  --cap-hover:linear-gradient(180deg, #555764 0%, #3f414b 12%, #33353e 60%, #22242a 100%);
+  --cap-blank:linear-gradient(180deg, #3a3c46 0%, #2d2f37 12%, #25272d 60%, #191b20 100%);    /* the unfitted station: same cap, a shade lower */
+  --well-base: #0c0d11;
+  --well:     linear-gradient(180deg, #08090c, #121318);                                      /* L-1 beds and recesses */
+  --win:      linear-gradient(180deg, #050608, #0a0b0e);                                      /* L-2 display glass */
+  --edge:     #000;
+
+  /* ---- light on the plastic (one source, upper left, cool white) ------- */
+  --hl:       rgba(255,255,255,.09);
+  --hl-cap:   rgba(255,255,255,.22);
+  --sh-casing: inset 0 1px 0 var(--hl), inset 0 -5px 12px rgba(0,0,0,.55), 0 6px 16px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.04);
+  --sh-well:   inset 0 2px 5px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.05);
+  --sh-win:    inset 0 0 14px rgba(0,0,0,.75), inset 0 1px 3px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.05);
+  --sh-cap:    inset 0 1px 0 var(--hl-cap), inset 0 -4px 6px rgba(0,0,0,.6), 0 4px 6px rgba(0,0,0,.6);
+  --sh-cap-down: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -2px 4px rgba(0,0,0,.7), 0 1px 2px rgba(0,0,0,.6);
+  --screw:    radial-gradient(circle at 35% 30%, #50525c, #1c1d22 65%);
+
+  /* ---- TOOLING · one set of radii ------------------------------------- */
+  --r-chassis: 12px;   /* outer chassis */
+  --r-casing:  8px;    /* every casing: scope, speaker, set, module, log, console */
+  --r-well:    4px;    /* beds, windows, plates */
+  --r-cap:     2px 2px 3px 3px;   /* the deck-key profile: used by keys, rocker ends, push, preview keys */
+
+  /* ---- PRINT (silk-screen ink, never lit) ------------------------------ */
+  --ink:       #d4d7df;
+  --ink-dim:   #686c78;
+  --ink-label: #888c99;
+  --print:     #8f93a0;
+  --print-dim: #636773;
+  --print-hi:  #b9bcc8;
+
+  /* ---- LAMPS · four, by function -------------------------------------- */
+  --lamp-signal: #3ddc84;  --lamp-signal-rgb: 61, 220, 132;   /* SIGNAL / ON: screens, PLAY, run tally, 受信 lens, mute-on paper, bargraph 序 */
+  --phos:        #8ff0b4;  --phos-dim: #2f9a5a;               /* the same green as it looks on glass: screen text only */
+  --lamp-readout: #ff9a14; --lamp-readout-rgb: 255, 154, 20;  /* READOUT: every number, name and line a display shows; bargraph 破 */
+  --lamp-alarm:  #ff3350;  --lamp-alarm-rgb: 255, 51, 80;     /* STOP / CLIMAX / WARNING: STOP, bargraph 急, kyū shake, mute-off paper, 機動注意 */
+  --focus:       #9ad7ff;  --focus-rgb: 154, 215, 255;        /* KEYBOARD FOCUS: rings, and a knob under the finger. Nothing else is cool-coloured. */
+  --paper-on:    #1b4a2e;                                     /* the mute label, signal's printed form */
+  --paper-off:   #5d1e28;                                     /* the mute label, alarm's printed form */
+
+  /* legacy names, re-pointed so no stray cyan/magenta/amber survives
+     (drop these on port, once every var(--cyan) etc. in zankyo.css is renamed) */
+  --red: var(--lamp-alarm);       --red-rgb: var(--lamp-alarm-rgb);
+  --amber: var(--lamp-readout);   --amber-rgb: var(--lamp-readout-rgb);
+  --green: var(--lamp-signal);    --green-rgb: var(--lamp-signal-rgb);
+  --cyan: var(--focus);           --cyan-rgb: var(--focus-rgb);
+  --magenta: var(--lamp-readout); --magenta-rgb: var(--lamp-readout-rgb);
+  --lcd-rgb: var(--lamp-readout-rgb);
+}
+
+/* =====================  THE CHASSIS  =====================
+   Pressed steel, powder-coated, one step darker than the plastic that sits
+   on it. No brushed grain, no rust, no neon spill: the wear is soot, bare-
+   metal nicks and a stamped rim line. */
+.zankyo-frame {
+  background:
+    radial-gradient(60% 5% at 22% 0%, rgba(255,255,255,.035), transparent 75%),
+    radial-gradient(38% 8% at 86% 100%, rgba(0,0,0,.5), transparent 75%),
+    radial-gradient(22% 18% at 0% 72%, rgba(0,0,0,.28), transparent 75%),
+    radial-gradient(26% 20% at 100% 24%, rgba(0,0,0,.22), transparent 75%),
+    var(--chassis);
+  background-color: var(--chassis-base);
+  border: 1px solid var(--edge);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.07),
+    inset 0 -3px 8px rgba(0,0,0,.6),
+    inset 4px 0 10px rgba(0,0,0,.28),
+    inset -2px 0 8px rgba(0,0,0,.2),
+    0 28px 90px rgba(0,0,0,.7);
+  outline: 1px solid rgba(255,255,255,.045); outline-offset: -8px;   /* the stamped rim line of a rack panel */
+}
+@media (min-width: 701px) { .zankyo-frame { border-radius: var(--r-chassis); outline-offset: -9px; } }
+.zankyo-frame::before {
+  opacity: .9;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='560' height='560'><g fill='none' stroke-linecap='round'><path d='M40 470 L152 384' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='1'/><path d='M320 88 l112 24' stroke='%23ffffff' stroke-opacity='0.035' stroke-width='0.8'/><path d='M472 300 l46 92' stroke='%23000000' stroke-opacity='0.3' stroke-width='1.3'/><path d='M92 148 l58 -20' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='1.5'/><path d='M212 522 q64 -16 132 4' stroke='%23000000' stroke-opacity='0.22' stroke-width='1'/><path d='M502 58 l-38 42' stroke='%23ffffff' stroke-opacity='0.05' stroke-width='0.7'/><path d='M28 250 l14 60' stroke='%23000000' stroke-opacity='0.25' stroke-width='0.9'/><path d='M420 480 l64 -10' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1.1'/><path d='M64 60 l7 3' stroke='%23b4b8c4' stroke-opacity='0.2' stroke-width='2'/><path d='M498 388 l5 6' stroke='%23b4b8c4' stroke-opacity='0.16' stroke-width='2.4'/><path d='M180 300 l4 2' stroke='%23b4b8c4' stroke-opacity='0.12' stroke-width='1.8'/></g></svg>");
+}
+.zankyo-frame::after { opacity: .085; }   /* the powder-coat's orange-peel, a little stronger than the old film grain */
+
+/* louvres in the chassis: the speaker's moulded slot, turned on end */
+.zk-vent {
+  border-radius: var(--r-well);
+  background: repeating-linear-gradient(90deg, #050608 0 5px, #2c2e36 5px 7px, #0f1014 7px 12px);
+  box-shadow: inset 0 2px 3px rgba(0,0,0,.9), 0 1px 0 rgba(255,255,255,.08);
+}
+.zk-far-sw { background: linear-gradient(180deg, #050608 0%, #0e0f13 62%, #030304 100%); }
+.zk-far-nub { background: var(--cap); box-shadow: 0 1px 0 rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.12); }
+.zk-far-sw:hover .zk-far-nub { background: var(--cap-hover); }
+.zk-far-sw:focus-visible { outline: 1px solid var(--focus); }
+.zk-far-sw[aria-checked="true"] .zk-far-nub { background: linear-gradient(180deg, #4fa874 0%, #2c6b48 55%, #14301f 100%); }
+.zk-far-sw[aria-checked="true"] { box-shadow: inset 0 1px 2px rgba(0,0,0,.95), inset 0 -1px 0 rgba(255,255,255,.05), 0 0 5px rgba(var(--lamp-signal-rgb), .4), 0 1px 0 rgba(255,255,255,.06); }
+
+/* silk-screen: no more red/cyan misregistration fringe (it was two more
+   lamp colours painted into the ink) — worn print is a dark offset only */
+.zk-print, .zk-mod-head, .zankyo-mixer-title, .zankyo-log-label, .zankyo-scale-mood {
+  text-shadow: 0.5px 0.5px 0 rgba(0,0,0,.55);
+}
+
+/* =====================  THE CASINGS  =====================
+   Scope, speaker, set, module, log and console: one plastic, one radius,
+   one highlight, one shadow recipe. */
+.zk-monitor, .zk-spk, .zk-set2, .zk-module, .zankyo-log-block, .zankyo-mixer {
+  border: 1px solid var(--edge);
+  border-radius: var(--r-casing);
+  background: var(--sheen), var(--plastic);
+  background-color: var(--plastic-base);
+  box-shadow: var(--sh-casing);
+}
+.zankyo-mixer { box-shadow: var(--sh-casing); }
+/* wear that is neutral soot, never brown */
+.zk-module::before {
+  border-radius: var(--r-casing);
+  background:
+    radial-gradient(34% 52% at 2% 100%, rgba(0,0,0,.34), transparent 74%),
+    radial-gradient(16% 30% at 97% 4%, rgba(0,0,0,.4), transparent 78%);
+}
+/* one screw, everywhere */
+.zk-mod-screw, .zk-name-latch { background: var(--screw); }
+.zk-mod-screw-r { filter: brightness(.9); }
+.zk-plate::before, .zk-plate::after { background: var(--screw); }
+.zk-bolt { background: radial-gradient(circle at 36% 30%, #6c6e7a, #30323a 55%, #0a0b0d); }
+.zk-bolt-tr, .zk-bolt-bl { filter: brightness(.85); }
+.zk-plate {
+  border-radius: 2px;
+  background: var(--cap); background-color: var(--cap-base);
+  border: 1px solid #08090b; color: var(--print-hi);
+  box-shadow: inset 0 1px 0 var(--hl-cap), inset 0 -3px 5px rgba(0,0,0,.5), 0 2px 3px rgba(0,0,0,.6);
+}
+
+/* ---- scope: screen, bargraph --------------------------------------- */
+.zk-screen { border: 1px solid #020304; background: #020305; }
+/* 二管 TWO TUBES, TWO PHOSPHORS (owner, 2026-10-02). The second set is the
+   green P39 tube; the scope is a COLOUR tube, and its title and its
+   visualizer (zankyo-viz.js, unchanged) share one neon family: pink-red,
+   magenta, violet, with the cyan glitch echo. The lamp re-pointing above
+   would turn the title's --red / --cyan / --magenta into the panel's lamps,
+   so the scope's glass gets the original neon back, and that family is
+   found on the scope glass and nowhere else on the machine. The title,
+   its glitch echoes, the kyū glitch and the boot card are the live rules
+   from the top of this file, untouched. */
+.zk-monitor .zk-screen {
+  --red: #ff2d55;     --red-rgb: 255, 45, 85;
+  --cyan: #16e0e0;    --cyan-rgb: 22, 224, 224;
+  --magenta: #ff3df0; --magenta-rgb: 255, 61, 240;
+}
+
+.zk-bar-housing { border-radius: var(--r-well); border: 1px solid #020304; background: var(--well); box-shadow: var(--sh-well); }
+.zk-bar-tick { background: rgba(143,147,160,.4); }
+.zk-seg-jo  { --c: var(--lamp-signal-rgb); }
+.zk-seg-ha  { --c: var(--lamp-readout-rgb); }
+.zk-seg-kyu { --c: var(--lamp-alarm-rgb); }
+
+/* ---- keys: the master tooling, re-stated on tokens ------------------ */
+.zk-keybed { border-radius: var(--r-well); background: var(--well); background-color: var(--well-base); box-shadow: var(--sh-well); }
+.zk-key {
+  border: 1px solid #08090b; border-radius: var(--r-cap);
+  background: var(--cap); background-color: var(--cap-base); box-shadow: var(--sh-cap);
+}
+.zk-key.is-down { box-shadow: var(--sh-cap-down); }
+.zk-key-play .zk-key-glyph { color: #3f8a5c; }
+.zk-key-play.is-down .zk-key-glyph { color: var(--lamp-signal); }
+.zk-key-stop .zk-key-glyph { color: #a33448; }
+.zk-tally { background: radial-gradient(circle at 35% 30%, #123a1c, #0a1d0f 70%); box-shadow: inset 0 1px 1px rgba(0,0,0,.8), 0 0 0 2px #0a0b0e, 0 0 0 3px rgba(150,154,166,.28), 0 1px 2px rgba(0,0,0,.7); }
+.zankyo-scene.is-on .zk-tally { background: radial-gradient(circle at 35% 30%, #b4ffcc, var(--lamp-signal) 60%); }
+
+/* ---- thumbwheel ----------------------------------------------------- */
+.zk-wheel-barrel { border-radius: var(--r-well); background: linear-gradient(180deg, #08090b 0%, #212329 24%, #31333b 50%, #212329 74%, #08090b 100%); }
+.zk-wheel-ind::after { border-top-color: rgba(150,154,166,.6); }
+.zk-wheel-seam { background: linear-gradient(90deg, rgba(0,0,0,.55) 0 50%, rgba(170,176,192,.16) 50% 100%); }
+.zk-wheel-plate { background: linear-gradient(180deg, #181a1f 0%, #24262c 28%, #2c2e35 50%, #212329 76%, #15161a 100%); }
+.zk-wheel-plate i { color: var(--print-hi); text-shadow: 0 1px 1px rgba(0,0,0,.95); }
+
+/* ---- speaker -------------------------------------------------------- */
+.zk-spk-medal { background: var(--well); background-color: var(--well-base); box-shadow: var(--sh-well); }
+.zk-spk-medal i { color: var(--print-dim); text-shadow: 0 1px 0 rgba(255,255,255,.07), 0 -1px 0 rgba(0,0,0,.9); }   /* an engraved character, not a lit one */
+.zk-spk-slots span { background: repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 3px), var(--well); }
+
+/* ---- module: mode readout + degree lamps ----------------------------- */
+.zk-mod-lamp { border-radius: var(--r-well); border: 1px solid #020304; background: radial-gradient(90% 100% at 50% 0%, rgba(var(--lamp-readout-rgb), .045), transparent 70%), var(--win); box-shadow: var(--sh-win); }
+.zankyo-scale-name { color: var(--lamp-readout); text-shadow: 0 0 10px rgba(var(--lamp-readout-rgb), .45); }
+.zankyo-scale-name b { color: #ffc76a; }
+.zk-testpoints { background: repeating-linear-gradient(90deg, #5d606b 0 4px, #0c0d10 4px 9px); }   /* bare pads, graphite-grey: no gold */
+.zk-deg { border-radius: 2px; border: 1px solid #000; background: var(--win); box-shadow: var(--sh-win); color: rgba(var(--lamp-readout-rgb), .22); }
+.zk-deg.is-lit { color: #ffe3b8; background: linear-gradient(180deg, #2a1807, #1b0f04); text-shadow: 0 0 9px rgba(var(--lamp-readout-rgb), .95), 0 0 3px rgba(var(--lamp-readout-rgb), 1); }
+
+/* ---- knobs and readouts --------------------------------------------- */
+.zk-knob-cap { border-color: #08090b; }
+.zk-knob-ind { background: linear-gradient(#eceef3, #a9acb8); }
+.zk-wear-3 .zk-knob-ind { background: linear-gradient(#cfd2db, #868a96); }
+.zk-wear-3 .zk-knob-cap { filter: brightness(.86); }
+.zk-knob-rate.is-drag .zk-knob-ind, .zk-knob-rate:focus-visible .zk-knob-ind { background: linear-gradient(#e6f5ff, var(--focus)); box-shadow: 0 0 7px rgba(var(--focus-rgb), .8); }
+.zankyo-val-readout, .zk-unit-rate .zankyo-val-readout {
+  color: var(--lamp-readout); background: var(--win); border-radius: 2px; box-shadow: var(--sh-win);
+  text-shadow: 0 0 5px rgba(var(--lamp-readout-rgb), .5);
+}
+.zankyo-param-label b { color: var(--lamp-readout); }
+
+/* =====================  THE CONSOLE  ===================== */
+.zankyo-mixer-title { border-bottom: 1px solid #0a0b0e; box-shadow: 0 1px 0 rgba(255,255,255,.05); }
+.zk-warn-small { color: rgba(var(--lamp-alarm-rgb), .62); }
+.zankyo-layer { border-bottom: 1px solid #0c0d10; box-shadow: inset 0 -1px 0 rgba(255,255,255,.04); }
+.zankyo-layer-name {
+  border-radius: var(--r-cap); border: 1px solid #08090b; color: var(--ink);
+  background: var(--cap); background-color: var(--cap-base);
+  box-shadow: inset 0 1px 0 var(--hl-cap), inset 0 -3px 5px rgba(0,0,0,.45), 0 2px 3px rgba(0,0,0,.5);
+}
+.zankyo-layer-name:hover { background: var(--cap-hover); }
+/* the kanji is print on the plate, not a lamp: engraved ink, a half-step brighter than the name */
+.zankyo-layer-kana { color: var(--print-hi); text-shadow: 0 -1px 0 rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.07); }
+.zk-ch { color: var(--print-dim); }
+.zk-vfd-tag { color: var(--print-dim); }
+
+/* preview: a deck key, small. It is PLAY's painted green at rest and lights green when struck */
+.zankyo-layer-sample {
+  width: 34px; height: 26px; border-radius: var(--r-cap); border: 1px solid #08090b;
+  background: var(--cap); background-color: var(--cap-base);
+  box-shadow: inset 0 1px 0 var(--hl-cap), inset 0 -3px 5px rgba(0,0,0,.6), 0 3px 4px rgba(0,0,0,.6), 0 0 0 2px var(--well-base), 0 0 0 3px #000;
+}
+.zankyo-layer-sample::before {   /* the finger ribs, as on the deck keys */
+  content: ""; position: absolute; left: 6px; right: 6px; top: 4px; height: 6px; border-radius: 1px;
+  background: repeating-linear-gradient(180deg, rgba(255,255,255,.09) 0 1px, rgba(0,0,0,.3) 1px 3px);
+}
+.zankyo-layer-sample .tri { left: 50%; top: 63%; border-left: 7px solid #3f8a5c; border-top-width: 4.5px; border-bottom-width: 4.5px; filter: drop-shadow(0 -1px 0 rgba(0,0,0,.8)); }
+.zankyo-layer-sample:active, .zankyo-layer-sample.is-hit {
+  transform: translateY(1.5px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), inset 0 -2px 4px rgba(0,0,0,.7), 0 1px 2px rgba(0,0,0,.6), 0 0 0 2px var(--well-base), 0 0 0 3px #000;
+}
+.zankyo-layer-sample:active .tri, .zankyo-layer-sample.is-hit .tri { border-left-color: var(--lamp-signal); filter: drop-shadow(0 0 5px rgba(var(--lamp-signal-rgb), .8)); }
+
+/* mute: the same keycap, slid along a recessed bed. Signal-green paper = on, alarm-red paper = muted */
+.zk-switch-well { border-radius: var(--r-well); background: var(--well-base); border: 1px solid #08090b; box-shadow: var(--sh-well); }
+.zk-lamp-on  { background: var(--paper-on); }
+.zk-lamp-off { background: var(--paper-off); }
+.zk-switch-thumb {
+  border-radius: var(--r-cap); width: 21px; height: 20px; border: 1px solid #08090b;
+  background: var(--cap); background-color: var(--cap-base);
+  box-shadow: inset 0 1px 0 var(--hl-cap), inset 0 -3px 4px rgba(0,0,0,.6), 0 2px 3px rgba(0,0,0,.8);
+  transform: translateX(19px);
+}
+.zk-switch.muted .zk-switch-thumb { transform: translateX(0); }
+.zk-switch-thumb::before {   /* ribs, across the cap */
+  inset: 3px 4px; border-radius: 1px; -webkit-mask: none; mask: none;
+  background: repeating-linear-gradient(90deg, rgba(255,255,255,.1) 0 1px, rgba(0,0,0,.35) 1px 3px);
+}
+.zk-switch-thumb::after { display: none; }
+.zankyo-layer:nth-child(3n) .zk-switch-well, .zankyo-layer:nth-child(4n) .zk-switch-well, .zankyo-layer:nth-child(5n) .zk-switch-thumb { filter: none; }
+
+/* the open row: a recess in the console, not a black hole */
+.zk-cavity { border: 1px solid #060709; border-top: 1px solid #060709; border-radius: var(--r-well); background: var(--well); box-shadow: var(--sh-well), inset 0 0 20px rgba(0,0,0,.45); }
+.zk-cavity-knobs + .zankyo-params { border-top: 1px solid #1a1c21; box-shadow: 0 -1px 0 rgba(0,0,0,.5); }
+.zankyo-range { background: var(--well); box-shadow: inset 0 1px 2px rgba(0,0,0,.95), 0 1px 0 rgba(255,255,255,.05); }
+.zankyo-range::-webkit-slider-thumb { background: linear-gradient(90deg, transparent 0 42%, #cfd2db 42% 58%, transparent 58%), var(--cap); border-radius: 2px; box-shadow: 0 2px 3px rgba(0,0,0,.75), inset 0 1px 0 var(--hl-cap); }
+.zankyo-range::-moz-range-thumb { background: linear-gradient(90deg, transparent 0 42%, #cfd2db 42% 58%, transparent 58%), var(--cap); border-radius: 2px; box-shadow: 0 2px 3px rgba(0,0,0,.75), inset 0 1px 0 var(--hl-cap); }
+
+/* =====================  THE LOG · amber VFD  =====================
+   Everything the log says is a readout, so it is all the readout amber. The
+   tags keep their kinds by SHAPE — solid, dashed, dotted, filled — not by
+   a colour each. */
+.zankyo-log {
+  background: radial-gradient(rgba(var(--lamp-readout-rgb), .06) 1px, transparent 1.5px) 0 0 / 6px 6px, var(--win);
+  border-radius: var(--r-well); border: 1px solid #000;
+  box-shadow: inset 0 0 24px rgba(0,0,0,.85), inset 0 0 70px rgba(var(--lamp-readout-rgb), .03);
+}
+.zankyo-log-block::after { background: linear-gradient(108deg, rgba(255,235,205,.04), transparent 26%); }
+.zankyo-log-empty, .zankyo-log-text { color: rgba(var(--lamp-readout-rgb), .82); }
+.zankyo-log-empty { color: rgba(var(--lamp-readout-rgb), .6); text-shadow: 0 0 6px rgba(var(--lamp-readout-rgb), .25); }
+.zankyo-log-text { text-shadow: 0 0 6px rgba(var(--lamp-readout-rgb), .25); }
+.zankyo-log-time { color: rgba(var(--lamp-readout-rgb), .45); }
+.zankyo-log-row { border-bottom-color: rgba(var(--lamp-readout-rgb), .06); }
+.zankyo-log-tag[class] { color: var(--lamp-readout); border: 1px solid rgba(var(--lamp-readout-rgb), .5); text-shadow: none; }
+.zankyo-log-tag.ambient, .zankyo-log-tag.hichiriki, .zankyo-log-tag.biwa, .zankyo-log-tag.form, .zankyo-log-tag.mode { border-style: dashed; color: var(--lamp-readout); }
+.zankyo-log-tag.furin, .zankyo-log-tag.vox, .zankyo-log-tag.sho, .zankyo-log-tag.pa { border-style: dotted; color: var(--lamp-readout); }
+.zankyo-log-tag.far, .zankyo-log-tag.rx { background: var(--lamp-readout); color: #1a0e02; border: 1px solid var(--lamp-readout); text-shadow: none; }
+.zk-log-src { color: rgba(var(--lamp-readout-rgb), .7); border-color: rgba(var(--lamp-readout-rgb), .35); }
+/* the log's scrollbar: a thin amber rail, not the browser's white one */
+.zankyo-log { scrollbar-width: thin; scrollbar-color: rgba(var(--lamp-readout-rgb), .35) transparent; }
+.zankyo-log::-webkit-scrollbar { width: 6px; }
+.zankyo-log::-webkit-scrollbar-track { background: transparent; }
+.zankyo-log::-webkit-scrollbar-thumb { background: rgba(var(--lamp-readout-rgb), .35); border-radius: 3px; }
+
+/* =====================  THE SECOND SET  =====================
+   Same plastic as the scope. It stays the older, receive-only tube by what
+   is ON it — the crack, the tape, its model line, a little more soot and a
+   bigger ejector witness — not by a different material. */
+.zk-set2 {
+  padding: 11px 13px 0;
+  background:
+    radial-gradient(30% 40% at 100% 100%, rgba(0,0,0,.4), transparent 70%),
+    radial-gradient(22% 30% at 0% 55%, rgba(0,0,0,.22), transparent 70%),
+    var(--sheen), var(--plastic);
+  background-color: var(--plastic-base);
+}
+.zk-set2::before {
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.5) 0 2px, rgba(0,0,0,.24) 2px 9px, transparent 9px, transparent calc(100% - 9px), rgba(0,0,0,.24) calc(100% - 9px) calc(100% - 2px), rgba(0,0,0,.5) calc(100% - 2px)),
+    linear-gradient(90deg, transparent 4px, rgba(255,255,255,.055) 4px 5px, transparent 5px, transparent calc(100% - 5px), rgba(255,255,255,.04) calc(100% - 5px) calc(100% - 4px), transparent calc(100% - 4px));
+}
+.zk-tube { box-shadow: inset 0 0 0 2px rgba(0,0,0,.95), inset 0 0 26px rgba(0,0,0,.95), inset 0 3px 10px rgba(0,0,0,.85), inset 0 0 60px rgba(var(--lamp-signal-rgb), .05), 0 -1px 2px rgba(0,0,0,.55), 0 1px 0 rgba(255,255,255,.07); }
+.zk-tube .zk-glass { background:
+    linear-gradient(118deg, rgba(235,255,242,.1) 0%, rgba(235,255,242,.03) 14%, transparent 26%, transparent 66%, rgba(255,255,255,.025) 84%),
+    radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(0,0,0,.5) 96%); }
+
+.zk-ledge {
+  border-radius: 0 0 calc(var(--r-casing) - 1px) calc(var(--r-casing) - 1px);
+  background: linear-gradient(180deg,
+      rgba(0,0,0,.62) 0 1px, rgba(255,255,255,.1) 1px 2px, rgba(0,0,0,.34) 2px 5px, rgba(0,0,0,.16) 5px 10px,
+      rgba(0,0,0,.04) 24%, rgba(255,255,255,.025) 62%, rgba(255,255,255,.045) 88%, rgba(0,0,0,.1));
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,.08);
+}
+.zk-pin { background: radial-gradient(circle at 42% 38%, rgba(255,255,255,.05), rgba(0,0,0,.18) 70%, transparent 78%); box-shadow: inset 0 0 0 .5px rgba(0,0,0,.35); }
+.zk-ledge-brand span { color: var(--print-dim); text-shadow: 0 -1px 0 rgba(0,0,0,.85), 0 1px 0 rgba(255,255,255,.06); }
+.zk-ledge-brand i { color: var(--print); }
+.zk-ledge-brand em { color: var(--print-dim); opacity: .8; }
+
+/* the well IS the deck's key bed */
+.zk-well { background: var(--well); box-shadow: var(--sh-well); border-radius: var(--r-well); padding: 4px 4px 7px; gap: 6px; }
+.zk-rocker { border-radius: var(--r-cap); background: var(--well); background-color: var(--well-base); box-shadow: inset 0 2px 3px rgba(0,0,0,.8); }
+/* the see-saw ends are deck keys: same profile, same gradient, same ribs, glyph low on the cap */
+.zk-cap, .zk-cap-l, .zk-cap-r {
+  position: relative; align-items: flex-end; padding-bottom: 6px;
+  border-radius: var(--r-cap); background: var(--cap); background-color: var(--cap-base); box-shadow: var(--sh-cap);
+}
+.zk-cap::before, .zk-push-cap::before {
+  content: ""; position: absolute; left: 6px; right: 6px; top: 5px; bottom: auto; height: 9px; border-radius: 1px; pointer-events: none;
+  background: repeating-linear-gradient(180deg, rgba(255,255,255,.09) 0 1px, rgba(0,0,0,.3) 1px 3px);
+  box-shadow: none;
+}
+.zk-cap i { position: relative; color: var(--print-hi); text-shadow: 0 -1px 0 rgba(0,0,0,.9); }
+.zk-rocker:hover .zk-cap { background: var(--cap-hover); }
+.zk-rocker.tilt-l .zk-cap-l, .zk-rocker.tilt-r .zk-cap-r { transform: translateY(2px); box-shadow: var(--sh-cap-down); }
+.zk-rocker.tilt-l .zk-cap-r, .zk-rocker.tilt-r .zk-cap-l { transform: translateY(-1.5px); box-shadow: inset 0 2px 0 rgba(255,255,255,.2), inset 0 -2px 3px rgba(0,0,0,.5), 0 3px 5px rgba(0,0,0,.7); }
+@supports selector(:has(*)) {
+  .zk-rocker:has(.zk-hit-l:focus-visible) .zk-cap-l, .zk-rocker:has(.zk-hit-r:focus-visible) .zk-cap-r { outline: 2px solid var(--focus); outline-offset: 3px; }
+  .zk-rocker:has(.zk-hit-l:active) .zk-cap-l, .zk-rocker:has(.zk-hit-r:active) .zk-cap-r { transform: translateY(2px); box-shadow: var(--sh-cap-down); }
+  .zk-rocker:has(.zk-hit-l:active) .zk-cap-r, .zk-rocker:has(.zk-hit-r:active) .zk-cap-l { transform: translateY(-1.5px); box-shadow: inset 0 2px 0 rgba(255,255,255,.2), inset 0 -2px 3px rgba(0,0,0,.5), 0 3px 5px rgba(0,0,0,.7); }
+}
+/* the windows between the ends: the same display glass as the log and the module */
+.zk-rock-win { background: var(--win); border-radius: 2px; box-shadow: var(--sh-win); }
+.zk-rock-k { color: var(--print); }
+.zk-step { background: #1a1c20; }
+.zk-step.on { background: linear-gradient(180deg, #ffd79a, var(--lamp-readout)); box-shadow: 0 0 5px rgba(var(--lamp-readout-rgb), .8), inset 0 1px 0 rgba(255,255,255,.5); }
+.zk-num { background: var(--win); box-shadow: var(--sh-win), inset 0 0 8px rgba(var(--lamp-readout-rgb), .06); }
+.zk-num::after, .zk-vol-win::after {
+  background:
+    repeating-linear-gradient(0deg, rgba(0,0,0,.34) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(90deg, rgba(0,0,0,.34) 0 1px, transparent 1px 2px),
+    linear-gradient(106deg, rgba(255,255,255,.045), transparent 30%);
+}
+
+/* 受信 — a deck key with its lamp low on the cap; lit = a reception is on the air = signal green */
+.zk-push-cap {
+  align-items: flex-end; padding-bottom: 6px;
+  border-radius: var(--r-cap); background: var(--cap); background-color: var(--cap-base); box-shadow: var(--sh-cap);
+}
+.zk-push-cap::before { left: 10px; right: 10px; }
+.zk-push-k { color: var(--print-hi); text-shadow: 0 -1px 0 rgba(0,0,0,.9); }
+.zk-push-lens {
+  background: radial-gradient(circle at 42% 36%, #1f4a30, #0f2418 70%, #08140d);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.8), 0 0 0 1.5px #0a0b0e, 0 0 0 2.5px rgba(150,154,166,.26);   /* the same turned bezel as the run tally */
+}
+.zk-push.is-on .zk-push-lens {
+  background: radial-gradient(circle at 42% 36%, #d8ffe6, var(--lamp-signal) 62%, #138a45);
+  box-shadow: 0 0 6px rgba(var(--lamp-signal-rgb), .8), inset 0 1px 0 rgba(255,255,255,.55), 0 0 0 1.5px #0a0b0e, 0 0 0 2.5px rgba(150,154,166,.26);
+}
+.zk-push:hover .zk-push-cap { background: var(--cap-hover); }
+.zk-push:active .zk-push-cap, .zk-push.is-down .zk-push-cap { transform: translateY(2px); box-shadow: var(--sh-cap-down); }
+.zk-push:focus-visible .zk-push-cap { outline: 2px solid var(--focus); }
+
+/* the unfitted station: the same cap, no print */
+.zk-blank { border-radius: var(--r-cap); background: var(--cap-blank); background-color: var(--cap-base); box-shadow: var(--sh-cap); opacity: .95; }
+.zk-blank::before { background: radial-gradient(circle at 42% 36%, rgba(255,255,255,.06), rgba(0,0,0,.28) 66%, rgba(0,0,0,.08)); box-shadow: inset 0 1px 1px rgba(0,0,0,.5), 0 1px 0 rgba(255,255,255,.05); }
+.zk-blank::after { background: radial-gradient(circle at 42% 38%, rgba(255,255,255,.045), rgba(0,0,0,.14) 70%, transparent 78%); }
+
+.zk-build { color: var(--ink-dim); }
+
+@media (max-width: 700px) {
+  .zankyo-frame { border-radius: 0; outline-offset: -6px; }
+  .zk-ledge { border-radius: 0 0 calc(var(--r-casing) - 1px) calc(var(--r-casing) - 1px); }
 }
