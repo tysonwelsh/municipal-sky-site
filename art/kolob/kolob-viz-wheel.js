@@ -8,7 +8,9 @@
 // one gilt arc that fills as it plays, the wheel turning a seat beneath it
 // when the arc is full; inside the hour ring, the tabernacle's facade, black
 // pipes breathing with the spectrum of the master bus. Drawn by the page's
-// frame on the wheel's own canvas (drawWheel, after the staff). Lends
+// frame on the wheel's own canvas (drawWheel, after the staff; what does not
+// move while a section plays kept on a canvas of its own: THE WHEEL'S STILL
+// PART). Lends
 // drawWheel, wheelSeatAt and setWheelLabels (the last two on KolobViz's
 // surface); reads the wheel's plate (VS.xctx, VS.XW, VS.XH), the conductor's
 // report (VS.cond) and whether the meeting plays (VS.playing) from
@@ -231,6 +233,7 @@ window.KOLOB = window.KOLOB || {};
     c.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
     c.stroke();
   }
+  var liveEl = null;                               // the live region (looked up until it is found, then kept)
   function drawWheel(dt) {
     if (!VS.xctx) return;
     var c = VS.xctx, st = wheelState();
@@ -263,9 +266,91 @@ window.KOLOB = window.KOLOB || {};
     }
     var fillAlpha = turning ? 1 - wh.e : 1;
 
-    var g = wheelGeom(), R = g.R, cx = g.cx, cy = g.cy, fontPx = g.fontPx;
-    var TRACK = fontPx * 0.14;
+    var g = wheelGeom(), R = g.R, cx = g.cx, cy = g.cy;
     c.clearRect(0, 0, VS.XW, VS.XH);
+    c.lineWidth = 1;
+    // the still part, drawn again only if it must be, and laid down whole:
+    // one device pixel to one, under no clip (it was clipped to the horizon
+    // where it was drawn)
+    if (!stillKept(turning)) drawStill(g, turning);
+    c.save(); c.setTransform(1, 0, 0, 1, 0, 0); c.drawImage(still, 0, 0); c.restore();
+
+    c.save();
+    c.beginPath(); c.rect(0, 0, VS.XW, g.horizonY); c.clip();  // the wheel lives above the horizon
+    // the organ, standing on the horizon inside the hour ring
+    updateBands(dt);
+    drawFacade(c, g);
+    // THE arc — one, fixed to the page at the crown; the wheel turns beneath it.
+    // It runs from the left neighbour's tick to the right neighbour's: the whole
+    // crown of the wheel is the bar, and each section refills it.
+    var span = SEAT_STEP * 2, a0 = -Math.PI / 2 - SEAT_STEP, rr = R + 6;
+    c.save();
+    c.setLineDash([1, 3]); c.strokeStyle = inkA(0.3);
+    c.beginPath(); c.arc(cx, cy, rr, a0, a0 + span); c.stroke();
+    c.restore();
+    c.strokeStyle = inkA(0.4);
+    radial(c, cx, cy, a0, rr - 3, rr + 3); radial(c, cx, cy, a0 + span, rr - 3, rr + 3);
+    if (wh.fill > 0.002 && fillAlpha > 0.01) {
+      c.lineWidth = 3; c.lineCap = "butt"; c.strokeStyle = giltA(fillAlpha);
+      c.beginPath(); c.arc(cx, cy, rr, a0, a0 + span * wh.fill); c.stroke();
+      c.lineWidth = 1;
+    }
+    // a seat that folds several hymns: ticks divide the arc, one hymn to a part
+    if (VS.playing && st.count > 1) {
+      c.strokeStyle = inkA(0.45);
+      for (var k = 1; k < st.count; k++) radial(c, cx, cy, a0 + span * k / st.count, rr - 3, rr + 3);
+    }
+    c.restore();
+
+    // the horizon: the letterpress rule the wheel sets behind and the organ
+    // stands on (its impost) — one hairline; the double rule stays unique to
+    // the title
+    c.strokeStyle = inkA(0.42);
+    c.beginPath(); c.moveTo(0, g.horizonY + 0.5); c.lineTo(VS.XW, g.horizonY + 0.5); c.stroke();
+
+    // the live region, for readers who cannot see the wheel: on a new seat and
+    // at the quarter-marks, never every frame
+    var live = liveEl || (liveEl = document.getElementById("kolob-wheel-live"));
+    if (live) {
+      var key = VS.playing ? wh.seat + ":" + st.k + ":" + Math.floor(st.prog * 4) : "idle";
+      if (key !== wh.liveKey) {
+        wh.liveKey = key;
+        live.textContent = VS.playing
+          ? seatSpoken[wh.seat] + (st.count > 1 ? " " + (st.k + 1) + " of " + st.count : "") + " · " + Math.round(st.prog * 100) + "%"
+          : "";
+      }
+    }
+  }
+  // ---- the wheel's still part -------------------------------------------------
+  // What does not move while a section plays — the sun's gilt, the rim and
+  // the banner's rule, the hour ring, the dial's spokes and quarter-marks,
+  // the seats' ticks and their labels lettered round the banner — is drawn
+  // on a canvas of its own (still), the wheel's size, and laid down whole
+  // each frame. It is drawn again only when something it is drawn from is
+  // not what it was (stillFrom): the wheel's rotation (every frame of a turn),
+  // the seat at the crown, whether the meeting plays, a turn's clearing of
+  // the finished seats, the plate's size, the labels (the Latin switch) or
+  // the fonts (one arriving). Each frame the wheel draws over it the organ's
+  // pipes, the arc and its marks, and the horizon, as before.
+  var still = null, stillFrom = null, fontsDone = 0;
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener("loadingdone", function () { fontsDone++; });
+  function stillKept(turning) {
+    var k = stillFrom, e = wh.wrap && turning ? wh.e : null, fonts = document.fonts ? document.fonts.status : null, wc = VS.xctx.canvas;
+    if (k && k[0] === wh.offset && k[1] === wh.seat && k[2] === VS.playing && k[3] === e && k[4] === VS.XW && k[5] === VS.XH && k[6] === VS.dpr &&
+        k[7] === seatLabels && k[8] === fonts && k[9] === fontsDone && still.width === wc.width && still.height === wc.height) return true;
+    stillFrom = [wh.offset, wh.seat, VS.playing, e, VS.XW, VS.XH, VS.dpr, seatLabels, fonts, fontsDone];
+    return false;
+  }
+  function drawStill(g, turning) {
+    var R = g.R, cx = g.cx, cy = g.cy, fontPx = g.fontPx, wc = VS.xctx.canvas;
+    var TRACK = fontPx * 0.14;
+    if (!still) still = document.createElement("canvas");
+    if (still.width !== wc.width) still.width = wc.width;
+    if (still.height !== wc.height) still.height = wc.height;
+    var c = still.getContext("2d");
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, still.width, still.height);
+    c.setTransform(VS.dpr, 0, 0, VS.dpr, 0, 0);
     c.font = fontPx + 'px "Noto Sans Deseret", "EB Garamond", serif';
     if ("letterSpacing" in c) c.letterSpacing = "0em";
     c.textAlign = "center"; c.textBaseline = "alphabetic";
@@ -308,49 +393,7 @@ window.KOLOB = window.KOLOB || {};
       c.fillStyle = inkA(alpha);
       curvedText(c, seatLabels[i] || SEATS[i], cx, cy, R - fontPx * 1.6, a, TRACK);
     }
-    // the organ, standing on the horizon inside the hour ring
-    updateBands(dt);
-    drawFacade(c, g);
-    // THE arc — one, fixed to the page at the crown; the wheel turns beneath it.
-    // It runs from the left neighbour's tick to the right neighbour's: the whole
-    // crown of the wheel is the bar, and each section refills it.
-    var span = SEAT_STEP * 2, a0 = -Math.PI / 2 - SEAT_STEP, rr = R + 6;
-    c.save();
-    c.setLineDash([1, 3]); c.strokeStyle = inkA(0.3);
-    c.beginPath(); c.arc(cx, cy, rr, a0, a0 + span); c.stroke();
     c.restore();
-    c.strokeStyle = inkA(0.4);
-    radial(c, cx, cy, a0, rr - 3, rr + 3); radial(c, cx, cy, a0 + span, rr - 3, rr + 3);
-    if (wh.fill > 0.002 && fillAlpha > 0.01) {
-      c.lineWidth = 3; c.lineCap = "butt"; c.strokeStyle = giltA(fillAlpha);
-      c.beginPath(); c.arc(cx, cy, rr, a0, a0 + span * wh.fill); c.stroke();
-      c.lineWidth = 1;
-    }
-    // a seat that folds several hymns: ticks divide the arc, one hymn to a part
-    if (VS.playing && st.count > 1) {
-      c.strokeStyle = inkA(0.45);
-      for (var k = 1; k < st.count; k++) radial(c, cx, cy, a0 + span * k / st.count, rr - 3, rr + 3);
-    }
-    c.restore();
-
-    // the horizon: the letterpress rule the wheel sets behind and the organ
-    // stands on (its impost) — one hairline; the double rule stays unique to
-    // the title
-    c.strokeStyle = inkA(0.42);
-    c.beginPath(); c.moveTo(0, g.horizonY + 0.5); c.lineTo(VS.XW, g.horizonY + 0.5); c.stroke();
-
-    // the live region, for readers who cannot see the wheel: on a new seat and
-    // at the quarter-marks, never every frame
-    var live = document.getElementById("kolob-wheel-live");
-    if (live) {
-      var key = VS.playing ? wh.seat + ":" + st.k + ":" + Math.floor(st.prog * 4) : "idle";
-      if (key !== wh.liveKey) {
-        wh.liveKey = key;
-        live.textContent = VS.playing
-          ? seatSpoken[wh.seat] + (st.count > 1 ? " " + (st.k + 1) + " of " + st.count : "") + " · " + Math.round(st.prog * 100) + "%"
-          : "";
-      }
-    }
   }
   // Which seat is under a point of the wheel canvas (CSS px) — for the dev
   // jump menu. Null off the wheel or beneath the horizon.
