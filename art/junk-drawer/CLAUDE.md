@@ -68,7 +68,8 @@ SEVEN files, loaded in order by `_scripts.php`. They are IIFEs talking through
 **Runners:** `api/setup-jd2-tables.php` (v2 DDL, idempotent, both dialects)
 and `api/setup-jd-tables.php` (v1). `api/jd-backfill-curated.php` answers
 "done" while v1 is frozen. `api/jd2-resanitize.php` re-checks rejected
-drawings after a sanitizer change (below).
+drawings after a sanitizer change (below). `api/jd2-reset.php` is the
+one-shot pre-campaign reset (the Never list's one exception).
 
 **Owner tools:**
 
@@ -383,6 +384,9 @@ share `local-dev/jd-dev.sqlite`, and the flow and reads tests empty the
 - `node scripts/test-jd2-bench.js`: the bench in Playwright. It starts its
   own `php -S`.
 - `php scripts/test-jd-sanitizer.php`: the sanitizer fixtures.
+- `php scripts/test-jd2-reset.php`: the pre-campaign reset (dry run, token,
+  refusals, the real run, the record, `--forget-state`). It empties the
+  `jd2_*` tables too.
 - `python3 scripts/validate-junk-drawer.py`: the v1 archive in `legacy/items/`.
 
 Always run `php -l` and `node --check` on what you touch.
@@ -401,6 +405,19 @@ and must be re-captured against v2 before it is used again (its README).
   lineage, not an analysis join.
 - Never delete or overwrite a session, judgment, ranking or pair. Re-rating
   files a new session.
+
+  **The one sanctioned exception** is `api/jd2-reset.php`, the pre-campaign
+  reset (owner, 2026-10-03): it deletes every `jd2_*` row — the trial
+  prompts, runs, drawings and sittings, the Titanic test sitting included —
+  ONCE, BY THE OWNER, BEFORE THE CAMPAIGN'S FIRST SITTING, so the campaign
+  starts clean. Its window is 2026-10-02 … 2026-10-31 UTC
+  (`JD2_RESET_WINDOW_*`; a real run outside it is refused, and moving it is
+  the owner's call). It is setup-key gated, dry-run first, needs the
+  state-bound token the dry run prints, and leaves a record outside the web
+  root (`db/junk-drawer-v2-schema.md`, "Reset"). An agent never runs it
+  against production, never widens it, and never copies it into another
+  endpoint; from the campaign's first sitting on there is no exception, and
+  the file is deleted once it has run.
 - Never hard-code a model, axis or label in PHP, SQL or JS. They come from
   `taxonomy.json`.
 - Never write servable data as `.md` (the deploy excludes it).
