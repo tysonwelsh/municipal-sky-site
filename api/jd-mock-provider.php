@@ -63,6 +63,15 @@ function jd_mock_call(string $provider, string $prompt): array
         $svg = preg_replace('/^(<svg\b[^>]*>)/', "$1<style><![CDATA[ .jd-mock-cdata > * { opacity: 1; } ]]></style>", $svg, 1);
     }
 
+    // '[title]': the model captioning and signing its own drawing — a
+    // <title> and a <desc> inserted after the root's start tag. The sanitizer
+    // strips both from the served svg (2026-10-03), so the slot files ok with
+    // normalized 'title_desc_stripped' (with '[cdata]' too:
+    // 'cdata_unwrapped,title_desc_stripped'); raw_response keeps them.
+    if (jd_mock_token_hits($prompt, 'title', $provider)) {
+        $svg = preg_replace('/^(<svg\b[^>]*>)/', "$1<title>jd-mock self-caption</title><desc>jd-mock signature</desc>", $svg, 1);
+    }
+
     if (stripos($prompt, '[prose]') !== false) {
         $svg = "Certainly! Here is the object you described.\n\n```svg\n"
             . $svg

@@ -147,8 +147,9 @@ jd2_ensure_column($db, 'jd2_prompts', 'intake_json', 'TEXT NULL AFTER intake_mod
 jd2_ensure_column($db, 'jd2_prompts', 'intake_cost_usd', 'DECIMAL(10,6) NULL AFTER intake_json', 'DECIMAL(10,6) NULL');
 jd2_ensure_column($db, 'jd2_prompts', 'intake_at', 'DATETIME NULL AFTER intake_cost_usd', 'TEXT NULL');
 
-// The sanitizer's named normalization (2026-10-02: CDATA sections unwrapped,
-// not refused): what it changed between raw_response and svg, a comma-joined
+// The sanitizer's named normalizations (2026-10-02: CDATA sections unwrapped,
+// not refused; 2026-10-03: <title>/<desc> stripped from the served svg —
+// both fit the VARCHAR(64)): what it changed between raw_response and svg, a comma-joined
 // list of JD2_GEN_NORMALIZED words, NULL when the drawing passed
 // byte-identical. Additive, nullable.
 jd2_ensure_column($db, 'jd2_generations', 'normalized', 'VARCHAR(64) NULL AFTER disobedience', 'TEXT NULL');

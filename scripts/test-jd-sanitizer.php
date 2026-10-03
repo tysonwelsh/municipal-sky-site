@@ -9,20 +9,25 @@
 //   ok-<name>.svg                 must pass the sanitizer byte-identical,
 //                                 with no 'normalized' in the verdict
 //   reject-<reason>-<name>.svg    must be rejected with exactly <reason>
-//   normalize-<word>-<n>-<name>.svg
-//                                 must pass with 'normalized' => [<word> => n]
-//                                 and nothing else (2026-10-02: the one word
-//                                 is cdata_unwrapped). The output must hold no
-//                                 CDATA marker, keep the document's text,
-//                                 never self-close a <style>/<title> nor carry
-//                                 a '<' inside one, and be a fixed point: the
-//                                 sanitizer passes it again byte-identical
-//                                 with nothing normalized.
+//   normalize-<word>-<n>-[<word>-<n>-…]<name>.svg
+//                                 must pass with 'normalized' => [<word> => n,
+//                                 …] and nothing else. The words:
+//                                 cdata_unwrapped (2026-10-02) and
+//                                 title_desc_stripped (2026-10-03; n counts
+//                                 every <title> and <desc>, nested included).
+//                                 The output must hold no CDATA marker and no
+//                                 <title>/<desc>, keep the document's text
+//                                 (less what sat inside a stripped title or
+//                                 desc), never self-close a <style>/<title>
+//                                 nor carry a '<' inside one, and be a fixed
+//                                 point: the sanitizer passes it again
+//                                 byte-identical with nothing normalized.
 //
 // The CDATA twin: every fixture holding a <![CDATA[ … ]]> is also run with
 // each section replaced by the same characters written as escaped text, and
 // must get the SAME verdict (pass, or the same reason). That is the
-// normalization's promise — a wrapper changes nothing the rules decide.
+// normalization's promise — a wrapper changes nothing the rules decide. (The
+// twin may still be normalized title_desc_stripped, never cdata_unwrapped.)
 //
 // The one reason the sanitizer does not produce is no_svg_found: that verdict
 // belongs to the extraction step, so those fixtures are asserted against
@@ -50,7 +55,7 @@ if (!$files) {
 }
 
 // The normalization words the sanitizer may report (jd2_generations.normalized).
-$NORMALIZATIONS = ['cdata_unwrapped'];
+$NORMALIZATIONS = ['cdata_unwrapped', 'title_desc_stripped'];
 
 $passed = 0;
 $failed = 0;
@@ -63,19 +68,50 @@ function cdata_twin(string $svg): string
         static fn (array $m): string => htmlspecialchars($m[1], ENT_XML1 | ENT_NOQUOTES, 'UTF-8'), $svg);
 }
 
-/** The document's character data (every text and CDATA node, in order). */
-function text_of(string $svg): ?string
+/** The parsed document, or null. */
+function doc_of(string $svg): ?DOMDocument
 {
     $doc = new DOMDocument();
     $prev = libxml_use_internal_errors(true);
     $ok = $doc->loadXML($svg, LIBXML_NONET);
     libxml_clear_errors();
     libxml_use_internal_errors($prev);
-    return $ok ? $doc->documentElement->textContent : null;
+    return $ok ? $doc : null;
+}
+
+/** How many SVG <title> and <desc> elements the document holds. */
+function title_desc_count(DOMDocument $doc): int
+{
+    return $doc->getElementsByTagNameNS(JD_SVG_NS, 'title')->length
+        + $doc->getElementsByTagNameNS(JD_SVG_NS, 'desc')->length;
+}
+
+/**
+ * The document's character data (every text and CDATA node, in order); with
+ * $withoutTitleDesc, as it reads once every <title>/<desc> is gone.
+ */
+function text_of(string $svg, bool $withoutTitleDesc = false): ?string
+{
+    $doc = doc_of($svg);
+    if ($doc === null) {
+        return null;
+    }
+    if ($withoutTitleDesc) {
+        $found = [];
+        foreach (['title', 'desc'] as $name) {
+            foreach ($doc->getElementsByTagNameNS(JD_SVG_NS, $name) as $el) {
+                $found[] = $el;
+            }
+        }
+        foreach ($found as $el) {
+            $el->parentNode?->removeChild($el);
+        }
+    }
+    return $doc->documentElement->textContent;
 }
 
 /** What is wrong with a normalized output, or null. */
-function normalized_output_problem(string $in, string $out): ?string
+function normalized_output_problem(string $in, string $out, array $expected): ?string
 {
     if ($out === $in) {
         return 'output is byte-identical to the input (nothing was re-serialized)';
@@ -83,7 +119,14 @@ function normalized_output_problem(string $in, string $out): ?string
     if (str_contains($out, '<![CDATA[') || str_contains($out, ']]>')) {
         return 'output still carries a CDATA marker';
     }
-    if (text_of($out) !== text_of($in)) {
+    $outDoc = doc_of($out);
+    if ($outDoc === null || title_desc_count($outDoc) !== 0) {
+        return 'output still carries a <title> or <desc> (or does not parse)';
+    }
+    if (preg_match('#<(title|desc)\b#', $out)) {
+        return 'output text still holds a <title or <desc tag';
+    }
+    if (text_of($out) !== text_of($in, isset($expected['title_desc_stripped']))) {
         return 'the document text changed';
     }
     if (preg_match('#<(style|title)\b[^>]*/>#', $out)) {
@@ -114,12 +157,28 @@ foreach ($files as $file) {
     } elseif (str_starts_with($name, 'normalize-')) {
         $expectation = 'normalize';
         $expectedReason = null;
+        // One or more <word>-<n>- pairs after 'normalize-', in any order.
+        $rest = substr($name, strlen('normalize-'));
+        $expectedNormalized = [];
+        do {
+            $matched = false;
+            foreach ($NORMALIZATIONS as $word) {
+                if (preg_match('/^' . preg_quote($word, '/') . '-(\d+)-/', $rest, $m)) {
+                    $expectedNormalized[$word] = (int) $m[1];
+                    $rest = substr($rest, strlen($m[0]));
+                    $matched = true;
+                    break;
+                }
+            }
+        } while ($matched);
+        // The sanitizer reports its words in $NORMALIZATIONS order.
+        $ordered = [];
         foreach ($NORMALIZATIONS as $word) {
-            if (preg_match('/^normalize-' . preg_quote($word, '/') . '-(\d+)-/', $name, $m)) {
-                $expectedNormalized = [$word => (int) $m[1]];
-                break;
+            if (isset($expectedNormalized[$word])) {
+                $ordered[$word] = $expectedNormalized[$word];
             }
         }
+        $expectedNormalized = $ordered ?: null;
         if ($expectedNormalized === null) {
             printf("FAIL  %-46s unknown normalization or count encoded in filename\n", $name);
             $failed++;
@@ -172,8 +231,14 @@ foreach ($files as $file) {
             $failed++;
             continue;
         }
-        if (!empty($twin['ok']) && isset($twin['normalized'])) {
-            printf("FAIL  %-46s CDATA twin was normalized (it holds no CDATA)\n", $name);
+        if (!empty($twin['ok']) && isset($twin['normalized']['cdata_unwrapped'])) {
+            printf("FAIL  %-46s CDATA twin was normalized cdata_unwrapped (it holds no CDATA)\n", $name);
+            $failed++;
+            continue;
+        }
+        if (!empty($twin['ok']) && ($twin['normalized']['title_desc_stripped'] ?? null) !== ($result['normalized']['title_desc_stripped'] ?? null)) {
+            printf("FAIL  %-46s CDATA twin stripped %s title/desc, the fixture %s\n", $name,
+                json_encode($twin['normalized']['title_desc_stripped'] ?? 0), json_encode($result['normalized']['title_desc_stripped'] ?? 0));
             $failed++;
             continue;
         }
@@ -189,7 +254,7 @@ foreach ($files as $file) {
             printf("FAIL  %-46s expected normalized %s, got %s\n", $name, json_encode($expectedNormalized),
                 json_encode($result['normalized'] ?? null));
             $failed++;
-        } elseif (($problem = normalized_output_problem($contents, $result['svg'])) !== null) {
+        } elseif (($problem = normalized_output_problem($contents, $result['svg'], $expectedNormalized)) !== null) {
             printf("FAIL  %-46s %s\n", $name, $problem);
             $failed++;
         } else {
