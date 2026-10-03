@@ -91,6 +91,25 @@ back-end change; the owner decides the wording):
 
 **Before the drawer opens to the public:**
 
+- **Visitors wait less for a slow model (owner, 2026-10-02).** Today every
+  slot on a visitor turn gets `JD_PROVIDER_TIMEOUT` = 150 s; a model that
+  misses it is marked failed, the card says it did not come back, and the
+  visitor rates the survivors. Kimi K3 has missed or crawled past that
+  repeatedly (284 s at max, ~90 s at medium, two bare 503s in the medium
+  trial). The owner's standard: the BENCHMARK waits and retries until all
+  four are in (the batch runner's resume and the stranded-slot rule do
+  this); a VISITOR should not sit several minutes for one machine. Design:
+  (1) a shorter web-profile wire timeout (~75–90 s); (2) a "go on without
+  it" affordance in the darkroom once two or more drawings are in and the
+  laggard has passed ~45 s, which marks the slot `abandoned` for THIS
+  sitting; (3) a late drawing that lands afterwards is still stored (it is
+  data) but the sitting's completeness is judged against the drawings it
+  was dealt (`jd2_sessions.seat_order`), not every ok drawing of the run,
+  so the item still goes live; the owner can rate the late one on the
+  bench. Needs: a word in the generation status list, a completeness
+  tweak in `jd2_is_complete`, darkroom copy ("Kimi K3 did not come back
+  in time"), and the ledger showing the laggard.
+
 - **Sanitizer and DOM must agree on namespace prefixes (2026-10-02).** A
   drawing that uses `xlink:href` without declaring `xmlns:xlink` passes the
   sanitizer but fails the browser's XML parse, so since the DOMParser
