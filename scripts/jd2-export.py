@@ -18,6 +18,10 @@ ordered deterministically (prompts by created+id, runs by created+id,
 generations by slot, sessions by filed_at+id, cells by slot/kind/axis) so two
 exports of the same data diff cleanly. A generation carries `svg_bytes` and
 `raw_response_bytes`; the text itself only with --include-svg / --include-raw.
+It also carries `normalized`: what the sanitizer changed between
+raw_response and svg (comma-joined words, e.g. `cdata_unwrapped`; null =
+nothing, svg is the model's bytes as extracted) — in the JSONL and as a
+standing-CSV column.
 
 THE DISPLAY SESSION (the one rule this file applies, and the only one): per
 run, the owner's CURRENT session if it is COMPLETE, else the visitor's current
@@ -235,7 +239,7 @@ def export(conn, args, taxonomy):
     # byte lengths: LENGTH() counts bytes on MySQL, characters on SQLite unless cast to a BLOB
     blen = "LENGTH(%s)" if not type(conn).__module__.startswith("sqlite3") else "LENGTH(CAST(%s AS BLOB))"
     gen_cols = ("id, run_id, slot, model_id, api_model, provider, params, status, reject_reason, "
-                "disobedience, latency_ms, usage_json, cost_usd, priced, hidden, created, "
+                "disobedience, normalized, latency_ms, usage_json, cost_usd, priced, hidden, created, "
                 + (blen % "svg") + " AS svg_len, " + (blen % "raw_response") + " AS raw_len")
     if args.include_svg:
         gen_cols += ", svg"
@@ -312,6 +316,7 @@ def export(conn, args, taxonomy):
                     "id": g["id"], "slot": g["slot"], "model_id": g["model_id"], "api_model": g["api_model"],
                     "provider": g["provider"], "params": as_json(g["params"]), "status": g["status"],
                     "reject_reason": g["reject_reason"], "disobedience": as_int(g["disobedience"]),
+                    "normalized": g["normalized"],
                     "latency_ms": as_int(g["latency_ms"]), "usage": as_json(g["usage_json"]),
                     "cost_usd": as_float(g["cost_usd"]), "priced": as_int(g["priced"]), "hidden": as_int(g["hidden"]),
                     "created": as_stamp(g["created"]), "svg_bytes": as_int(g["svg_len"]),
@@ -350,7 +355,8 @@ def export(conn, args, taxonomy):
                     "run_id": run["id"], "run_kind": run["kind"], "profile": run["profile"], "harness": run["harness"],
                     "pool_version": run["pool_version"], "generation_id": g["id"], "slot": g["slot"],
                     "model_id": g["model_id"], "api_model": g["api_model"], "provider": g["provider"],
-                    "status": g["status"], "hidden": as_int(g["hidden"]), "cost_usd": as_float(g["cost_usd"]),
+                    "status": g["status"], "hidden": as_int(g["hidden"]), "normalized": g["normalized"],
+                    "cost_usd": as_float(g["cost_usd"]),
                     "priced": as_int(g["priced"]), "latency_ms": as_int(g["latency_ms"]),
                     "display_session_id": display["id"] if (display and counted) else None,
                     "rater_role": display["rater_role"] if (display and counted) else None,
@@ -445,7 +451,7 @@ def main(argv=None):
             "prompt_id", "prompt", "origin", "visibility", "v1_item_id", "category", "size_class", "size_by",
             "run_id", "run_kind", "profile", "harness",
             "pool_version", "generation_id", "slot", "model_id", "api_model", "provider", "status", "hidden",
-            "cost_usd", "priced", "latency_ms", "display_session_id", "rater_role", "blind", "taxonomy_version",
+            "normalized", "cost_usd", "priced", "latency_ms", "display_session_id", "rater_role", "blind", "taxonomy_version",
             "grade"] + axes + ["tags_" + f for f in facets] + ["rank_pos", "gap_after"], standing)
     if args.pairs:
         write_csv(args.pairs, [

@@ -605,6 +605,8 @@ $p2rows = array_values(array_filter($sc, fn ($r) => ($r[$ixP] ?? '') === $p2));
 check('standing CSV: size_class, size_by and a tags_<facet> column per facet (P2: tags_probe = state)',
     in_array('size_class', $head, true) && in_array('size_by', $head, true) && in_array('tags_subject', $head, true)
     && in_array('tags_treatment', $head, true) && $ixT !== false && $p2rows !== [] && $p2rows[0][$ixT] === 'state', json_encode($head));
+check('the export carries jd2_generations.normalized: on every JSONL generation and as a standing CSV column',
+    array_key_exists('normalized', $rec2['runs'][0]['generations'][0] ?? []) && in_array('normalized', $head, true), json_encode($head));
 check("pairs CSV: one row per pair of every run's display session ($expPairs), with both models",
     count($pc) === $expPairs && in_array('model_a', $phead, true) && in_array('score', $phead, true));
 
