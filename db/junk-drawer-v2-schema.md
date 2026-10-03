@@ -733,3 +733,8 @@ after the drawings, stand over the clerk's.
   as a retired column). No filed row changes; `required_cells` unchanged in
   meaning (the campaign's v35 sittings name `layering` and stay complete).
   No schema change.
+- 2026-10-03 — re-rating's entry points (VERSION 0.17.0): `jd2-queue` items
+  gain `filed_at`, when the owner's current sitting on the bench run was
+  filed (null when there is none), read off the session row the queue
+  already holds. The bench's RATED sheet sorts `?all=1`'s complete rows by
+  it. No schema change.

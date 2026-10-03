@@ -1934,9 +1934,17 @@
       return st && st !== 'ok' && st !== 'pending';
     }).length;
     var first = previewWord(n);
+    /* A RE-RATING (0.17.0): when the seated prompt carries the owner's last
+       COMPLETE sitting as its prefill (the bench job's `rerating`), the one
+       instruction line says so in a second sentence; a first sitting reads
+       as before */
     var h = '<p class="jd-turn-line jd-preview-line">' +
       esc(first.charAt(0).toUpperCase() + first.slice(1)) +
-      ', side by side. Click one to enlarge.</p>' +
+      ', side by side. Click one to enlarge.' +
+      (work.rerating
+        ? ' <span class="jd-preview-rerate">Your last sitting’s answers are on the card; ' +
+          'change what you like — filing adds a new sitting.</span>'
+        : '') + '</p>' +
       '<div class="jd-preview" role="list">';
     ok.forEach(function (s) {
       h += '<div class="jd-preview-cell" role="listitem" data-cell="' + s + '">' +
@@ -3781,6 +3789,9 @@
          pile, the tracking beacon — was built to read a winner; `strength`
          survives as a permanent null, the podium having no margin. */
       step: 'preview', reached: reached, resume: null,
+      /* a bench re-rating (0.17.0): the job's `rerating` — the owner's last
+         sitting on this run was complete and is the prefill */
+      rerating: false,
       ranks: {},
       /* THE HEAD TO HEAD's answers (dataset v2): canonical pair key 'a|c'
          → score −3..+3, positive = the first slot preferred; pairDeck is
@@ -4597,7 +4608,9 @@
          see curateFile.
        — resume is server-truth: answers already filed arrive prefilled, the
          rail opens at the first unfinished drawing, and a fully-answered
-         item opens on the podium.
+         item opens on the podium. A job with `rerating` (the owner's last
+         sitting on the run was complete: a re-rate, 0.17.0) says so on the
+         preview — see previewPanel.
        — nothing joins the pile, nothing persists to the turn store, and
          nothing is tracked as a turn. */
   function curateOpen(job) {
@@ -4692,6 +4705,7 @@
       }
       work.prefillPruned = pruned;
       work.prefillMapped = mapped;
+      work.rerating = !!job.rerating;
       /* the sitting's note starts empty: it is this sitting's rationale */
       work.note = '';
       /* THE CATALOGUE ENTRY (0.13.0): the bench's job carries what is on

@@ -1997,6 +1997,17 @@ tr.rc-axdesc td {
 }
 .rc-save:hover { background: var(--jd-bench-gold-hi); }
 .rc-save:focus-visible { outline: 2px solid #6d5426; outline-offset: 2px; }
+/* RE-RATE ON THE BENCH (0.17.0): the card's one act on the bench page,
+   dressed as SAVE RATINGS is (the owner's brass), at the paperwork's foot */
+.rc-rerate-row { display: flex; justify-content: flex-end; margin-top: 10px; }
+.rc-rerate {
+  font: 700 9px/1.4 var(--jd-font-mono);
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: #221809; background: var(--jd-bench-gold); border: 0; border-radius: 2px;
+  padding: 5px 11px; cursor: pointer; white-space: nowrap;
+}
+.rc-rerate:hover { background: var(--jd-bench-gold-hi); }
+.rc-rerate:focus-visible { outline: 2px solid #6d5426; outline-offset: 2px; }
 /* the edit cell: the gauge stays ahead of the scale, the scale takes the rest */
 .rc-editcell { display: flex; width: 100%; }
 .rc-subj .rc-editcell select.rc-edit { flex: 1 1 auto; width: auto; min-width: 0; }
@@ -5906,6 +5917,12 @@ html.jd-folder-open { overflow: hidden; }
 html.jd-bench-on .jd-turn-scrim {
   padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px));
   padding-bottom: max(calc(52px + env(safe-area-inset-bottom, 0px)), calc(var(--jd-bench-bar-h, 0px) + 6px));
+}
+/* …and so does the report card (0.17.0): its foot — the "re-rate on the
+   bench →" button on the bench page, the editor's save row in ?admin — sat
+   under the strip, out of reach of a click and of the card's own scroll */
+html.jd-bench-on .jd-record-scrim {
+  padding-bottom: max(max(14px, 2.2vh), calc(var(--jd-bench-bar-h, 46px) + 6px));
 }
 @media (max-width: 560px) {
   .jd-bench-bar .jd-bench-title { max-width: 46vw; }

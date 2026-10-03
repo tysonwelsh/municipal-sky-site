@@ -854,7 +854,40 @@
     }
     /* (no footer any more: the download button lives on the photograph and
        the file number in its margin notes — owner rev, 2026-08-13) */
+    /* RE-RATE ON THE BENCH (0.17.0, owner 2026-10-03): the card's one act on
+       the bench page — it closes the record and seats this prompt on the
+       bench with the owner's last sitting as the prefill (JD_bench.rerate,
+       direct addressing done in-page; filing adds a new sitting). The bench
+       page only, and only with the key verified: never on the plain drawer,
+       never for a visitor, and not in ?admin, whose card has the editor. */
+    if (rerateOn(entry)) {
+      h += '<div class="rc-block rc-rerate-row">' +
+        '<button type="button" class="rc-rerate" data-rc="rerate" ' +
+        'title="seat this prompt on the bench with your last sitting’s answers — filing adds a new sitting">' +
+        're-rate on the bench &rarr;</button></div>';
+    }
     return h + '</div>';
+  }
+  function rerateOn(entry) {
+    return !!(entry && entry.id && window.JD_admin && JD_admin.on && JD_admin.mode === 'bench' &&
+      JD_admin.isVerified() && window.JD_bench && window.JD_bench.rerate);
+  }
+  /* the record comes down first — through history when open() pushed the
+     #id (close() goes back and popstate tears down), so the bench rewrites
+     the address only once the hash is gone — then the bench seats it */
+  function rerateOnBench(id) {
+    var go = function () { if (window.JD_bench && window.JD_bench.rerate) window.JD_bench.rerate(id); };
+    if (pushed) {
+      var after = function () {
+        window.removeEventListener('popstate', after);
+        window.setTimeout(go, 0);
+      };
+      window.addEventListener('popstate', after);
+      close();
+    } else {
+      close();
+      go();
+    }
   }
 
   /* the enlargement's contents: the SAME response the card is showing, on
@@ -1019,6 +1052,7 @@
        the plate, so a press on one of them never also zooms */
     scrollEl.addEventListener('click', function (e) {
       if (hit(e, '[data-rc="save"]')) { saveRatings(); return; }
+      if (hit(e, '[data-rc="rerate"]')) { if (curEntry) rerateOnBench(curEntry.id); return; }
       /* the PAPER button rides the plate's top-right corner: swap, never zoom */
       if (hit(e, '.rc-paper')) { togglePaper(); return; }
       /* the plate's arrows turn the response; they never zoom */

@@ -242,6 +242,27 @@ the step it would have opened as `work.resume`, and the preview's next goes
 there (`previewDest`). A one-drawing turn has no rail and no preview. The
 /about/ walkthrough's card opens on it as well.
 
+**Re-rating** (0.17.0, owner 2026-10-03). The mechanism is direct
+addressing: `?bench&prompt=<id>` seats one prompt in any state with the
+owner's last sitting as the prefill (grades, axes, places and the pedestal's
+gaps — `jd2-queue`'s `prefill`), and filing appends a NEW owner sitting,
+which then becomes the display session; nothing is replaced. There are three
+ways in, all landing on that same path: the bench strip's **RATED** sheet
+(`?bench` only; `ratedList` in `jd-bench.js`) lists every prompt whose bench
+run has a complete owner sitting (`jd2-queue?all=1`, `complete`, not
+hidden), newest sitting first by the item's `filed_at`, and its RE-RATE
+button calls `rerate()` (`fetchOne` + `openItem`, the address rewritten to
+`?bench&prompt=<id>` so a reload comes back to it); the report card's
+**"re-rate on the bench →"** (`rerateOn`/`rerateOnBench` in `jd-record.js`),
+shown only on the bench page with the key verified — never on the plain
+drawer, never in `?admin` (its card has the editor), never for visitors —
+closes the record and calls `JD_bench.rerate`; and the ledger's RE-RATE link,
+a plain `?bench&prompt=` URL. A seated prompt whose owner sitting is
+complete carries `rerating` on its curate job, and the preview's
+instruction line then adds "Your last sitting's answers are on the card;
+change what you like — filing adds a new sitting." A first sitting reads as
+before.
+
 ## How ratings work
 
 - **What is rated is what is served.** The drawing served is the sanitized

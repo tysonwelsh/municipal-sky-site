@@ -42,6 +42,16 @@
 //          (prefill_mapped; the card's note; the rc-q ramp), the report card
 //          shows ONE Layering row at the mapped value, marked "mapped from
 //          the 3-point scale", and the judgment rows do not move
+//   rerate RE-RATING (0.17.0): the strip's RATED sheet lists P2 (complete,
+//          its heading, when it was filed) and not the open P1; closing it
+//          changes nothing; RE-RATE seats P2 as ?bench&prompt= does (the
+//          address says so) with the prefill — grades, places, the gaps —
+//          and the preview's re-rating sentence (a first sitting has none);
+//          filing it with one margin changed appends a SECOND owner
+//          sitting, which the ledger's display and data.php's pairs show;
+//          the report card on the bench page carries "re-rate on the bench →"
+//          and it seats the prompt; the plain drawer's card (with or without
+//          the key) and ?admin's do not
 //   scrap  hides it (visibility hidden) and the bench moves on
 //   hidden HIDDEN ITEMS lists it from the ledger; SHOW returns it live — and
 //          a jd2-curate answer naming another build (the response rewritten
@@ -767,6 +777,8 @@ async function main() {
       return { rows, marks: document.querySelectorAll('.rc-mapped').length };
     });
     await shot(rcPage, '12f-report-card-mapped');
+    check('report card: the plain drawer\'s card, no key, carries no re-rate button',
+      !(await rcPage.$('.jd-record [data-rc="rerate"]')));
     const lay = rcm.rows.filter((r) => r.name === 'Layering');
     const tax4 = TAX.axes.filter((a) => a.id === 'layering-2')[0];
     const lab4 = {};
@@ -817,6 +829,147 @@ async function main() {
       JSON.stringify(q("SELECT id, axis_id, value FROM jd2_judgments WHERE session_id = ? AND axis_id IN ('layering', 'layering-2') ORDER BY generation_id", [sid2])
         .map((x) => [x.id, x.axis_id, Number(x.value)])) === JSON.stringify(keepLayering.map((x) => [x.id, x.axis_id, Number(x.value)])) &&
       q('SELECT required_cells FROM jd2_sessions WHERE id = ?', [sid2])[0].required_cells === keepCells);
+
+    // --- re-rate (0.17.0) -------------------------------------------------------
+    // the backlog walk seats P1 (still open); its preview is a FIRST sitting
+    await page.goto(BASE + '/art/junk-drawer/?bench', { waitUntil: 'load' });
+    await seated(page, P1.prompt_id);
+    await page.waitForSelector('.jd-turn[data-view="preview"] .jd-preview');
+    const firstPv = await previewState(page);
+    check('rerate: a first sitting\'s preview reads as before (no re-rating sentence)',
+      firstPv.view === 'preview' && !(await page.$('.jd-preview-rerate')) && !/Your last sitting/.test(firstPv.text));
+    const ownerSessions = () => q("SELECT id FROM jd2_sessions WHERE run_id = ? AND rater_role = 'owner' ORDER BY filed_at DESC, id DESC", [P2.run_id]);
+    const sessBefore = ownerSessions();
+    const p2filed = q("SELECT filed_at FROM jd2_sessions WHERE id = ?", [sessBefore[0].id])[0].filed_at;
+    const qAll = await api('GET', '/api/jd2-queue.php?all=1');
+    const qa2 = (qAll.items || []).find((x) => x.prompt_id === P2.prompt_id);
+    const qa1 = (qAll.items || []).find((x) => x.prompt_id === P1.prompt_id);
+    check('rerate: jd2-queue items carry filed_at — the owner\'s current sitting\'s (P2), null with none (P1)',
+      !!qa2 && qa2.filed_at === p2filed && !!qa1 && qa1.filed_at === null, JSON.stringify([qa2 && qa2.filed_at, p2filed, qa1 && qa1.filed_at]));
+    const ratedState = () => page.evaluate(() => {
+      const sh = document.querySelector('.jd-bench-sheet');
+      return { hidden: sh.hidden, which: sh.getAttribute('data-sheet'), text: sh.textContent,
+        rows: [...sh.querySelectorAll('.jd-bench-rated-row')].map((r) => ({ id: r.getAttribute('data-rated'),
+          head: (r.querySelector('b') || {}).textContent, when: (r.querySelector('span') || {}).textContent || null,
+          btn: (r.querySelector('[data-rerate]') || {}).textContent })),
+        cur: window.JD_bench.current(), open: window.JD_turn.isOpen(), search: location.search };
+    });
+    await page.click('.jd-bench-bar [data-bench="rated"]');
+    await page.waitForSelector('.jd-bench-sheet[data-sheet="rated"] [data-rerate]', { timeout: 10000 });
+    const rs = await ratedState();
+    await shot(page, '13-rated-sheet');
+    check('RATED lists the filed prompt (its heading, when it was filed, RE-RATE) and not the open one',
+      rs.which === 'rated' && rs.rows.length === 1 && rs.rows[0].id === P2.prompt_id && rs.rows[0].head === P2TITLE &&
+      /^filed \S/.test(rs.rows[0].when || '') && rs.rows[0].btn === 're-rate', JSON.stringify(rs.rows));
+    await page.click('.jd-bench-bar [data-bench="rated"]');
+    const rsClosed = await ratedState();
+    check('…closing it without choosing changes nothing (P1 still on the stage, the address untouched, no sitting filed)',
+      rsClosed.hidden && rsClosed.cur === P1.prompt_id && rsClosed.open && rsClosed.search === '?bench' &&
+      ownerSessions().length === sessBefore.length && (await view(page)) === 'preview', JSON.stringify(rsClosed));
+    await page.click('.jd-bench-bar [data-bench="rated"]');
+    await page.click('.jd-bench-sheet [data-rerate="' + P2.prompt_id + '"]');
+    await seated(page, P2.prompt_id);
+    await page.waitForSelector('.jd-turn[data-view="preview"] .jd-preview');
+    await page.waitForTimeout(400);
+    const rv = await previewState(page);
+    const rvSearch = await page.evaluate(() => location.search);
+    await shot(page, '13b-rerate-preview');
+    check('RE-RATE seats it as ?bench&prompt= does: the preview, every answered station reached, next toward the ranking; the sheet down',
+      rv.view === 'preview' && rv.rail[0].current && rv.rail.filter((x) => x.step !== 'size').every((x) => x.reached) &&
+      rv.cells.length === 4 && rv.go && /next — ranking/.test(rv.go.text) &&
+      (await page.$eval('.jd-bench-sheet', (e) => e.hidden)), JSON.stringify({ view: rv.view, rail: rv.rail, go: rv.go }));
+    check('…and the address names it (?bench&prompt=<id>), so a reload comes back to it',
+      rvSearch === '?bench&prompt=' + P2.prompt_id, rvSearch);
+    check('…and the preview says it is a re-rating, in its one instruction line',
+      await page.$eval('.jd-preview-line', (p) => /Click one to enlarge\. Your last sitting’s answers are on the card; change what you like — filing adds a new sitting\.$/.test(p.textContent.trim()) &&
+        !!p.querySelector('.jd-preview-rerate')).catch(() => false));
+    await page.click('.jd-turn-actions [data-act="next"]');
+    await page.waitForSelector('.jd-turn[data-view="call"]', { timeout: 10000 });
+    const rrFull = await page.$eval('.jd-turn-actions [data-act="next"]', (b) => !b.disabled).catch(() => false);
+    await page.click('.jd-rail-step[data-step="b"]');
+    await page.waitForSelector('.jd-bench select.jd-turn-select');
+    const rrAnswered = await page.$$eval('.jd-bench select.jd-turn-select', (s) => s.length > 0 && s.every((x) => x.value !== ''));
+    check('…with the prefill: the podium full (the places), every scale answered (grades and axes)', rrFull && rrAnswered);
+    await page.click('.jd-rail-step[data-step="call"]');
+    await page.click('.jd-turn-actions [data-act="next"]');
+    await page.waitForSelector('.jd-turn[data-view="gaps"] .jd-ped');
+    const rrPed = await pedState(page);
+    check('…and the pedestal card restores the filed margins (1, negligibly, 2)',
+      rrPed.slips.join('|') === 'slightly|≈ negligibly|better' && rrPed.answer.complete &&
+      rrPed.answer.ranking.slice(0, 3).map((p) => p.gap).join() === '1,0,2', JSON.stringify(rrPed));
+    // the owner's "little adjustment": the first margin, slightly → much better
+    await page.click('.jd-ped-qo[data-gap="3"]');
+    const rrPed2 = await pedState(page);
+    await page.waitForTimeout(600);
+    await shot(page, '13c-rerate-pedestal-adjusted');
+    check('…a margin changed on the card (3, negligibly, 2)',
+      rrPed2.answer.complete && rrPed2.answer.ranking.slice(0, 3).map((p) => p.gap).join() === '3,0,2', JSON.stringify(rrPed2.answer));
+    const rrFiling = page.waitForRequest((rq) => /\/api\/jd2-rate\.php/.test(rq.url()) && rq.method() === 'POST', { timeout: 30000 })
+      .then((rq) => JSON.parse(rq.postData() || '{}'));
+    rrFiling.catch(() => {});
+    await throughGaps(page);
+    await page.click('.jd-turn-actions [data-act="file"]');
+    const rrBody = await rrFiling;
+    await page.waitForSelector('.jd-pod--said', { timeout: 20000 });
+    const sessAfter = ownerSessions();
+    check('filing the re-rate APPENDS a second owner sitting (the first untouched), gaps 3/0/2 on the wire',
+      sessAfter.length === sessBefore.length + 1 && sessAfter.slice(1).map((x) => x.id).join() === sessBefore.map((x) => x.id).join() &&
+      Array.isArray(rrBody.ranking) && rrBody.ranking.map((p) => p.gap).join() === '3,0,2,' && rrBody.pairs === null,
+      JSON.stringify({ before: sessBefore, after: sessAfter, ranking: rrBody.ranking }));
+    const rrGaps = q('SELECT gap_after FROM jd2_rankings WHERE session_id = ? ORDER BY rank_pos', [sessAfter[0].id]);
+    const ledRR = await api('GET', '/api/jd2-ledger.php');
+    const lrun = (((ledRR.items || []).find((x) => x.prompt_id === P2.prompt_id) || {}).runs || []).find((x) => x.run_id === P2.run_id) || {};
+    const lgaps = Object.values((lrun.display || {}).gaps || {}).filter((g) => g !== null).map(Number).sort().join();
+    check('the ledger shows the NEWEST sitting: its display session is the new one, with gaps 3/0/2; both sittings listed',
+      rrGaps.map((x) => x.gap_after === null ? '-' : String(x.gap_after)).join() === '3,0,2,-' &&
+      (lrun.display || {}).session_id === sessAfter[0].id && lgaps === '0,2,3' &&
+      (lrun.sessions || []).filter((x) => x.rater_role === 'owner').length === sessAfter.length,
+      JSON.stringify({ display: lrun.display && lrun.display.session_id, want: sessAfter[0].id, lgaps, sessions: (lrun.sessions || []).length }));
+    const dRR = await (await fetch(BASE + '/art/junk-drawer/data.php?item=' + P2.prompt_id, { cache: 'no-store' })).json();
+    const dMags = ((dRR.item || {}).pairs || []).map((p) => Math.abs(Number(p.score))).sort().join();
+    check('data.php shows the newest sitting: its derived pairs are the new margins\' (3,0,2,3,2,3)',
+      dMags === [3, 0, 2, 3, 2, 3].sort().join() && (dRR.item || {}).display_role === 'owner', JSON.stringify({ dMags, role: (dRR.item || {}).display_role }));
+    // the report card on the bench page: "re-rate on the bench →" seats it
+    await page.click('[data-act="done"]');
+    await seated(page, P1.prompt_id);
+    await page.evaluate(() => window.JD_turn.close());
+    await page.waitForFunction(() => window.JD_record && window.JD_record.ready() && !window.JD_turn.isOpen(), null, { timeout: 10000 });
+    await page.evaluate((pid) => window.JD_record.open(pid), P2.prompt_id);
+    await page.waitForSelector('.jd-record [data-rc="rerate"]', { timeout: 10000 }).catch(() => {});
+    const rcBtn = await page.$eval('.jd-record [data-rc="rerate"]', (b) => b.textContent).catch(() => null);
+    await page.$eval('.jd-record [data-rc="rerate"]', (b) => b.scrollIntoView({ block: 'center' })).catch(() => {});
+    await page.waitForTimeout(600);
+    await shot(page, '13d-report-card-rerate');
+    check('report card on the bench page: "re-rate on the bench →"', rcBtn === 're-rate on the bench →', String(rcBtn));
+    await page.click('.jd-record [data-rc="rerate"]');
+    await seated(page, P2.prompt_id);
+    await page.waitForSelector('.jd-turn[data-view="preview"] .jd-preview-rerate', { timeout: 10000 }).catch(() => {});
+    const rcAfter = await page.evaluate(() => ({ record: window.JD_record.isOpen(), search: location.search, hash: location.hash,
+      rerate: !!document.querySelector('.jd-turn[data-view="preview"] .jd-preview-rerate') }));
+    await shot(page, '13e-report-card-rerate-seated');
+    check('…it closes the record and seats the prompt on the bench (the preview\'s re-rating line; the address names it)',
+      !rcAfter.record && rcAfter.rerate && rcAfter.search === '?bench&prompt=' + P2.prompt_id && rcAfter.hash === '',
+      JSON.stringify(rcAfter));
+    // the plain drawer's card, key on file but not the bench: no button; ?admin: none either
+    const plainPg = await ctx.newPage();
+    plainPg.on('pageerror', (e) => errors.push('plain: ' + String(e)));
+    for (const [where, url] of [['plain drawer (key on file)', '/art/junk-drawer/'], ['?admin', '/art/junk-drawer/?admin']]) {
+      await plainPg.goto(BASE + url, { waitUntil: 'load' });
+      await plainPg.waitForFunction(() => window.JD_record && window.JD_record.ready(), null, { timeout: 20000 });
+      if (url.indexOf('admin') !== -1) {
+        await plainPg.waitForFunction(() => window.JD_admin.isVerified(), null, { timeout: 10000 }).catch(() => {});
+      }
+      await plainPg.evaluate((pid) => window.JD_record.open(pid), P2.prompt_id);
+      await plainPg.waitForSelector('table.rc-subj', { timeout: 10000 });
+      const st = await plainPg.evaluate(() => ({ btn: !!document.querySelector('.jd-record [data-rc="rerate"]'),
+        editor: !!document.querySelector('.jd-record [data-rc="save"]') }));
+      check('report card on the ' + where + ': no re-rate button' + (where === '?admin' ? ' (its editor instead)' : ''),
+        !st.btn && (where !== '?admin' || st.editor), JSON.stringify(st));
+    }
+    await plainPg.close();
+    // back to where the scrap below expects the page: P2 seated by address
+    await page.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P2.prompt_id, { waitUntil: 'load' });
+    await seated(page, P2.prompt_id);
 
     // --- scrap ---------------------------------------------------------------
     await page.click('.jd-bench-bar [data-bench="scrap"]');
