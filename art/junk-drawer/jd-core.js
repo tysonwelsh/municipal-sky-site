@@ -930,6 +930,21 @@ var JD_admin = (function () {
     return String(s == null ? '' : s).replace(/_([^_]+)_/g, '$1');
   }
   window.JD_labelText = labelText;
+  /* …and the HTML surfaces' form: escaped first (so nothing can smuggle
+     markup), then each _emphasis_ pair in italics — the report card's
+     pencilled marks and the rating card's question cards share it */
+  function labelHTML(s) {
+    return JD_esc(String(s == null ? '' : s)).replace(/_([^_]+)_/g, '<i>$1</i>');
+  }
+  window.JD_labelHTML = labelHTML;
+  /* the overall grade as a question (taxonomy v37 `gradeQuestion`): its
+     name wherever it is asked or shown, and the question the rating card
+     asks under it — data, like every other label */
+  function gradeQuestion(tax) {
+    var g = (tax || {}).gradeQuestion || {};
+    return { label: String(g.label || ''), summary: String(g.summary || '') };
+  }
+  window.JD_gradeQuestion = gradeQuestion;
 
   /* The pencil an axis value writes with. Classes encode rank AND scale
      length, because a rank means nothing without its scale: on a 3-point
@@ -1206,6 +1221,9 @@ var JD_admin = (function () {
       /* resolve + fetch every primary response SVG (contract: primary
          always resolves; every response has a ready same-origin url) */
       var tax = data.taxonomy || {};
+      /* the rubric, for modules that render outside a payload of their own
+         (the analytics folder's grade chart names the grade from it) */
+      window.JD_TAX = tax;
       /* tier boxes are data: taxonomy.sizeTiers is the source of truth, with
          the hardcoded BASE as fallback if an id is missing */
       var tiers = {};

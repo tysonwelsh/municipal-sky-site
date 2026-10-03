@@ -113,6 +113,15 @@ def validate_taxonomy(path):
             for key in ("id", "rank", "label", "description"):
                 if not v.get(key) and v.get(key) != 0:
                     err(path, f"axis {a.get('id')!r} value {v.get('id')!r} missing {key}")
+    # the overall grade as a question (v37): its name and the question the
+    # rating card asks; and the axes whose "more" repeats the house rule
+    gq = tax.get("gradeQuestion")
+    if not isinstance(gq, dict) or not gq.get("label") or not gq.get("summary"):
+        err(path, "gradeQuestion must carry a label and a summary")
+    live_ids = {a.get("id") for a in axes if not a.get("defunct")}
+    for aid in tax.get("houseRuleAxes", []):
+        if aid not in live_ids:
+            err(path, f"houseRuleAxes names {aid!r}, not a live axis")
     models = tax.get("models", [])
     check_unique(path, "model", [m.get("id") for m in models])
     for m in models:
