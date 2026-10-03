@@ -31,36 +31,72 @@ define('JD_IS_PRODUCTION', is_readable('/home1/tdrivemy/private_config/secrets.p
 define('JD_DEV_MODE', !JD_IS_PRODUCTION && getenv('JD_DEV_MOCK') === '1');
 
 // ---------------------------------------------------------------------------
-// C4.1 — harness v4-web.2. This constant IS the harness: any edit to these
-// bytes requires bumping the harness ids in JD_HARNESS_BY_PROFILE below
-// (JD_HARNESS is the web one: 'v3-web.2', ...), because responses generated
-// under different harnesses are not strictly comparable.
+// C4.1 — harness v5 (2026-10-03): the owner's settled drawing prompt. This
+// constant IS the harness: any edit to these bytes requires bumping EVERY id
+// in JD_HARNESS_BY_PROFILE below (JD_HARNESS is the web one: 'v5-web.1'),
+// because responses drawn to different briefs are never pooled.
+//
+// THE PROSE IS THE OWNER'S. Its source of truth, and the reason for every
+// sentence (the change log), is art/junk-drawer/PLAN-DRAWING-PROMPT.md §2
+// (gitignored; the main checkout). The heredoc is §2's fenced block byte for
+// byte, line breaks included — edit it there first, then here, and prove it:
+//   diff <(php -r 'require "api/jd-config.php"; echo JD_SYSTEM_PROMPT;') \
+//        <(printf '%s' "$(awk '/^## 2\./{f=1} f&&/^```/{c++; if(c==2) exit; next} f&&c==1' \
+//          art/junk-drawer/PLAN-DRAWING-PROMPT.md)")
+// What v5 changed from v4, the owner's reasons, one line each:
+//   - figure/ground throughout: "draw the figure and never the ground".
+//   - "transparent background" defined: nothing drawn behind the figure.
+//   - a backdrop of any kind is setting: rectangle, panel, paper, texture or
+//     colour field, solid or translucent (v4 forbade only an OPAQUE rectangle).
+//   - the additions list: no caption, title, label, watermark, signature,
+//     seal, or unspecified decorative shapes floating around the subject.
+//   - a picture-bearing object's surface and its printed words are the object.
+//   - style from the brief; where it names none, a suitable one, committed to.
+//   - margin tolerance ~2% → ~3%.
+// The model's own <title>/<desc> are not the prompt's business: the sanitizer
+// strips them from the served drawing (normalized `title_desc_stripped`).
 const JD_SYSTEM_PROMPT = <<<'JD_PROMPT'
-You are an SVG generator. The user's message is a creative brief. Make
-the artwork and reply with the SVG document alone.
+The agent has the enviable job of generating SVG vector art. The user's
+message is a creative brief. Generate an SVG image that satisfies the
+brief, and reply with the SVG document alone. Take the style from the
+brief; where the brief names none, choose a suitable style and commit to
+it.
 
 Output a single complete SVG document and nothing else - no prose, no
 code fences. Requirements: xmlns and a viewBox on the root; the artwork
-must fill the viewBox edge to edge (at most ~2% margin - no empty space
-around the subject); transparent background (no opaque backdrop
-rectangle); fully self-contained (no external references, no <script>,
-no event attributes, no <foreignObject>, no raster images).
+must fill the viewBox edge to edge (at most ~3% margin - no empty space
+around the subject); a transparent background, meaning nothing drawn
+behind the subject - the space outside the subject's own figure stays
+empty; fully self-contained (no external references, no <script>, no
+event attributes, no <foreignObject>, no raster images).
 
-The subject stands alone. Each drawing is a standalone element that will
-be placed into someone else's layout, so draw the figure and never the
-ground it would sit on. A ship means the ship alone - no water, no sky, no
+The subject stands alone. Assume each drawing is a standalone element
+that will be placed into someone else's layout, so draw the figure and
+never the ground. A ship means the ship alone - no water, no sky, no
 horizon, no birds. No ground plane, no cast shadow pooled beneath it, no
-vignette, no frame. What is structurally part of the subject stays (sails
-and rigging are the ship); the setting it would occupy does not. Where the
-subject's edge is genuinely unclear, keep what a designer would need and
-leave out the rest. If the brief explicitly asks for a setting, follow the
-brief.
+vignette, no frame, and no backdrop behind the subject of any kind - not
+a rectangle, a panel, a sheet of paper, a texture or a colour field,
+whether solid or translucent; a backdrop is setting too. Add nothing the
+brief did not ask for: no caption, title, label, watermark, signature,
+seal, or unspecified decorative shapes floating in the space around the
+subject.
+
+What is structurally part of the subject stays (sails and rigging are the
+ship); the setting it would occupy does not. Where the subject's edge is
+genuinely unclear, keep what a designer would need and leave out the
+rest. If the brief explicitly asks for a setting, follow the brief. (A
+picture-bearing object is the one case where a background belongs - see
+the next paragraph.)
 
 When the subject is itself a picture-bearing object - a photograph, a
-tarot card, a poster, a stamp, a screen - everything inside its own edges
-is the subject, the depicted scene and that scene's own background
-included. The ground to leave out is only what lies outside the object:
-the table it rests on, the wall behind it.
+tarot card, a poster, a stamp, a print, a screen - everything inside its
+own edges is the subject: the paper or card itself, the depicted scene,
+that scene's own background and sky, and any words printed on it. Those
+are not a backdrop or a caption; they are the object. The surface the
+picture lives on - the paper, card, canvas, foil, glass or screen - is
+part of the figure, not the ground, and belongs in the drawing. The
+ground to leave out is only what lies outside the object described in the
+prompt: the table it rests on, the wall behind it.
 JD_PROMPT;
 
 // JD_HARNESS — the visitor turn's harness id — is defined with the profiles,
@@ -243,11 +279,17 @@ const JD_MAX_TOKENS_BY_PROFILE = [
 // endpoint accepts. Nothing was generated under v4-bench.4 with this
 // pool. v4-bench.4 and v4-bench.5 are NOT pooled. bench-medium and bench-low
 // keep their ids: their parameters did not change.
+// v5-* (2026-10-03): the owner's settled drawing prompt (the note at
+// JD_SYSTEM_PROMPT). The bytes changed, so EVERY profile's id moves:
+// v4-web.4 → v5-web.1, v4-benchlow.1 → v5-benchlow.1, v4-benchmed.1 →
+// v5-benchmed.1, v4-bench.5 → v5-bench.1. The parameters (JD_EFFORT, the
+// budgets, the timeouts) are unchanged; only the brief differs. Runs under
+// v4-* and v5-* are NEVER pooled: they were drawn to different briefs.
 const JD_HARNESS_BY_PROFILE = [
-    'web'          => 'v4-web.4',
-    'bench-max'    => 'v4-bench.5',
-    'bench-medium' => 'v4-benchmed.1',
-    'bench-low'    => 'v4-benchlow.1',
+    'web'          => 'v5-web.1',
+    'bench-max'    => 'v5-bench.1',
+    'bench-medium' => 'v5-benchmed.1',
+    'bench-low'    => 'v5-benchlow.1',
 ];
 
 // The harness id jd-generate.php stamps on every visitor turn's generations —

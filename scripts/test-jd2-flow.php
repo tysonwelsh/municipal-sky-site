@@ -500,8 +500,8 @@ $params = json_decode((string) one($db, "SELECT params FROM jd2_generations WHER
 check('second run on the same prompt: rerun, owner, `bench` filed as ' . JD2_OWNER_DEFAULT_PROFILE . ' with its harness and budget; no new prompt',
       ($r2row['kind'] ?? '') === 'rerun' && $r2row['requested_by'] === 'owner' && $r2row['profile'] === JD2_OWNER_DEFAULT_PROFILE
       && JD2_OWNER_DEFAULT_PROFILE === 'bench-medium'
-      && $r2row['harness'] === jd_harness(JD2_OWNER_DEFAULT_PROFILE) && $r2row['harness'] === 'v4-benchmed.1' && $r2row['status'] === 'generated'
-      && ($params['effort_profile'] ?? '') === JD2_OWNER_DEFAULT_PROFILE && ($params['harness'] ?? '') === 'v4-benchmed.1'
+      && $r2row['harness'] === jd_harness(JD2_OWNER_DEFAULT_PROFILE) && $r2row['harness'] === 'v5-benchmed.1' && $r2row['status'] === 'generated'
+      && ($params['effort_profile'] ?? '') === JD2_OWNER_DEFAULT_PROFILE && ($params['harness'] ?? '') === 'v5-benchmed.1'
       && ($params['max_tokens'] ?? $params['max_completion_tokens'] ?? $params['max_output_tokens'] ?? null) === 64000
       && (int) one($db, 'SELECT COUNT(*) FROM jd2_prompts') === 1
       && (int) one($db, 'SELECT COUNT(*) FROM jd2_runs WHERE prompt_id = ?', [$prompt1]) === 2, json_encode($r2row));
@@ -786,15 +786,15 @@ foreach ($runsBy as $k => [$st, $rid]) {
     $prof[$k] = [$st, $r['profile'] ?? null, $r['harness'] ?? null, $pp['effort_profile'] ?? null,
                  $pp['max_tokens'] ?? $pp['max_completion_tokens'] ?? $pp['max_output_tokens'] ?? null];
 }
-check('no profile sent: the owner run is filed under bench-medium (v4-benchmed.1, 64000)',
-      $prof['default'] === [200, 'bench-medium', 'v4-benchmed.1', 'bench-medium', 64000], json_encode($prof['default']));
+check('no profile sent: the owner run is filed under bench-medium (v5-benchmed.1, 64000)',
+      $prof['default'] === [200, 'bench-medium', 'v5-benchmed.1', 'bench-medium', 64000], json_encode($prof['default']));
 check('bench-low / bench-medium / bench-max filed as sent, each with its own harness and the 64000 budget',
-      $prof['bench-low'] === [200, 'bench-low', 'v4-benchlow.1', 'bench-low', 64000]
-      && $prof['bench-medium'] === [200, 'bench-medium', 'v4-benchmed.1', 'bench-medium', 64000]
-      && $prof['bench-max'] === [200, 'bench-max', 'v4-bench.5', 'bench-max', 64000], json_encode($prof));
+      $prof['bench-low'] === [200, 'bench-low', 'v5-benchlow.1', 'bench-low', 64000]
+      && $prof['bench-medium'] === [200, 'bench-medium', 'v5-benchmed.1', 'bench-medium', 64000]
+      && $prof['bench-max'] === [200, 'bench-max', 'v5-bench.1', 'bench-max', 64000], json_encode($prof));
 $webParams = json_decode((string) one($db, "SELECT g.params FROM jd2_generations g JOIN jd2_runs r ON r.id = g.run_id WHERE r.profile = 'web' LIMIT 1"), true) ?: [];
-check('a visitor turn stays on web: v4-web.4 and the 12000 budget (JD_MAX_TOKENS)',
-      ($webParams['harness'] ?? '') === 'v4-web.4' && JD_MAX_TOKENS === 12000
+check('a visitor turn stays on web: v5-web.1 and the 12000 budget (JD_MAX_TOKENS)',
+      ($webParams['harness'] ?? '') === 'v5-web.1' && JD_MAX_TOKENS === 12000
       && ($webParams['max_tokens'] ?? $webParams['max_completion_tokens'] ?? $webParams['max_output_tokens'] ?? null) === 12000, json_encode($webParams));
 // pool refresh 2026-10-02: Opus 5.5 answers 400 to thinking:disabled at every
 // effort, so no profile may send a `thinking` key; web runs every vendor low
