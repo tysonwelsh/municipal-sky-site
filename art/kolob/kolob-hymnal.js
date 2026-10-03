@@ -456,9 +456,10 @@ window.KOLOB = window.KOLOB || {};
         return;
       }
       if (m.type === "forget") {
-        // (the hymns AND the refrain statements of the meeting let go: h:<n>:* and r:<n>:*)
-        var fp = m.prefixes || [m.prefix];
-        for (var k in cache) for (var q = 0; q < fp.length; q++) if (k.indexOf(fp[q]) === 0) { delete cache[k]; break; }
+        // (what the desk let go of, by key: a meeting two back — its hymns
+        // and its refrain's statements — and every hymn of a seed the visit
+        // has left, at a GATHER)
+        (m.keys || []).forEach(function (k) { delete cache[k]; });
         return;
       }
       if (m.type !== "compose") return;
@@ -502,6 +503,11 @@ window.KOLOB = window.KOLOB || {};
   var forced = null;             // a backend a test names: "worker" | "idle" | "sync"
   var idleArmed = false;
   var st = { posted: 0, composed: 0, byWorker: 0, byIdle: 0, late: 0, lateInCue: 0, failed: 0, workerMs: [], mainMs: [], receiveMs: [] };
+  // (the times are kept for the last TIMES_KEPT hymns, not for every hymn of
+  // a page open for days: one each a hymn, by the worker and on the main
+  // thread; the counts above are of them all)
+  var TIMES_KEPT = 200;
+  function timed(a, v) { a.push(v); if (a.length > TIMES_KEPT) a.shift(); }
   function keyOf(seed, id) { return seed + "|" + id; }
   function clock() { return typeof performance !== "undefined" && performance.now ? performance.now() : 0; }
 
@@ -570,8 +576,8 @@ window.KOLOB = window.KOLOB || {};
       armIdle(); return;
     }
     j.hymn = m.hymn; j.state = "done"; j.ms = m.ms; j.how = "worker";
-    st.composed++; st.byWorker++; st.workerMs.push(Math.round(m.ms));
-    st.receiveMs.push(+(clock() - t0).toFixed(2));
+    st.composed++; st.byWorker++; timed(st.workerMs, Math.round(m.ms));
+    timed(st.receiveMs, +(clock() - t0).toFixed(2));
   }
   function send(j) {
     j.state = "posted";
@@ -590,13 +596,17 @@ window.KOLOB = window.KOLOB || {};
   // the doxology's; see THE RECKONING above)
   function prepare(seed, n, rows, fm, rk) {
     ordering = { seed: seed, n: n };
-    // (the orders of meetings long gone are dropped; the worker forgets them too)
+    // (the orders of meetings long gone are dropped — and every order of a
+    // seed the visit has left, at a GATHER; the worker forgets each of them
+    // too, by key, and keeps every hymn an order still standing may be
+    // written on)
+    var gone = [];
     order = order.filter(function (k) {
       var keep = jobs[k] && jobs[k].n >= n - 1 && jobs[k].seed === seed;
-      if (!keep) { if (jobs[k] && jobs[k].hymn) shelve(jobs[k]); delete jobs[k]; }
+      if (!keep) { if (jobs[k] && jobs[k].hymn) shelve(jobs[k]); delete jobs[k]; gone.push(k); }
       return keep;
     });
-    if (worker) worker.postMessage({ type: "forget", prefixes: [seed + "|h:" + (n - 2) + ":", seed + "|r:" + (n - 2) + ":"] });
+    if (worker && gone.length) worker.postMessage({ type: "forget", keys: gone });
     var earlier = [];
     function post(j) {
       jobs[j.key] = j;
@@ -681,7 +691,7 @@ window.KOLOB = window.KOLOB || {};
     }
     j.ms = clock() - t0; j.how = how;
     if (j.hymn) { st.composed++; if (how === "idle") st.byIdle++; }
-    st.mainMs.push(Math.round(j.ms * 10) / 10);
+    timed(st.mainMs, Math.round(j.ms * 10) / 10);
     return j.hymn;
   }
   // get(id): the hymn, as it came back — or written now, if it has not
@@ -731,6 +741,8 @@ window.KOLOB = window.KOLOB || {};
     return null;
   }
   function book() { return order.map(function (k) { var j = jobs[k]; return { id: j.id, n: j.n, state: j.state, how: j.how, piece: j.piece || "compose", ms: j.ms != null ? Math.round(j.ms) : null }; }); }
+  // (the times' p50, p90 and max are of the last TIMES_KEPT hymns; n is how
+  // many that is)
   function stats() {
     function q(a, p) { if (!a.length) return null; var s = a.slice().sort(function (x, y) { return x - y; }); return s[Math.min(s.length - 1, Math.floor(p * s.length))]; }
     return {

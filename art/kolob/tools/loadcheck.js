@@ -22,7 +22,9 @@
 // name a file borrows from KOLOB._viz lent there once all have loaded (each
 // wrapper's function, each value taken at load, each VS.name read), and the
 // page set up and drawn for a few frames, idle, without a throw (the
-// harness's staff= draws a whole meeting). Last, the labs: every *-lab.php (beside the engine
+// harness's staff= draws a whole meeting). The page's tags: every script
+// index.php prints is deferred, the engine's with the guard after them as a
+// module script (PLAN-REFACTOR §4.1). Last, the labs: every *-lab.php (beside the engine
 // and in shelved/) loads the house's rooms its page loads, in its page's
 // order, in a process of its own — each room evaluated with only what the
 // lab put before it, without a throw or a word to console.error, and every
@@ -184,6 +186,44 @@ let page = "";
   }
 }
 
+// the page's tags (PLAN-REFACTOR §4.1): every external script index.php
+// prints is deferred — the engine's through kolob_engine_tags(…, true), which
+// prints the guard as a module script, run in the same deferred order — so
+// each still runs after the ones above it and the guard before kolob-ui.js. A
+// plain tag among deferred ones would run as the page is parsed, before all
+// of them. Where PHP is at hand the printer is run as the page runs it, and
+// what it prints is read: every room's tag deferred, in the list's order, the
+// guard a module script after the last. (A build from before the deferral has
+// none deferred: said, not failed.)
+let tags = "";
+{
+  const idx = path.join(DIR, "index.php");
+  if (!fs.existsSync(idx)) tags = "no index.php in this build";
+  else {
+    const php = fs.readFileSync(idx, "utf8").replace(/<!--[\s\S]*?-->/g, "");
+    const own = [...php.replace(/<\?php[\s\S]*?\?>/g, "…").matchAll(/<script\b[^>]*\bsrc=[^>]*>/g)].map((m) => m[0]);   // (the PHP inside a tag set aside: its ?> is not the tag's end)
+    const plain = own.filter((t) => !/\sdefer\b/.test(t));
+    const call = /kolob_engine_tags\(\s*\$kolob_engine\s*,\s*'kolob_v'\s*(,\s*true\s*)?\)/.exec(php);
+    if (!call) failures.push("index.php: no kolob_engine_tags($kolob_engine, 'kolob_v'…) call prints the engine's tags");
+    if (call && !call[1] && plain.length === own.length) tags = "none deferred (a build from before PLAN-REFACTOR §4.1)";
+    else {
+      plain.forEach((t) => failures.push("index.php: a script tag not deferred among deferred ones (it would run before all of them): " + t));
+      if (call && !call[1]) failures.push("index.php: the engine's tags are printed without defer (kolob_engine_tags(…, true)) among deferred ones");
+      let printed = "the printer not run (no php here)";
+      try {
+        const out = require("child_process").execFileSync("php", ["-r", "$e = require $argv[1]; kolob_engine_tags($e, function ($f) { return '0'; }, true);", path.join(DIR, "_engine.php")], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+        const opened = [...out.matchAll(/<script\b[^>]*>/g)], rooms = opened.map((m) => (/^<script src="([^"?]+)\?v=0" defer>$/.exec(m[0]) || [])[1]);
+        const last = opened[opened.length - 1], guard = !!last && last[0] === '<script type="module">' && out.slice(last.index).indexOf("(function (need)") === last[0].length;
+        const inOrder = rooms.length === list.length + 1 && rooms.slice(0, -1).every((r, i) => r === list[i]);
+        if (!inOrder) failures.push("_engine.php: kolob_engine_tags(…, true) does not print every room's tag deferred, in the list's order, and nothing else before the guard");
+        if (!guard) failures.push("_engine.php: kolob_engine_tags(…, true) does not print the guard as a module script after the rooms");
+        printed = "the printer gives " + rooms.filter(Boolean).length + " rooms deferred" + (inOrder ? ", in the list's order" : "") + ", then " + (guard ? "the guard as a module script" : "no module guard");
+      } catch (e) { if (e.code !== "ENOENT") failures.push("_engine.php: kolob_engine_tags(…, true) could not be run: " + String(e.message).split("\n")[0]); }
+      tags = own.length + " script tags in index.php's source, every one " + (plain.length ? "but " + plain.length + " " : "") + "deferred; the engine's printed with defer" + (call && call[1] ? "" : " NOT asked") + " — " + printed;
+    }
+  }
+}
+
 // the labs: each lab's list in a process of its own (a room sees only what
 // its lab loaded before it), a few at a time
 async function labsLoad() {
@@ -219,6 +259,7 @@ async function labsLoad() {
   console.log("  desk: " + desk);
   console.log("  smoke: " + smoke);
   console.log("  page: " + page);
+  console.log("  tags: " + tags);
   console.log("  labs: " + labLine);
   if (failures.length) { console.log("  FAILED:"); failures.forEach((f) => console.log("   - " + f)); process.exit(1); }
   console.log("  ALL GREEN");

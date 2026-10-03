@@ -18,7 +18,7 @@ plays the same meeting every time, in the browser and in the headless harness.
 
 | what | where |
 |---|---|
-| the page | `index.php` (markup, the build stamp), `kolob.css`, `kolob-ui.js` (the console, the minutes, the band's caterpillar), the page's drawing — the wheel, the organ facade, the staff — in six files behind one `KolobViz` (`kolob-viz-atlas.js` the glyph atlas, `kolob-viz-intake.js` the notes taken in, `kolob-viz-guests.js` the new guests on the staff, `kolob-viz-hymnal.js` the hymnal on the staff, `kolob-viz-wheel.js` the wheel and the facade, `kolob-viz.js` the page's state, the engraving and the frame, last; THE SIX FILES in `kolob-viz.js`), `kolob-text.js` (the broadside) |
+| the page | `index.php` (markup, the build stamp, every script deferred in the lists' order), `kolob.css`, `kolob-ui.js` (the console, the minutes, the band's caterpillar), the page's drawing — the wheel, the organ facade, the staff — in six files behind one `KolobViz` (`kolob-viz-atlas.js` the glyph atlas, `kolob-viz-intake.js` the notes taken in, `kolob-viz-guests.js` the new guests on the staff, `kolob-viz-hymnal.js` the hymnal on the staff, `kolob-viz-wheel.js` the wheel and the facade, `kolob-viz.js` the page's state, the engraving and the frame, last; THE SIX FILES in `kolob-viz.js`), `kolob-text.js` (the broadside) |
 | the page's list | `_viz.php` — the page's six files in the order they load; `index.php` prints their tags and fingerprints them, and the harness's `staff=`, `loadcheck` and `lends` read it; add a file of the page's drawing there and nowhere else |
 | the engine's one list | `_engine.php` — every room the page, the labs and the harness load, in SCORE §1's order; add a module there and nowhere else |
 | the tuning and the score | `kolob-pitch.js`, `kolob-score.js`, `kolob-tunes.js` (the Earth tunes, cited) |
@@ -30,13 +30,13 @@ plays the same meeting every time, in the browser and in the headless harness.
 | the labs | `*-lab.php` + `*-lab.js` — unlinked dev benches, one per subsystem (`hymn-lab` is the owner's listening checkpoint for the composer; `room-lab` the impulse responses; `voices-lab` v0.30's four voices, its own copy, against the ward) |
 | shelved | `shelved/` — the Question (`kolob-question.js`, `kolob-question-setpiece.js`, its lab), the bagpipe (`kolob-voices-bagpipe.js`, its lab) and the tune lab (v0.30's old-tune incipits): the owner's rulings of 2026-09-27 and 2026-09-13; code kept, not loaded |
 | the harness | `_harness.js` — plays a meeting headless in Node (mock Web Audio, a virtual clock) and writes the dump the tools read; tracked since 2026-10-01 |
-| the tools | `tools/` — `loadcheck.js` (the engine loads, and the page's drawing), `lends.js` (the shared bags), `samecode.js` (an edit touched only comments; `--split`: a cut moved its code whole), `golden.js` (the pure core composes what it composed, against `tools/golden/`), `selftest.js`, `distinctness.js`, `repetition.js`, `tally.js` (A/B: did the music move), `screens.js`, `capture.js`; `tools/README.md` explains each |
+| the tools | `tools/` — `loadcheck.js` (the engine loads, and the page's drawing), `lends.js` (the shared bags), `samecode.js` (an edit touched only comments; `--split`: a cut moved its code whole), `golden.js` (the pure core composes what it composed, against `tools/golden/`), `selftest.js`, `distinctness.js`, `repetition.js`, `tally.js` (A/B: did the music move), `cost.js` (what the audio graph cost, work by work, A/B), `screens.js`, `tracediff.js` (two builds' drawing, call by call), `pageload.js` (the page's load, and the load guard in a browser), `capture.js`; `tools/README.md` explains each |
 | the contract | `SCORE.md` — the interface every module codes against, one layer, one section a topic (modules, pitch, streams, time, the Score, events, performance, guests, versions); **the code each section names is the authority**. The layered original it was consolidated from is `archive/SCORE-layered.md` |
 | the owner's rulings | `OWNER-RULINGS.md` — every level, seat, look and shelved idea the owner has decided on, dated, each naming the code that implements it. Do not reverse one without asking |
 | open work | `OPEN-WORK.md` — ideas approved and not built, the crews' requests not done, known issues, the decisions waiting on the owner's ear, cost |
 | the staff's rules | `STAFF.md` — what the shape-note staff prints and never prints, the layers and their sizes, the look, the collision rules, the checks |
 | the plans | `PLAN-ONE-ROOM.md` (the room; phases C–E open), `PLAN-CATERPILLAR.md` (the band's volume control) and `PLAN-REFACTOR.md` (efficiency, reliability and maintainability with nothing audible or visible changed: the faults found, the copies to fold, the page's frame, the order of work), each with a status banner. The build's plans — composition, engraving, execution — are in `archive/plans/`; what they proposed is built, declined (`OWNER-RULINGS.md`) or open (`OPEN-WORK.md`) |
-| the handoffs | `handoff/` — what is current: the listening packets (`listen-*.md`), the last integration (`r3c-integrate-1.md`), the last engraving pass (`r3c-engrave-2.md`), the caterpillar (`caterpillar-1.md`, `-2.md`) and one open brief (`drone-wave-handoff.md`). Everything a later round superseded is in `archive/handoff/` |
+| the handoffs | `handoff/` — what is current: the listening packets (`listen-*.md`; `listen-kept-mouths.md`, the ward's mouths, waits on the owner), the last integration (`r3c-integrate-1.md`), the last engraving pass (`r3c-engrave-2.md`), the caterpillar (`caterpillar-1.md`, `-2.md`) and one open brief (`drone-wave-handoff.md`). Everything a later round superseded is in `archive/handoff/` |
 | the archive | `archive/` — the layered contract, the build's plans, every superseded handoff and listening packet, the critics' briefs and panels, the second look, the old page mockups; `archive/README.md` says what each was. Nothing there governs |
 | mockups | `mockups/` — the three engraving directions the owner chose from (A, "The Colony Tunebook", shipped) |
 
@@ -83,7 +83,7 @@ whether or not its result is used, and no musical decision reads the audio clock
 ```sh
 npm install                              # once: ESLint (package.json at the repo root)
 npm run lint                             # no undefined names, no unused variables, no silent catch, a default in every switch (warnings: complexity, long functions)
-node art/kolob/tools/loadcheck.js        # the engine loads headless; the roll call and the page's guard; the desk's files; one hymn proofread; every lab's list loads in its order
+node art/kolob/tools/loadcheck.js        # the engine loads headless; the roll call and the page's guard; the desk's files; one hymn proofread; the page's tags deferred; every lab's list loads in its order
 node art/kolob/tools/lends.js            # every S.x read has a lend; every BORROWED wrapper calls the lend it is named after
 node art/kolob/tools/samecode.js         # a comment pass changed no code token (against HEAD; --ref <ref>)
 node art/kolob/tools/golden.js           # the pure core (plan, hymns, guests, organist, ward) on seeds 1–40, in seconds; the plan run with the house shut
@@ -91,7 +91,9 @@ node art/kolob/_harness.js 300 7         # a meeting plays headless, no errors, 
 node art/kolob/tools/selftest.js         # the measurement tools read true
 node art/kolob/tools/tally.js --a git:main --b worktree --seeds 1-20   # did my change move the music?
 node art/kolob/tools/screens.js --seed 22                               # the staff at 860 and 390 px, muted (--freeze: frame-exact, two builds compared by pixel)
+node art/kolob/tools/pageload.js                                         # the page's load (PHP's time, the browser's) and the guard with a room missing, muted
 node art/kolob/_harness.js 600 22 staff                                  # everything the page draws, traced headless: a digest (KOLOB_DIR=<other build> for the other side)
+node art/kolob/tools/cost.js --a git:HEAD --b worktree                   # the audio graph's cost, work by work (a lane, a guest, a press), before and after
 ```
 
 CI (`.github/workflows/kolob-check.yml`) runs lint, loadcheck, lends, golden,
@@ -106,9 +108,12 @@ baseline again (`--write`) in the same commit.
 
 `?seed=N` · `&guest=<name>` (one of `bands handcart gulls variations changes
 tongues farward hosanna socialhall testimony trombones handbells singingschool
-steeples oldtune`) · `&exp=-reckoning` / `-singingSchool` ·
-`&latin=1` · `&kolobPreview=1` · `&kolobCumulative=1`. The Ives switch forces a guest;
-the Whole switch governs the withheld tune; Latin reveals the dev labels.
+steeples oldtune`) · `&exp=-reckoning` / `-singingSchool` / `+rungOut` /
+`+keptMouths` · `&latin=1` · `&kolobPreview=1` · `&kolobCumulative=1`. The Ives
+switch forces a guest; the Whole switch governs the withheld tune; Latin reveals
+the dev labels. `rungOut` and `keptMouths` are off, waiting on the owner's ear
+(`handoff/listen-kept-mouths.md`): the ward's mouths parted only once they have
+rung out, and kept from line to line.
 
 ## Where to hear things
 

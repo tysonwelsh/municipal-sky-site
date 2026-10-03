@@ -108,6 +108,27 @@
 //    a little closure cut in two to its moves (a name it reassigns read
 //    through the bag by a getter: SAME CODE), and fails a cut that takes that
 //    name once at load and one whose list changed a number, naming both.
+// 17. The cost (PLAN-REFACTOR §4.0(b)): seed 22, 240 s, rendered with the
+//    harness's `cost` — the dump is the plain run's, record for record; the
+//    sidecar's works, summed here, come to the graph's own counts (nodes,
+//    automation calls, disconnects) and the notes to the notes told, with
+//    nothing outside a cue, a press or a source's end; every work that told
+//    notes built nodes — the band's notes and nodes are the band's guest's,
+//    the hymn's throats the ward's pump's; and tools/cost.js holds the
+//    sidecar against itself and finds nothing moved.
+// 18. The pool (PLAN-REFACTOR §4.0(c)): two sets of seeds 3, 7 and 22
+//    rendered at once on one pool of three, as tally.js renders its two
+//    builds, write what one set rendered a seed at a time writes — every
+//    dump and every witness the same bytes; and a set that fails stops the
+//    pool: the renders of the set beside it that had not begun never begin,
+//    and that set says it was stopped. The failing set's two renders run side
+//    by side, so the one it names is whichever failed first (either seed).
+// 19. The page's tags (PLAN-REFACTOR §4.1): tools/loadcheck.js on scratch
+//    copies of the page. Whole, every script tag index.php prints is
+//    deferred, and the engine's printer, run, gives every room's tag
+//    deferred in the list's order and the guard as a module script after
+//    them; with kolob-ui.js's tag left plain among the deferred ones, or the
+//    engine's tags asked for without defer, loadcheck fails, naming it.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -672,6 +693,97 @@ function check(name, ok, detail) {
     check("…a cut that takes the reassigned name once at load, and one whose list changed a number: both NOT A PURE MOVE, each named",
       once.code === 1 && /n taken once at load, but the old closure reassigned it/.test(once.out) && bent.code === 1 && /stands in no new file: var LIST = \[1, 2\];/.test(bent.out),
       [once, bent].map((r) => (r.out.split("\n").find((l) => /^ {3}- /.test(l)) || "nothing named").trim()).join(" · "));
+  }
+
+  console.log("17. the cost (PLAN-REFACTOR §4.0(b)): seed 22, 240 s, the graph charged to the work that did it");
+  {
+    const { execFileSync } = require("child_process");
+    const [plain, costed] = await Promise.all([[], ["cost"]].map((flags, i) => R.renderSet({ engine, seeds: [22], secs: 240, flags, dir: path.join(tmp, "cost-" + i), quiet: true }).then((x) => x.results[0])));
+    const records = (r) => fs.readFileSync(r.dump, "utf8").split("\n").filter((l) => l && !l.startsWith('["H"'));
+    const a = records(plain), b = records(costed);
+    check("with cost, the dump is the plain run's, record for record", a.length > 0 && a.join("\n") === b.join("\n") && /PASS/.test(costed.verdict || ""), a.length + " records against " + b.length + " · " + costed.verdict);
+    const side = costed.dump.replace(/\.jsonl$/, ".cost.json");
+    const C = fs.existsSync(side) ? JSON.parse(fs.readFileSync(side, "utf8")) : null;
+    const W = C ? Object.keys(C.buckets).map((k) => Object.assign({ name: k }, C.buckets[k])) : [];
+    const total = (f) => W.reduce((s, w) => s + f(w), 0), notesOf = (w) => Object.keys(w.notes).reduce((s, l) => s + w.notes[l], 0);
+    const told = (/^notes: (\d+) /m.exec(fs.readFileSync(costed.log, "utf8")) || [])[1];
+    const out = C && C.buckets.outside;
+    check("its sidecar, beside the dump: the works add up to the graph's nodes, automation calls and disconnects, and to the notes told; none outside a cue, a press or a source's end",
+      !!C && total((w) => w.total) === C.graph.total && total((w) => w.automation) === C.graph.automation && total((w) => w.disconnects) === C.graph.disconnects && total(notesOf) === +told && (!out || !(out.total || out.automation || out.disconnects)),
+      C ? total((w) => w.total) + " of " + C.graph.total + " nodes · " + total((w) => w.automation) + " of " + C.graph.automation + " calls · " + total((w) => w.disconnects) + " of " + C.graph.disconnects + " disconnects · " + total(notesOf) + " of " + told + " notes in " + W.length + " works" : "no sidecar at " + side);
+    const bands = C && C.buckets["guest:bands"], ward = C && C.buckets.ward, quiet = W.filter((w) => notesOf(w) > 0 && !w.total);
+    check("every work that told notes built nodes; the band's notes and nodes are its guest's, the hymn's throats the ward's pump's",
+      !!C && !quiet.length && !!bands && bands.notes.band > 0 && bands.total > 0 && !!ward && (ward.built.BiquadFilter || 0) > 0 && !W.some((w) => w.name !== "guest:bands" && w.notes.band),
+      C ? (quiet.length ? "told and built nothing: " + quiet.map((w) => w.name).join(", ") + " · " : "") + "guest:bands " + (bands ? bands.notes.band + " notes, " + bands.total + " nodes" : "absent") + " · ward " + (ward ? (ward.built.BiquadFilter || 0) + " BiquadFilters" : "absent") : "no sidecar");
+    let same = "";
+    try { same = execFileSync(process.execPath, [path.join(__dirname, "cost.js"), side, side], { encoding: "utf8" }); } catch (e) { same = String(e.stdout || e.message); }
+    check("tools/cost.js holds the sidecar against itself: no work and no builder moved",
+      /^builders: every one of the \d+ built on B what it built on A$/m.test(same) && /^\(the graph\) +[\d,]+ +[\d,]+ +0 %/m.test(same) && /^accounted: A 1 of 1 run\(s\), B 1 of 1/m.test(same),
+      (same.split("\n").find((l) => /^builders/.test(l)) || "no builders line").trim());
+  }
+
+  console.log("18. the pool (PLAN-REFACTOR §4.0(c)): two sets on one pool of three, against one at a time");
+  {
+    const seeds = [3, 7, 22], files = (dir) => fs.readdirSync(dir).filter((f) => /\.(jsonl|witness\.json)$/.test(f)).sort();
+    await R.renderSet({ engine, seeds, secs: 200, jobs: 1, dir: path.join(tmp, "pool-1"), quiet: true });
+    const P = R.pool(3);
+    await Promise.all(["pool-a", "pool-b"].map((d) => R.renderSet({ engine, seeds, secs: 200, pool: P, dir: path.join(tmp, d), quiet: true })));
+    const one = files(path.join(tmp, "pool-1")), same = ["pool-a", "pool-b"].every((d) => {
+      const fs2 = files(path.join(tmp, d));
+      return fs2.join() === one.join() && fs2.every((f) => fs.readFileSync(path.join(tmp, d, f)).equals(fs.readFileSync(path.join(tmp, "pool-1", f))));
+    });
+    check("two sets on one pool of three write what one set a seed at a time writes: every dump and witness the same bytes", one.length === 6 && same, one.length + " files a set");
+    // a harness that writes no dump fails its set; queued first, it stops the pool before the set beside it begins
+    const mute = path.join(tmp, "mute-harness.js");
+    fs.writeFileSync(mute, "process.exitCode = 0;\n");
+    const Q = R.pool(2);
+    const [bad, good] = await Promise.all([
+      R.renderSet({ engine: R.resolveEngine(null, mute), seeds: [1, 2], secs: 60, pool: Q, dir: path.join(tmp, "pool-bad"), quiet: true }).then(() => null, (e) => e),
+      R.renderSet({ engine, seeds, secs: 60, pool: Q, dir: path.join(tmp, "pool-good"), quiet: true }).then(() => null, (e) => e),
+    ]);
+    const begun = fs.existsSync(path.join(tmp, "pool-good")) ? fs.readdirSync(path.join(tmp, "pool-good")).filter((f) => f.endsWith(".log")).length : 0;
+    // both of the bad set's renders hold the pool's two places at once, and
+    // the pool tells whichever fails first: seed 1's or seed 2's, by the machine
+    check("a set that fails stops the pool: the set beside it begins none of its renders and says it was stopped",
+      !!bad && /harness failed for seed-[12] \(no dump/.test(bad.message) && !!good && good.stopped === true && /3 of 3 seeds not begun/.test(good.message) && begun === 0,
+      (bad ? bad.message.split("\n")[0].replace(/ \(no dump.*$/, " (no dump)") : "the bad set passed") + " · " + (good ? good.message : "the other set finished") + " · " + begun + " begun");
+  }
+
+  console.log("19. the page's tags (PLAN-REFACTOR §4.1)");
+  {
+    const { execFileSync } = require("child_process");
+    const E = require("./lib/engine.js");
+    // a scratch copy of the page — the list's files, the page's, index.php,
+    // _engine.php and _viz.php, the substrate beside it as on the site — with
+    // one thing changed
+    const scratch = (name, edit) => {
+      const dir = path.join(tmp, "tags-" + name, "art", "kolob");
+      engine.list.files.concat(E.vizList(engine.dir).concat(["index.php", "_engine.php", "_viz.php"]).map((f) => path.join(engine.dir, f))).forEach((f) => {
+        const to = path.join(dir, path.relative(engine.dir, f));
+        fs.mkdirSync(path.dirname(to), { recursive: true });
+        fs.copyFileSync(f, to);
+      });
+      if (edit) edit(dir);
+      return dir;
+    };
+    const swap = (dir, file, from, to) => { const p = path.join(dir, file), t = fs.readFileSync(p, "utf8"); if (t.indexOf(from) < 0) throw new Error(file + " has no " + from); fs.writeFileSync(p, t.replace(from, to)); };
+    const loadcheck = (dir) => {
+      try { return { code: 0, out: execFileSync(process.execPath, [path.join(__dirname, "loadcheck.js")], { env: Object.assign({}, process.env, { KOLOB_DIR: dir }), encoding: "utf8" }) }; }
+      catch (e) { return { code: e.status, out: String(e.stdout || "") }; }
+    };
+    const line = (r) => { const m = /^ {2}tags: (.*)$/m.exec(r.out); return m ? m[1] : "no tags line"; };
+    const failed = (r) => r.out.split("\n").filter((l) => /^ {3}- /.test(l)).map((l) => l.slice(5));
+    const whole = loadcheck(scratch("whole"));
+    check("whole: every script tag index.php prints is deferred, and the engine's printer gives the rooms deferred in the list's order, the guard a module script after them",
+      whole.code === 0 && /^\d+ script tags in index\.php's source, every one deferred; the engine's printed with defer — (the printer gives \d+ rooms deferred, in the list's order, then the guard as a module script|the printer not run \(no php here\))$/.test(line(whole)),
+      line(whole));
+    const UI = "<script src=\"kolob-ui.js?v=<?php echo kolob_v('kolob-ui.js'); ?>\" defer></script>";
+    const plain = loadcheck(scratch("plain", (dir) => swap(dir, "index.php", UI, UI.replace(" defer>", ">"))));
+    check("kolob-ui.js's tag left plain among the deferred ones: loadcheck fails, naming it",
+      plain.code === 1 && failed(plain).length === 1 && /^index\.php: a script tag not deferred among deferred ones .*kolob-ui\.js/.test(failed(plain)[0]), failed(plain).join("; ").slice(0, 200));
+    const eng = loadcheck(scratch("engine", (dir) => swap(dir, "index.php", "kolob_engine_tags($kolob_engine, 'kolob_v', true);", "kolob_engine_tags($kolob_engine, 'kolob_v');")));
+    check("the engine's tags asked for without defer among deferred ones: loadcheck fails, naming it",
+      eng.code === 1 && failed(eng).length === 1 && /^index\.php: the engine's tags are printed without defer/.test(failed(eng)[0]), failed(eng).join("; ").slice(0, 200));
   }
 
   fs.rmSync(tmp, { recursive: true, force: true });

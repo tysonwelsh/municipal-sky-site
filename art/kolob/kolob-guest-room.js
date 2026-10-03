@@ -156,11 +156,17 @@ window.KOLOB.GuestRoom = (function () {
   // phrase — and stopped at `until`. Its end lets the room's nodes go:
   // letGo(), the room's own (its voices' dispose, a room's tower closed, its
   // buses through quiet()), and then the sentinel's own two. (Every
-  // disconnect of one end is one task: their order is not heard.)
+  // disconnect of one end is one task: their order is not heard.) A STOP
+  // that shuts the meeting's doors stops every source behind them but this
+  // one, marked __kolobTeardown and left to its own time: what it gives back
+  // may still be ringing (the band's and the company's lent town air) and
+  // must not be lent again before it is quiet (THE DOORS' SOURCES,
+  // kolob-core.js).
   // opts.automated: the gain is zeroed by automation at `from`, not by its
   // value (change ringing's tower sets every gain so).
   function sentinel(ctx, dest, from, until, letGo, opts) {
     var sent = ctx.createConstantSource ? ctx.createConstantSource() : ctx.createOscillator(), sg = ctx.createGain(), at = Math.max(0, from);
+    sent.__kolobTeardown = true;
     if (opts && opts.automated) sg.gain.setValueAtTime(0, at); else sg.gain.value = 0;
     sent.connect(sg); sg.connect(dest);
     sent.onended = function () { if (letGo) letGo(); quiet([sg, sent]); };

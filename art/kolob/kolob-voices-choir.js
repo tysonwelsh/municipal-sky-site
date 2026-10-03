@@ -840,7 +840,7 @@ window.KOLOB = window.KOLOB || {};
       }
     }
     function tellLining(sg, L, t0) {
-      var mine = sg.notes.filter(function (n) { return n.liningOut && n.verse === L.verse && n.line === L.line; });
+      var mine = lineNotes(sg, L).filter(function (n) { return n.liningOut && n.verse === L.verse && n.line === L.line; });
       mine.forEach(function (n) { tellNote(n, t0); });
       emitEvent({ type: "lining-out", meter: h.meter, syllables: mine.length, hymnId: id, verse: L.verse, line: L.line, composed: true, by: pre0.id, nameDs: pre0.nameDs, start: t0 + L.lined.at });
     }
@@ -1213,10 +1213,24 @@ window.KOLOB = window.KOLOB || {};
     how.keeps.forEach(function (k) { if (n[k] != null) x[k] = n[k]; });
     emitNote("choir", K * mzRatio(h.keyMonzo) * mzRatio(n.monzo) * Math.pow(2, n.octave || 0), t0 + n.at, n.dur, x);
   }
+  // a piece's written notes of one verse and line, in the piece's order.
+  // The piece is indexed by verse and line once, the first time a line of
+  // it is told (a piece is written whole before any of it is told:
+  // KOLOB.Cast.segment), so a line's notes are found without reading every
+  // note of the piece for every line; the tellers still ask each note all
+  // they asked of it.
+  function lineNotes(sg, L) {
+    var ix = sg._byLine;
+    if (!ix) {
+      ix = sg._byLine = {};
+      sg.notes.forEach(function (n) { var k = n.verse + ":" + n.line; (ix[k] || (ix[k] = [])).push(n); });
+    }
+    return ix[L.verse + ":" + L.line] || [];
+  }
   // a line: its written notes, then its row (verse-line) with its Score,
   // `line`; amen and tag say which close it is
   function tellSheetLine(sg, h, K, L, t0, line, amen, tag, how) {
-    sg.notes.forEach(function (n) {
+    lineNotes(sg, L).forEach(function (n) {
       if (n.verse !== L.verse || n.line !== L.line || !!n.repeat !== !!L.repeat) return;
       if (how.sorts && (n.liningOut || !!n.amen !== amen || !!n.tag !== tag)) return;
       if (how.sorts && L.group != null && (n.group !== L.group || n.pass !== L.pass)) return;       // (a round: this group's time round)

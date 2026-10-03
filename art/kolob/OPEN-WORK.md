@@ -7,7 +7,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a) and §3.5 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a), §3.5, §4.0(b), §4.0(c), §4.1, §4.2, §4.3, §4.4, §4.5, §4.6 and §4.7 built; §4.6's third **awaits the owner**): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
@@ -26,9 +26,30 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   (`KolobViz.freezeAt`, `screens.js --freeze`, commit e06bfee), and §3.5, the staff in pieces
   (`kolob-viz.js` and five files behind one `KolobViz`, `_viz.php`'s list, commits 4ca4631 and 1478f2d:
   every statement moved whole, held by `samecode.js --split`; everything the page draws traced
-  headless by the harness's `staff=`, the same before and after).
-  What remains is §3.5's tail (the composer's steps in order) and §4 (the tools' (b) and (c), the
-  page's load and frame, the minutes' poll, the audio graph with the owner), in §6's order.
+  headless by the harness's `staff=`, the same before and after), and §4.0(b) and (c), the rest of
+  the tools: the audio graph's cost per work (the harness's `cost`, `tools/cost.js`, commit d05a5c6:
+  every node, automation call and disconnect charged to the lane, guest or press that made it) and
+  the tally four at a time, both builds on one pool (`--jobs`, commit e4dbe57: about 70 s), and
+  §4.1, the page's load (commit f7c7be3: each asset hashed once a request, or not at all with APCu —
+  PHP 12.9 ms a request → 7.6, → 1.3 with APCu — and every script deferred, the load guard an inline
+  module script run after the rooms and before kolob-ui.js; `tools/pageload.js`, loadcheck's `tags:`),
+  and §4.3–§4.5 (commits 651cb76, c24e34b and 9e5c6b0): the minutes' poll looks its nodes up once,
+  writes them on change and stands still while the meeting is stopped; one note object goes to every
+  listener, which never writes into it (the harness freezes it to hold them to that), a piece's notes
+  are found by line, the phrase queue kept in order by an insert; and the noise tape is drawn from the
+  page's load, not inside the PLAY press; and §4.2, the staff's frame (commits 01c7e74 to 91a8259):
+  the ink's strings built once for each alpha, the layers' fades made at the resize, the wheel's still
+  part kept on a canvas of its own and drawn again only when it changes, a held page painted at the
+  idle rate once it stands still, and the tie grain made exact (a curve settles the same in every
+  run); its items 3 and 4 (a group's engraving and layout kept with it) were measured to cost more
+  than they saved and left out; and §4.6, the audio graph (commits b455d56 and 7d4f0d0): the organ's
+  sounding spans kept in the order they end, and STOP stopping what still sounds behind the doors it
+  shuts; its third, the ward's mouths kept from line to line, prepared behind two switches that are
+  off and **AWAITS THE OWNER** (commit 8f4055a; `handoff/listen-kept-mouths.md`, below); and §4.7,
+  memory over hours (commit 5c08e83): the desk's times capped, the worker forgetting a left seed, the
+  field's and a release's panners let go. What remains is §3.5's tail (the composer's steps in order),
+  the owner's call on the ward's mouths, and the frame's real cost, the proof sheet's stamps, which
+  §4.2 found (its builder's first follow-up below).
   The §2 builders' follow-ups, not done:
   - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
   - a cue's fault that repeats is now logged at each of the net's retries (every 5 s for a layer), not once (§2.1);
@@ -124,9 +145,12 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     `shapeKey` and `anchorOf` are called through one-line wrappers from `kolob-viz.js`, and the atlas
     reads `VS.dpr` through a getter, per head per frame — measured, nothing the screens can see
     (seed 22 at 860 px, 4× throttled, 60 s from 90 s, builds alternated twice: p50 16.7 and 14.2 ms
-    before, 17.0 and 16.7 after); §4.2 is the place to weigh it closer;
+    before, 17.0 and 16.7 after); §4.2 is the place to weigh it closer — weighed by §4.2's profile
+    (860 px, CPU 4×): `headSprite` with all it calls 0.2–0.3 % of the page's CPU, the other wrappers
+    and the getter under 0.03 % each; not worth a change while the stamps are 55 %;
   - the frame-exact capture holds the staff only: the wheel's organ is the live spectrum and its arc
-    the console's last poll, and the console and the broadside run on, so a `--full` page is not
+    the console's last poll (`screens.js --wheel`, since 89fa621, hands both a fixed figure, so the
+    wheel's own drawing compares by pixel), and the console and the broadside run on, so a `--full` page is not
     comparable by pixel (the staff's rows in it are); in the sacrament and the postlude the drying
     follows the section the console last reported, so a page there can differ by a shade; and the
     harness's `staff=` does not exercise the hook (`?kolobFreeze` is proved in Chrome only);
@@ -143,6 +167,165 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     foot; `JOHNSTON7 = mzCents(…)` calls a function of the top section), so the sections can move
     whole; `samecode.js --split` with one new file and its order check relaxed would hold every
     statement to its old tokens, and the golden (hymns, 40 of 40) and the tally prove the rest.
+  The §4.0(b) and (c) builder's follow-ups, not done:
+  - the cost counts what is built, not what sounds at once: the audio thread's share (§4.6's
+    30–35 %, the Hosanna's 43 %) follows the nodes joined and sounding together, which the mock
+    does not hold (it counts no connect); the vocal room's own ledger (`budget.aliveAt`,
+    `kolob-voices-vocal.js`) or a live-node count in the mock (built less disconnected, minute by
+    minute) would come nearer, and the browser's capture is still the measure;
+  - a piece one lane hands to another's pump is the pump's when it is built: the hymn's throats are
+    `ward`'s (the choir's lane tells their notes and builds 960 of seed 22's nodes), and a guest's
+    line handed to the ward's or the organist's desk would be that desk's — following a piece
+    through the desks would need the engine to say whose it is;
+  - two anonymous builders of one file are one row in `cost.js` (it matches builders by function and
+    file, not line, so that a moved builder stays itself): `kolob-voices-vocal.js`'s breath source
+    and its oscillator, both `(anonymous)`;
+  - `tally.js`'s default of four leaves cores idle on a bigger machine (a harness keeps about two
+    busy, so half the cores would fill one); `render.js`, `distinctness.js`, `repetition.js` and
+    `cost.js` keep half the cores, at most eight, a set, and `cost.js` renders its builds one after
+    the other — each could take the tally's shared pool;
+  - with both builds on one pool, the tally's progress dots of the two sides interleave on stderr;
+  - ~~`tools/selftest.js` §18's "a set that fails stops the pool" expects the failure it names to be
+    seed 1's; on a pool of two both of the bad set's renders start at once, and on a busy machine
+    seed 2's can fail first (seen once beside two Chromes and the tally): the check could take either~~
+    — done, commit f80c038 (either seed; 20 of 20 loaded runs pass).
+  The §4.1 builder's follow-ups, not done:
+  - ~~a frozen capture still has a device pixel of grain in a tie: its far end is laid once, about
+    `X()` rounded to the device pixel at the live frame its second note first prints
+    (`kolob-viz.js` `settleCurve`, `tieShape`), so from run to run it lands a pixel either way (seed
+    1847, 860 px, 224 s: eight runs in three classes, AE 98–211, on 12dd962 as on the worktree).
+    Settling it on unrounded offsets, or at the held moment, would make the capture exact there
+    too — a page change for §4.2's pixel proofs, which a moment clear of ties avoids meanwhile~~ —
+    done, commit 91a8259: a curve's notes are read from its first note in whole device pixels, and
+    the three moments that showed it give one picture in ten runs each;
+  - the parse still waits on the Google Fonts stylesheet at the first inline script after it (the
+    page's tracking script: an inline script waits for the stylesheets above it), as it did; where
+    the fonts are refused (this container) that wait is most of `domInteractive` (315 ms with them
+    asked, 67 ms with them blocked, medians of five cold loads; 554 and 367 ms on 12dd962); the
+    tracking script deferred, or the stylesheet moved to the head, would free it — the site's
+    tracker and the page's fonts, not touched here;
+  - APCu keeps a hash against whole-second stat times: a file rewritten in place twice within one
+    second at one size keeps the first write's hash for up to the hour (the comment says so; no
+    deploy writes so);
+  - the labs still print the engine's tags blocking (the printer's default): their own scripts
+    follow as plain tags, and nothing there needs the page's speed;
+  - `tools/pageload.js` drives Chrome, so CI does not run it (as `screens.js`); loadcheck's `tags:`
+    runs there, and runs the tag printer where `php` is on the machine.
+  The §4.3–§4.5 builder's follow-ups, not done:
+  - the PLAY press is still one long task, about 300 ms in this container's headless Chrome; a CPU
+    profile of the click gives the AudioContext's creation and the rooms' convolvers (native), the
+    rooms' pour (`pourIR`, 40–60 ms, unseeded like the tape), the band's town air (`townIR`,
+    `townRoom`, `waveOf`, about 60 ms), the guests' bakes at the press (the change ringing's and
+    the far ward's `valley`, about 35 ms) and `planMeeting` (about 20 ms). The pour and the band's
+    air could be drawn ahead as the tape now is (texture, not music); the bakes could move to the
+    idle time after PLAY;
+  - the tape is drawn for 48 kHz: a 44.1 kHz context (headless Chrome's here) draws
+    117,000 samples it never uses, and a 96 kHz one draws its second half at the press;
+  - the poll now ticks on PLAY's phase (its first tick 300 ms after the press, where the load's
+    phase put it anywhere in 0–300): a row or the card can come up to one poll later or sooner than
+    on HEAD, never more;
+  - a phrase begun on the rail while stopped is no longer queued: on HEAD a PLAY within the same
+    300 ms could write it as the meeting's first row (a race), now never;
+  - the harness's staff= keeps its own poll running while the meeting is stopped (the page's stands
+    still; the drawing reads nothing of it that moves then) — the comment says so;
+  - the harness freezes a note's own fields, not what it carries (a telegraph's marks, a monzo), and
+    events not at all: an event is the engine's one object to all listeners as it always was, and a
+    freeze there would first need the engine never to write an event it has emitted;
+  - `screens.js` now wraps every setTimeout and setInterval to time them, in every run (a
+    `performance.now()` pair a callback); `--text`'s compare has two grains not the page's — the
+    band's "a band approaches" row at 00:07 or 00:08 (the band's own run-to-run grain) and the STOP
+    row's second (when the tool pressed it).
+  The §4.2 builder's follow-ups, not done:
+  - **the next frame item: the proof sheet** (found by §4.2's profile; not in the plan). The seven
+    items §4.2 named were about 2 % of the page's CPU (`drawWheel` 1.4 %, `layoutGroup` 0.5 %, the
+    rest under 0.1 %), while the frame is about 74 % and nine tenths of the frame is two `drawImage`s
+    (seed 22 at 860 px, 60–80 s, CPU 4×, this container's headless Chrome, whose 2D canvas is
+    software; a CPU profile with the frames' stacks, two runs): `stamp`'s copy of a patch of the proof
+    sheet onto its layer, 55 % of all the page's CPU (`impress`, the ward's and the guests' notes,
+    32–34 %; `drawBand` 22–23 %), and the frame's laying of the layers on the plate, 12 %. What the
+    stamp pays for is not the patch: a canvas just drawn on and then read by `drawImage` is copied
+    whole (snapshotted) as it is read, so each note struck on the page-sized sheet and stamped costs
+    a copy of the sheet. A bench in muted headless Chrome (a quiet machine, three runs: 60 notes a
+    frame, each a filled circle struck on a 1720 × 480 sheet and its 24 × 24 patch stamped at alpha
+    0.6) gives 86–91 ms a frame as the page does it (strike, stamp, wipe), 84–92 without the wipe,
+    0.38–0.39 ms with a 32 × 32 sheet a note, and 0.09 ms drawn straight — the sheet's size is the
+    whole cost. **The change:** strike each impression on a sheet the patch's size (kept at the
+    largest patch asked and cleared, or one an impression), at the patch's own device-pixel offset
+    so its strokes fall on the same pixel grid as on the page-sized sheet, and lay that on the layer
+    at the impression's alpha — the same one even tone a note (the owner's one clean strike), the
+    same pixels; the frozen screens (AE 0 on every pair) and `tools/tracediff.js` (the same strokes,
+    moved by the patch's offset) prove it, the frame-time table and a profile say what it saved.
+    On a GPU canvas (the owner's Mac, any phone) the copy is the GPU's and its share is not known: no
+    browser with a GPU has been measured here, and that should be measured first. The layers'
+    composite (12 %) is the next after it;
+  - items 3 and 4 of §4.2 (a group's `inkOpts` kept on it, `layoutGroup`'s layout kept with its
+    heads) were built, proved pixel-exact and digest-identical, and left out for their cost (the
+    harness's CPU profile, seed 22, 300 s: `layoutGroup` 254–267 → 422–481 ms, `inkOpts` 8–14 →
+    48–51 ms, the collector 1,159–1,234 → 1,288–1,436 ms): writing down and checking what a kept
+    layout was made from cost more than laying it out again, 91,119 of 207,277 layouts were asked
+    with a heads array never seen before (the band's notes, for one, are laid out from a fresh array
+    every frame), and making `inkOpts`'s small object costs less than comparing the twelve fields it
+    is made from. Worth another try only with a cheaper key (a group's own count of its writes, say)
+    and a profile that says so; the layout is under 1 % of the frame;
+  - a held page slows only once the wheel draws exactly what it drew the frame before: with the
+    live spectrum the pipes reach a float's fixed point about 13 s into a hold (Chrome here), so a
+    hold shorter than that is painted at the display's rate throughout; a stillness judged at the
+    pixel (a pipe's top moving less than a device pixel's 1/256) would slow it sooner, but is not
+    exact by construction. And a held page that stands still still repaints all of itself 12 times a
+    second (35–39 ms a frame at 860 px here, unthrottled — the same stamps): it could draw nothing
+    while nothing changed, if the frame knew its last drawing was still on the plate;
+  - the wheel's turn and its arc run on the frame's dt, capped at 0.1 s, so on a machine too busy
+    for ten frames a second they run slower than the clock: the wheel's shots (`screens.js
+    --wheel`) are exact on a machine running two or so pages at once, not eight (at a load of about
+    30 the shots of an unchanged wheel differed, and one frozen staff shot was caught blank — the
+    held shot at that moment was the page's);
+  - the wheel's shot holds the facade and the hand at a fixed figure (the tool's AnalyserNode and
+    conductor's report): the live spectrum and the live hand are still compared by eye only;
+  - the 860 px p99 did not move with §4.2 (207 → 214 ms, within its spread over three runs a side):
+    what makes the worst frames is not what §4.2 cut.
+  The §4.6 builder's follow-ups, not done:
+  - **AWAITS THE OWNER: the ward's mouths** — `rungOut` and `keptMouths` (`kolob-experimental.js`,
+    both off; `kolob-voices-vocal.js`, MOUTHS RUNG OUT and KEPT MOUTHS; commit 8f4055a). The packet
+    is `handoff/listen-kept-mouths.md`: three builds of seeds 7, 22 and 37 (today, `?exp=+rungOut`,
+    `?exp=+keptMouths`), what to listen for, and the captures' numbers. Switching either on for every
+    visitor is one word in `DEFAULTS` and a VERSION bump; nothing else waits on them;
+  - **today's ward cuts its mouths** (found by §4.6; the reason for `rungOut`): ARMING parts a mouth
+    when the caller's clock passes its span's end + RING, and the ward's pump hands its own cue's
+    time, which the clock fires up to its lookahead early — 0.25 s in view, 1.6 s hidden. So a mouth
+    is parted inside the crossfade that closes it: on seed 22's first ten minutes 2,699 of 6,811
+    partings while sound passed (0.9 % of the mouths' sound), on seed 37 1,540 of the Hosanna's and
+    the ward's 16,530 mouth spans lose more than half; in a hidden tab (a background tab, a locked
+    phone) 55 % of the ward's sound. Every caller of `VoicesVocal.arm` hands its own cue's time
+    (the ward's pump in `kolob-cast.js`, the far ward, the Hosanna, the gift of tongues) and the
+    parting queue is the context's, shared, so whichever arms next parts every mouth due by its
+    clock; only the shared throat's mouths are parted by span (the ward and the Hosanna's crowd —
+    a pew's or a lone singer's way into the room is parted at its line's end). `rungOut` is the
+    fix, waiting on the owner because it is heard;
+  - the organ's `held` list (the touch: `heldAt` looks back over up to ~200 keys at every note,
+    63,000–150,000 elements a meeting) is its largest walk; about a millisecond of a meeting, left;
+  - the sources STOP stops are stopped after the doors are disconnected: a browser that no longer
+    pulls a disconnected source may never process its stop either (not measured in a browser); the
+    nodes are let go by the house all the same (the doors' list is cleared);
+  - a guest's teardown sentinel keeps its own time after a STOP (up to the guest's remaining length
+    and its margin): it gives back the band's and the company's lent town air (`lendTown`), whose
+    convolver rings 2.6 s; a lend that waited for the air to fall quiet would let the sentinel stop
+    with the rest;
+  - the probe that proved no stopped source reached the output (a harness that follows every
+    connect and disconnect) and the mouths' probe (gate × envelope while joined) are scratch: either
+    would make a harness mode (`graph` or `mouths`) for the next change to the graph or the arming.
+  The §4.7 builder's follow-ups, not done:
+  - the hall still holds the notes of the layers that never let go: a layer outside THE HOUSE (the
+    bells, the drone, the telegraph, the still small voice) keeps one pool of panners for as long as
+    the doors stand, and each note's last gain stays wired into it after its sources end (seed 22 at
+    two hours, by a probe that keeps connections as a browser does: the bells' panners hold 2,646
+    nodes, the drone's 1,397, the telegraph's 1,101, the still small voice's 736; together about
+    1,700 more an hour). Each note could leave its panner when its source ends, as a field event's
+    now does (`fieldDest`'s third argument);
+  - the four-hour probe (connections kept as a browser keeps them, the hymnal given a Worker, a
+    sample on the hour) is a scratch copy of the harness; a harness mode would let the next change
+    to the graph's lifetime be held to it in one command;
+  - the hymnal's arrays reach the cap only after about twelve hours (one entry a hymn: 67 in four);
+    the counts beside them (`posted`, `composed`) still grow, as numbers.
 
 ## Ideas approved, not built
 
@@ -236,7 +419,9 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   the trio read as one thick stem; at 390 px the wheel's rim overlaps the plate's corner
   (the page's layout).
 - **The meeting** (handoff/r3c-integrate-1.md, Known issues): the PLAY press is one long
-  task of 105–129 ms (122–125 ms now, 70–82 before round 3c); the Hosanna has 18 of 40,849
+  task of 105–129 ms (122–125 ms now, 70–82 before round 3c; about 300 ms in this container's
+  headless Chrome, of which PLAN-REFACTOR §4.5 took the noise tape's 15–30 ms out — the rest is
+  in the refactor's §4.3–§4.5 follow-ups above); the Hosanna has 18 of 40,849
   render callbacks over the 5.33 ms budget (longest 5.9 ms) and the far ward 1 (6.4 ms) —
   no dropout measured, but "listen at the shout's entries and the far ward's first verse
   for a click"; REPRO at exactly 1,250 s on seed 22 lays three organ chords of the next
@@ -267,6 +452,11 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   `roundRect` without a fallback — **fixed** (`kolob-viz.js`).
 - **The hymns hold 1,900–2,900 nodes** and a callback can take 4.3–5.1 of its 5.3 ms on a
   busy Mac (listen-r3b): "close to an audible glitch at the peaks".
+- **The ward cuts its own mouths short** (found by PLAN-REFACTOR §4.6): a mouth is parted by the
+  pump's clock, which runs ahead of the audio by the clock's lookahead, so many are disconnected
+  inside the crossfade that closes them — about 1 % of the ward's sound with the page in view, about
+  half of it in a hidden tab. The fix is built and off (`?exp=+rungOut`), waiting on the owner's ear
+  (`handoff/listen-kept-mouths.md`; the refactor's §4.6 follow-ups above).
 
 ## Decisions waiting on the owner's ear
 
@@ -291,6 +481,9 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 - **The drone:** the landing, and how many Sundays reckon (`RECKON_CANDIDATES`).
 - **The organ under the ward:** `UNDER_WARD_DB` (`kolob-voices-organ.js`).
 - **What to scale back**, "either for technical or aesthetic reasons" (2026-09-28).
+- **The ward's mouths** (PLAN-REFACTOR §4.6, `handoff/listen-kept-mouths.md`): `rungOut` — a
+  mouth parted only once it has rung out, no cut — and `keptMouths` — each singer's mouths kept
+  from line to line, a sixth of the filters a line; both off (`kolob-experimental.js` `DEFAULTS`).
 
 ## Cost
 

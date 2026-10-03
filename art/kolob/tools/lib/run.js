@@ -144,7 +144,8 @@ function verify(engine, witnessFile, header, harness) {
 function runOne(engine, seed, secs, flags, dumpFile, name) {
   return new Promise((resolve) => {
     const witness = dumpFile.replace(/\.jsonl$/, ".witness.json");
-    [dumpFile, witness].forEach((f) => { try { fs.unlinkSync(f); } catch (e) { /* none to remove */ } });   // never read a stale one
+    // (and the harness's cost sidecar, written beside the dump with --flags cost: tools/cost.js)
+    [dumpFile, witness, dumpFile.replace(/\.jsonl$/, ".cost.json")].forEach((f) => { try { fs.unlinkSync(f); } catch (e) { /* none to remove */ } });   // never read a stale one
     const args = ["-r", WITNESS, engine.harness, String(secs), String(seed)].concat(flags || []).concat(["dump=" + dumpFile, "header"]);
     const env = Object.assign({}, process.env, { KOLOB_BASE: engine.dir, KOLOB_DIR: engine.dir, KOLOB_WITNESS: witness });
     if (engine.legacy) env.KOLOB_LEGACY = engine.legacy; else delete env.KOLOB_LEGACY;
@@ -166,31 +167,55 @@ function runOne(engine, seed, secs, flags, dumpFile, name) {
   });
 }
 
-// Render seeds → <dir>/seed-<n>.jsonl (+ .log, + .witness.json) and manifest.json.
+// A pool of n harness processes at once, which several sets may share
+// (tally.js renders both its builds on one, so neither waits on the
+// other's last seed): each render takes the next free place, in the order
+// asked; stop() lets no render still waiting begin. Every render is the
+// same runOne, witnessed on its own, however many run beside it.
+function pool(n) {
+  const size = Math.max(1, n | 0), waiting = [];
+  let free = size, stopped = false;
+  return {
+    size,
+    stop() { stopped = true; waiting.splice(0).forEach((go) => go(false)); },
+    async run(fn) {                              // fn's result, or undefined if the pool stopped before it began
+      if (stopped) return undefined;
+      if (free > 0) free--;
+      else if (!(await new Promise((go) => waiting.push(go)))) return undefined;
+      try { return await fn(); } finally { const next = waiting.shift(); if (next) next(true); else free++; }
+    },
+  };
+}
+
+// Render seeds → <dir>/seed-<n>.jsonl (+ .log, + .witness.json) and manifest.json,
+// on opts.pool, or a pool of its own of opts.jobs (default half the cores, at most 8).
 async function renderSet(opts) {
   const engine = opts.engine;
   fs.mkdirSync(opts.dir, { recursive: true });
-  const jobs = Math.max(1, opts.jobs || Math.min(8, Math.max(1, Math.floor(os.cpus().length / 2))));
+  const P = opts.pool || pool(opts.jobs || Math.min(8, Math.max(1, Math.floor(os.cpus().length / 2))));
   const todo = opts.seeds.map((s) => ({ seed: s, name: "seed-" + s }));
   (opts.extra || []).forEach((x) => todo.push(x));   // e.g. a twin for the self-test
   const results = [];
-  let k = 0, stop = false;
-  async function worker() {
-    while (k < todo.length && !stop) {
-      const job = todo[k++];
-      const r = await runOne(engine, job.seed, opts.secs, opts.flags, path.join(opts.dir, job.name + ".jsonl"), job.name);
-      results.push(r);
-      if (!r.ok || r.loadError || r.verifyError) stop = true;   // the next seed would fail the same way
-      if (!opts.quiet) process.stderr.write(".");
-    }
-  }
-  await Promise.all(Array.from({ length: jobs }, worker));
+  await Promise.all(todo.map((job) => P.run(async () => {
+    const r = await runOne(engine, job.seed, opts.secs, opts.flags, path.join(opts.dir, job.name + ".jsonl"), job.name);
+    results.push(r);
+    if (!r.ok || r.loadError || r.verifyError) P.stop();   // the next seed would fail the same way
+    if (!opts.quiet) process.stderr.write(".");
+  })));
   if (!opts.quiet) process.stderr.write("\n");
   const failed = results.filter((r) => !r.ok || r.loadError || r.verifyError);
   if (failed.length) {
+    // the failure told is the first to finish (results are kept in the order
+    // the renders end): the one that stopped the pool. Where a set's renders
+    // run side by side that is whichever failed first, not the first asked.
     const r = failed[0];
     const hint = r.loadError && engine.legacy ? " (a single-file build needs a harness that honours KOLOB_LEGACY)" : "";
     throw refusal("harness failed for " + r.name + (r.loadError ? " — " + r.loadError + hint : r.verifyError ? " — " + r.verifyError : " (no dump; see " + r.log + ")"));
+  }
+  if (results.length < todo.length) {                // the pool stopped: a render beside these failed
+    const e = refusal("the renders of " + engine.label + " were stopped with " + (todo.length - results.length) + " of " + todo.length + " seeds not begun: a render beside them failed");
+    e.stopped = true;
+    throw e;
   }
   // every seed must have played the same bytes
   const fps = [...new Set(results.map((r) => r.loaded.fingerprint))];
@@ -226,7 +251,8 @@ function describe(manifest) {
 }
 
 // Either read a dump set someone already rendered (--dumps <dir>), or render
-// one now into <into>. Returns { dir, manifest, files }.
+// one now into <into> (on o.pool, else o.jobs of its own). Returns { dir,
+// manifest, files, rendered } (rendered: the seeds rendered here, 0 for a set read).
 async function obtainSet(o) {
   const { listDumps, readManifest } = require("./dump.js");
   if (o.dumps) {
@@ -237,11 +263,11 @@ async function obtainSet(o) {
       files = files.filter((f) => { const m = /(\d+)\.jsonl$/.exec(f); return m && want.has(+m[1]); });
     }
     if (!files.length) throw refusal("no *.jsonl dumps in " + dir);
-    return { dir, manifest: readManifest(dir), files };
+    return { dir, manifest: readManifest(dir), files, rendered: 0 };
   }
   const engine = resolveEngine(o.engine, o.harness);
-  const { results, manifest } = await renderSet({ engine, seeds: o.seeds, secs: o.secs, flags: o.flags, dir: o.into, jobs: o.jobs, extra: o.extra, quiet: o.quiet });
-  return { dir: o.into, manifest, files: results.map((r) => r.dump) };
+  const { results, manifest } = await renderSet({ engine, seeds: o.seeds, secs: o.secs, flags: o.flags, dir: o.into, jobs: o.jobs, pool: o.pool, extra: o.extra, quiet: o.quiet });
+  return { dir: o.into, manifest, files: results.map((r) => r.dump), rendered: results.length };
 }
 
-module.exports = { resolveEngine, engineList, verify, refusal, renderSet, runOne, describe, obtainSet, HERE_ENGINE, REPO, OUT_ROOT, WITNESS };
+module.exports = { resolveEngine, engineList, verify, refusal, pool, renderSet, runOne, describe, obtainSet, HERE_ENGINE, REPO, OUT_ROOT, WITNESS };

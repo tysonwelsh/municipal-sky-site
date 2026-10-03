@@ -4,13 +4,13 @@
 writes. Written 2026-10-01 at v0.36.2; keep it true when the tools change.
 The owner's rules that bind these tools are in `art/kolob/README.md`.*
 
-Eleven tools, all plain Node (22 or later: the browser tools use Node's own
+Thirteen tools, all plain Node (22 or later: the browser tools use Node's own
 WebSocket) with no packages, except `samecode.js` and the wrapper check of
 `lends.js`, which need the `acorn` that `npm install` at the repo root brings
 with ESLint. Three read the engine's
 source and nothing else; one runs its pure core headless; three read only the
-harness's dump, so they keep working when the engine changes; two drive a
-**muted** headless Chrome.
+harness's dump, so they keep working when the engine changes; one reads the
+harness's cost sidecars; three drive a **muted** headless Chrome.
 
 | tool | answers | reads | time |
 |---|---|---|---|
@@ -20,8 +20,11 @@ harness's dump, so they keep working when the engine changes; two drive a
 | `golden.js` | Does the pure core — the plan of meeting 1, the hymns, the guests' decisions, the organist, the ward — compose what it composed (`tools/golden/*.json`)? | the engine, headless, no audio | ~16 s for 40 seeds on 4 cores |
 | `distinctness.js` | Do two random seeds sound clearly different within three minutes? (design law 2) | the dump | ~2 s for 20 seeds |
 | `repetition.js` | How often does a meeting say the same thing twice, and which shapes turn up in every meeting? | the dump | ~2 s for 20 meetings |
-| `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds; A/B at 60 seeds, under a minute |
-| `screens.js` | What does the staff look like at 860 and 390 px, and what does a frame cost at 4× CPU throttling? | the page, muted | real time: ~2.5 min per width |
+| `tally.js` | What is a meeting made of (cadences, guests, sections, notes per layer)? Did a change move it (A/B)? | the dump | ~2 s per 20 seeds read; A/B of 20 seeds at 1200 s, rendered four at a time, ~70 s |
+| `cost.js` | What does the audio graph cost, work by work (a lane, a guest, a press), and did a change move it (A/B)? | the harness's cost sidecars | ~20 s for two builds, four seeds each |
+| `screens.js` | What does the staff look like at 860 and 390 px — and the wheel, and the page held by PAUSE and stopped — what does the console print, and what do a frame, the timers and the PLAY press cost (at 4× CPU throttling)? | the page, muted | real time: ~2.5 min per width |
+| `tracediff.js` | Two builds of the page fed the same meeting: which calls does one draw that the other does not, frame by frame? | the harness's staff= traces | ~1 min for 300 s of meeting |
+| `pageload.js` | What does PHP spend on the page, how soon is it parsed and loaded, and does the load guard still keep PLAY disabled when a room is missing? | the page, muted | ~10 s |
 | `capture.js` | What does a seeded meeting sound like, as a WAV, a spectrogram, loudness (LUFS) and peak? | the page, muted | real time: 4 min for a 4-min window |
 | `render.js` | Renders a dump set to keep, or to read twice. | the harness | ~1 s per seed |
 | `selftest.js` | Do the instruments still read true? | the harness plus synthetic dumps and signals | ~35 s |
@@ -47,8 +50,14 @@ node tools/distinctness.js                       # 20 seeds, first 180 s → out
 node tools/repetition.js                         # 20 seeds, 1200 s, every complete meeting
 node tools/tally.js                              # the same, counted
 node tools/tally.js --a git:main --b worktree --seeds 1-20   # did my change move the music?
+node _harness.js 1200 22 cost                    # what the audio graph cost, charged to the work that did it
+node tools/cost.js --a git:HEAD --b worktree     # …before and after, work by work (seeds 3, 7, 22, 37)
 node tools/screens.js --seed 1847                # staff at 20/60/120 s, 860 + 390 px, frames at 4×
 node tools/screens.js --seed 22 --freeze         # the same, frame-exact: two runs compare by pixel (AE 0)
+node tools/screens.js --seed 22 --freeze --text --root <git archive of HEAD>   # another build's page, its console's text beside it (diff the text-*.json)
+node tools/screens.js --seed 22 --freeze --wheel --held   # the wheel shot too, and the page held by PAUSE and stopped
+node tools/tracediff.js --a git:HEAD --b worktree --seed 22   # what the page draws, call by call: the calls one build makes and the other does not
+node tools/pageload.js                           # the page's load: PHP's time, the browser's, and the guard with a room missing
 node tools/capture.js --seed 1847 --to 240       # four minutes, recorded
 ```
 
@@ -139,7 +148,7 @@ stops with the harness's `LOAD` error.
 node _harness.js <secs> <seed> [ives] [razz] [cumulative[=<mode>]] [force=<guest>] [exp=<spec>]
                  [stop=<secs>,…] [play=<secs>,…] [reseed=<seed>@<secs>,…]
                  [throw=<lane>@<secs>,…] [badlistener=note|event] [desk=<secs>]
-                 [staff[=860|390]] [dump=<file>] [header]
+                 [staff[=860|390]] [cost[=<file>]] [dump=<file>] [header]
 ```
 
 `art/kolob/_harness.js` (tracked since 2026-10-01) mocks `window` and Web Audio
@@ -168,8 +177,17 @@ same arguments on the same build give a byte-identical dump (CI checks it).
 armed after the last STOP (a `setTimeout`, `setInterval`,
 `requestAnimationFrame` or `requestIdleCallback` still waiting would be a
 leak; there is none today) and the sources scheduled past the run's end — the
-mock's `onended` for a node whose `stop()` lies beyond it, the drone partials
-and the voices written ahead (seed 7 at 300 s: 101, due 305–325 s), not a leak.
+mock's `onended` for a node whose `stop()` lies beyond it. Since PLAN-REFACTOR
+§4.6 a STOP stops what was still sounding behind the doors it shuts, so the
+count is 0, or a guest's teardown sentinel left to its own time (before it the
+drone partials and the voices written ahead ran on: seed 7 at 300 s, 101, due
+305–325 s). The `stops:` line after it follows every STOP, the run's last
+too: the sources sounding at its press, and how many of those still sound
+once its doors are shut — when its own 800 ms timer fires, or a PLAY comes
+first (`stop=300 play=300.5` on seed 22: 79 sounding → 0; HEAD before §4.6:
+79 → 79). The mock keeps a source as a browser does: a later `stop()` moves
+its end until it has stopped, and none after; one stopped before its start
+never sounds and ends at its stop time.
 `console.warn` counts the warnings other than the refused fetch's (the harness
 has no network, so a room keeps the impulse response it poured — expected) and
 prints each on its own line. None of the three moves the verdict.
@@ -263,6 +281,16 @@ The dump is the clean run's. Seed 7, 300 s: 1,755 notes thrown at and 2 told
 (the first and the thousandth), 91 events and 1 told; before PLAN-REFACTOR §2.4
 the engine told none of them — an empty catch around every listener.
 
+**The note unwritten (PLAN-REFACTOR §4.4).** The engine hands one note object
+to every note listener (`kolob-core.js`, ONE NOTE, ONE OBJECT), so a listener
+that wrote into it would be read by the next. On every run the harness
+registers each note listener through a wrapper whose first call freezes the
+note (its own fields), so a listener that writes into one — the page's drawing
+under `staff=` among them — throws, is told by the engine, and fails the run:
+a copy of the staff that marked each note it took in failed at its first note
+(`Kolob: the note listener 1 threw (on a note of the ambient) Cannot add
+property …`). The listeners keep their numbers in what the engine tells.
+
 **The page's drawing (`staff=`, PLAN-REFACTOR §3.5).** `staff` (or
 `staff=860`; `staff=390`, a phone) plays the page's drawing along with the
 meeting: the files on `_viz.php`'s list (`kolob-viz.js` alone in a build older
@@ -274,7 +302,9 @@ character, `getImageData` blank). The plates are the size the page lays them out
 at (860 px: the staff 687 × 240 CSS px and the wheel 687 × 200 at DPR 2; 390 px:
 316 × 196 and 316 × 150 at DPR 3); `KolobViz.init` before PLAY, as the page's
 load calls it; the console's poll (`setConductor` with the conductor, playing,
-held) every 300 ms; a frame every 1/60 s of the virtual clock. The mock's
+held) every 300 ms (the page's stands still while the meeting is stopped,
+where nothing the drawing reads of it moves; this one runs on); a frame every
+1/60 s of the virtual clock. The mock's
 analyser hears nothing, so the organ facade stands at rest. The report's
 `staff:` line gives the frames, the canvas calls, the canvases and paths made,
 the digest of everything drawn (16 hex) and its digest minute by minute, so two
@@ -284,7 +314,46 @@ staff` for the other side (the engine is read from there too). Seed 22, 60 s:
 3,796 frames, 5,686,403 calls, digest `8c18ec81a4ba069c`, the same twice, and
 the same on the page before and after it was cut into six files; with the ink
 one step bluer, another. About 20 s of the machine for a minute of meeting at
-860 px.
+860 px. `KOLOB_STAFF_TRACE=<file>` writes the calls themselves as well (gzip,
+`#F <n>` before frame n's), for `tools/tracediff.js` — about 90 MB for 300 s.
+
+**The cost (`cost`, PLAN-REFACTOR §4.0(b)).** `cost` charges every node the
+mock builds, every automation call and every disconnect to the work that did
+it, so a change to the audio graph is stated in numbers, before and after.
+The work is the clock lane whose cue was running — the engine names its lanes
+for its layers (`drone`, `organ`, `choir`, `strings`…), and the conductor, the
+ward's pump (`ward`), the organist's (`organist`) and the guests have lanes of
+their own; on the guests' lane, the guest the cue names (its notes' `guest`,
+the testimony's `testimony`, a `guest-start`, `guest` or `guest-end` event),
+else the guest named by the work that scheduled it (the conductor's tick that
+begins the Hosanna names it as it begins it), as `guest:<name>`, else
+`guests`; a press, `press:play`, `press:stop` or `press:reseed`. A source's
+end (the mock's `onended`) is charged to the work that built the source, a
+timer to the work that armed it, and anything else is `outside` (nothing
+today). A piece one cue hands to another layer's pump is that pump's when it
+is built: a hymn's lines are written and told on the `choir` lane and their
+throats built by the ward's pump, so `ward` tells no note and builds the most.
+The report's `cost:` section, after the `graph:` line, gives each work's cues
+(presses, for a press), nodes by type, automation calls and disconnects, in
+all and per minute of the run (`<secs>` / 60), its busiest minute and the
+notes it told by layer; the ten builders that built the most (the engine's
+function that called `create…`, by file and line, and whose work it was);
+and the check: every node, call and disconnect in a work's count, the works
+adding up to the graph's own, none outside, and every work that told notes
+built nodes — a lane the harness failed to watch would tell its layer's
+notes and build nothing. With `cost=<file>`, or with `dump=` (as
+`<dump>.cost.json` beside it), the same is written as JSON: the sidecar
+`cost.js` reads (`render.js` and `tally.js` write one beside each dump with
+`--flags cost`). The clock's lanes are watched as for `throw=`, and nothing
+the engine does moves: the dump is the plain run's, record for record (24
+runs — four seeds, the scripts, the throws, the bad listener, the paced desk
+and every forced guest — against the harness before the cost). The stack is
+read once a node, about a third more time. Seed 22, 1200 s: 34,628 nodes, the
+ward's pump 18,813 of them (11,182 BiquadFilters, 941 a minute, 5,863 in the
+first hymn's minute), the band 8,148, the organist 2,666; 9,284 disconnects,
+8,387 of them the ward's; `filterNode` (`kolob-voices-vocal.js`) built
+11,606. Seed 37: the Hosanna 22,466 nodes, 12,867 of them in its one minute
+(18), beside the ward's 25,088 over the whole meeting.
 
 ## The dump format (v1)
 
@@ -372,7 +441,17 @@ all have loaded, and the page is set up and drawn for its first frames, idle,
 without a throw (`page: 6 of 6 files loaded …; KolobViz's surface 7 of 7; 79
 names read from KOLOB._viz across the files, every one lent; 2 frames drawn
 idle (1910 canvas calls)`; the harness's `staff=` draws a whole meeting).
-Last, **the labs** (PLAN-REFACTOR §3.7): every `*-lab.php`, beside the
+**The page's tags** (PLAN-REFACTOR §4.1): every external script `index.php`
+prints is deferred — a plain tag among deferred ones would run as the page is
+parsed, before all of them — and the engine's are asked for deferred
+(`kolob_engine_tags(…, true)`); where `php` is at hand the printer is run and
+what it prints is read: every room's tag deferred, in the list's order, then
+the guard as a module script, which the browser runs in the same deferred
+order, after the rooms and before `kolob-ui.js` (`tags: 4 script tags in
+index.php's source, every one deferred; the engine's printed with defer — the
+printer gives 43 rooms deferred, in the list's order, then the guard as a
+module script`; a build from before the deferral, none deferred, is said, not
+failed). Last, **the labs** (PLAN-REFACTOR §3.7): every `*-lab.php`, beside the
 engine and in `shelved/`, has its list of the house's files read from its page
 — its `<script>` tags for `pj2-*.js` and `kolob-*.js`, resolved from the lab's
 folder, and `_engine.php`'s list where it prints `kolob_engine_tags()` — and
@@ -383,7 +462,7 @@ one list must answer the roll call. A room that comes to need another at load
 (`KOLOB.Pitch`, `KOLOB.Score`) is caught on the bench that lacks it; a room that
 reads another only when called is not (the lab finds that when it plays). It
 prints `modules: N of N loaded; rooms answering: M`, the guard, the desk, the
-hymn, the labs (`labs: 16 of 16 load the house's rooms in their own order
+hymn, the page's drawing and its tags, the labs (`labs: 16 of 16 load the house's rooms in their own order
 (cast-lab 44, …)`, each with its count of files) and `ALL GREEN` or the
 failures. No harness, no browser: the harness is what plays a meeting, this
 only proves the doors open. Its loader — the list, the page's mock, the rooms
@@ -488,7 +567,7 @@ node tools/golden.js [--seeds 1-40] [--engine <dir>|git:<ref>] [--jobs N] [--per
 ```
 
 The tally proves a change left the music alone by playing twenty meetings
-through the harness, ten minutes. Most of the engine's thinking is pure, and a
+through the harness on each build, about seventy seconds. Most of the engine's thinking is pure, and a
 change there is proved here in seconds: about 16 s for 40 seeds on four cores
 (the slowest seeds, 10 and 18, write a partner doxology, fourteen tries at the
 fit, in 2–3 s; a doxology the reckoning writes 24 ways takes about a second).
@@ -678,9 +757,25 @@ a hymn's verses to one tune (38–41 % each); every other voice is at or near
 ## tally.js
 
 ```sh
-node tools/tally.js [--seeds 1-20] [--secs 1200] [--first] [--engine …] [--harness …] [--dumps …] [--out <dir>]
-node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15] [--harness-a …] [--harness-b …] [--flags …]
+node tools/tally.js [--seeds 1-20] [--secs 1200] [--first] [--engine …] [--harness …] [--dumps …] [--jobs N] [--out <dir>]
+node tools/tally.js --a <spec> --b <spec> [--seeds 1-60] [--secs 1200] [--threshold 15] [--harness-a …] [--harness-b …] [--flags …] [--jobs N]
 ```
+
+**Four at a time** (`--jobs N`, PLAN-REFACTOR §4.0(c)). The renders are
+independent, so the tally runs `N` harness processes at once — by default
+min(4, the cores) — and both builds on one pool of `N` (`lib/run.js`
+`pool()`), so neither waits on the other's last seed. Each render is
+witnessed on its own, as a lone one is, and a render the witness refuses
+(the engine's bytes changed under it — "read the build's files but not its
+bytes") stops the pool: no render still waiting begins, on either side, and
+the refusal is what the tally says. At any `N` the dumps are the same files
+byte for byte, and the report differs only in its timing line (`- 40 renders
+in 72.6 s, 4 at a time (A and B on one pool) · <date>`). A harness keeps
+about two cores busy by itself (V8's collector and compiler beside the run;
+seed 22 at 1200 s: 2.7 s of the clock, 4.5 s of the cores), so four cores
+fill at three or four: `--a git:HEAD --b worktree --seeds 1-20 --secs 1200`
+took 149 s at 1, 85 at 2, 70 at 3, 72 at 4 and 68 at 6 — 85 s before, at
+two a side with B after A. Four harnesses hold about 1 GB between them.
 
 Here `<spec>` is a dump directory, an engine directory, `git:<ref>` or
 `worktree`. `--flags` hands the harness its switches for every build the
@@ -735,8 +830,9 @@ difference is the harness or the flags, not the engine).
 ## screens.js
 
 ```sh
-node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--freeze] [--fps-secs 20] [--throttle 4] [--full] [--ives] [--latin]
-                      [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
+node tools/screens.js [--seed 1847] [--times 20,60,120] [--widths 860,390] [--section hymn] [--freeze] [--text] [--wheel] [--held [5]]
+                      [--fps-secs 20] [--idle-secs 0] [--throttle 4] [--full] [--ives] [--latin] [--root <dir>] [--port 8113]
+                      [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 ```
 
 It loads `?seed=N` in muted headless Chrome and presses PLAY. At each time in
@@ -766,7 +862,54 @@ scrollbar at 860 px; a held page is then painted again at that width). What
 the engine writes after the held moment waits until the page runs on, so the
 page is made of the same notes in every run. In `--full` only the staff is
 held: the wheel's organ is the live sound's spectrum and the console runs on.
-The page runs free again before the frame timing.
+The page runs free again before the frame timing. One grain of the engine's own
+is left between two runs of one build: the visiting band's barlines, whose
+shade follows how far its march is written (choose moments clear of the band);
+a tie or a slur settles the same in every run since PLAN-REFACTOR §4.2 (its
+notes read in whole device pixels from its first, `settleCurve`).
+
+**What the console prints (`--text`, PLAN-REFACTOR §4.3).** Beside the shots,
+`text-<width>.json` holds the console's text: the programme card (the day,
+the mode · meter line, the direction, the card's classes), the board (the
+seed, the hymn, the day's numbers), the buttons' and the scene's classes and
+the minutes' rows — read at each capture as the audio clock passes its time,
+then held by PAUSE, let go again, and a second after STOP. Two builds are
+compared by `diff` (each record's `at`, the audio time it was read at, aside:
+a row written in the moment before the read may land on either side of it).
+`--root <dir>` serves another tree — a commit unpacked with `git archive` —
+so the A side of a comparison is measured by this file's own options.
+
+**The wheel (`--wheel`, PLAN-REFACTOR §4.2).** At each capture the wheel's
+canvas is shot too (`wheel-<width>-t<secs>.png`). The freeze holds the
+staff; the wheel reads two things live that no freeze holds — its organ
+facade is the master bus's spectrum, its arc (the hand) fills with the
+console's report of how far the section has gone, read by a poll on its own
+clock — so with `--wheel` the tool hands the page a fixed figure for both from
+its load: every `AnalyserNode` answers one fixed spectrum, and the
+conductor's report says each section half gone (`local` 0.5). The wheel is
+then one picture in every run, its seat, its turn, its labels, the hand and
+the pipes drawn as the page draws them. The hold is the tool's, not the
+page's (the console's text is untouched by it), and a `--wheel` run's facade
+and arc are not the live sound's. Choose moments some seconds clear of a
+section's start — the wheel turns for up to 3 s, and the hand then fills
+from nothing, smoothly, for some seconds more — and of its end.
+
+**Held and stopped (`--held [secs]`, PLAN-REFACTOR §4.2).** After the last
+capture the page is held by PAUSE — with `--freeze`, pressed while the page
+stands at that capture's moment, and the freeze then let go, so the page
+stands there because the meeting is paused — and shot after `secs` (default
+5; `paused-<width>.png`, and the wheel's beside it with `--wheel`), the frames
+it painted meanwhile counted and timed (unthrottled): how often a held page
+paints, and what each frame costs. A held page paints at the display's rate
+until it stands still — the wheel's turn done, its arc closed, the pipes
+settled on the held spectrum, some 13–15 s into a hold with the live spectrum —
+and then at the idle rate, about 12 frames a second (kolob-viz.js THE HELD
+PAGE): with `--held 40` the count in brackets, the hold's last half, is
+that rate. Then, after the frame timing and STOP, a
+last shot once the ink has drained from the plate (15 s after STOP,
+`stopped-<width>.png`). Two runs of one build give the same held and stopped
+shots, the wheel's too (seed 22 at 30 and 75 s, both widths: AE 0 on all
+eight).
 
 **Frame time.** After the shots, the CPU is throttled `--throttle`× for
 `--fps-secs` (0 to skip). Every requestAnimationFrame callback is timed, and
@@ -782,17 +925,105 @@ own cost shows, the tail is where the load shows. The report prints
 `os.loadavg()` beside each width and warns when it was over half the cores;
 re-run on a quiet machine before you read p99, max or long tasks as the page's
 own. The phone's p99 is the number to watch as the staff multiplies the ink.
+In the same window every `setTimeout` and `setInterval` callback is timed by
+its function's name (the console's `poll`, the clock's pump `tick`): **the
+timers** table gives their count and time, the poll's apart; `--idle-secs N`
+times them again for N seconds after STOP (the poll runs only while a meeting
+plays, PLAN-REFACTOR §4.3). **The PLAY press** is the click's own time on
+the main thread — its handlers run at once: the house built, the meeting
+called — and the long tasks begun in the second after it (§4.5).
 
 **The report** (`report.md`, each PNG embedded): the frame-time table (width,
 frames, p50, p90, p99, max, rAF interval, long tasks, section, load avg) with
-its notes on pacing and load; per width, a table of shots (meeting time,
-section, staff size in CSS px, file `staff-<width>-t<secs>.png`); console
-errors and warnings from each width.
+its notes on pacing and load; the timers; the PLAY press; per width, a table of shots (meeting time,
+section, staff size in CSS px, file `staff-<width>-t<secs>.png`, and the
+wheel's); with `--held`, the frames a held page painted and its two shots;
+console errors and warnings from each width.
+
+## tracediff.js
+
+```sh
+node tools/tracediff.js <a.gz> <b.gz> [--inline <canvas>] [--show 12]
+node tools/tracediff.js --a git:HEAD --b worktree [--seed 22] [--secs 300] [--width 860] [--inline <canvas>] [--out <dir>]
+```
+
+The harness's `staff=` digest says whether two builds of the page drew the
+same thing — every call, every argument, every frame. A change meant to draw
+the same pixels by other calls (a gradient made once instead of every frame,
+a drawing kept on a canvas of its own and laid down whole) changes the digest
+by design; this says how. Fed two traces (`KOLOB_STAFF_TRACE`, The harness),
+or rendering them itself (this worktree's harness, each build's own page:
+`git:<ref>` unpacked as `lib/run.js` does, or a directory), it reads them a
+frame at a time and gives the frames that are the same call for call, and for
+the others the calls one side made and the other did not (a shortest edit,
+after the frames' common head and tail), grouped by kind: in all, and by the
+kinds of difference a frame shows, each with the frames that show it, the
+first, and its calls in full. A call that differs in one argument shows as
+one taken out and one put in. The names are read again first, since a canvas
+added on one side shifts every name after it: a canvas by its first size and
+its place among those first sized so (`C1374x400#1`, the second 1374 × 400
+canvas made), a path by its place among the paths, a gradient as `G` (its
+stops follow it); a canvas's own lines from its width to its height are named
+once its height comes, in the same frame (the raw names count every canvas,
+path and gradient made, so a gradient made on one side shifts them). `--inline <canvas>` takes a canvas
+of B's that is drawn once and laid down whole (a cache) at its word: each
+`drawImage` of it is read as the calls drawn on it since it was last cleared
+(a gradient made on it, with its stops, among them), on the canvas it is laid
+on, and its own calls leave the compare — so a frame that laid down an
+out-of-date drawing shows as a frame whose calls differ. Seed 22, 300 s,
+about a minute a pair. PLAN-REFACTOR §4.2 is proved with it.
+
+## pageload.js
+
+```sh
+node tools/pageload.js [--root <dir>] [--missing kolob-calendar.js] [--runs 5] [--requests 200]
+                       [--latency <ms> --kbps <n>] [--no-apcu] [--port 8117] [--chrome-port 9441]
+```
+
+The page's load (PLAN-REFACTOR §4.1), and the load guard in a real browser.
+`index.php` hashes each asset once a request for its `?v=` and the build
+stamp (`kolob_v()`, kept against the file's size, inode and change times; in
+APCu across requests where the server has it), and prints the page's scripts
+deferred: fetched while the page is parsed, run once it has been, in their
+order, the guard among them as a module script that runs after the rooms and
+before `kolob-ui.js`. This serves a tree with `php -S` (the worktree, or
+`--root` another: for the before, a commit's page unpacked from `git archive
+<ref> art/kolob art/prosperos-jukebox-v2 art/background-audio.js includes css
+fonts`) and loads it in muted headless Chrome; PLAY is never pressed.
+
+- **php** — the page fetched `--requests` times in a row, after five to warm
+  up: the median, p90, min and max of a request's wall time. `--no-apcu` serves
+  with `php -d apc.enabled=0`, so the per-request cache is the one timed
+  (`php -S` has APCu on where the extension is installed).
+- **load** — `--runs` cold loads, the browser's cache off and the Google Fonts
+  blocked (the times are this server's and the browser's): the medians of
+  parsed (`domInteractive`), DOMContentLoaded, load, first paint and first
+  contentful paint, counted from the navigation's start. `--latency` and
+  `--kbps` emulate a slower network.
+- **whole** — `KOLOB._broken` unset, PLAY enabled, the minutes waiting for
+  PLAY, no console error (the blocked fonts and the browser's favicon aside).
+- **`<room>` missing** — the same page with one room answering 404 (a router in
+  front of `php -S`, written to `out/pageload-router.php`): the console says
+  `KOLOB AUDIO ENGINE FAILED TO LOAD: <room>`, `KOLOB._broken` holds it, PLAY
+  stays disabled and the minutes say the engine failed to load (the page is
+  loaded in Latin, `?latin=1`, so they read `THE ENGINE FAILED TO LOAD`).
+
+It prints one line each and `ALL GREEN`, or exits 1 when the guard did not do
+what it should on either page. The numbers on 2026-10-02 (seed 22's page,
+this container's 4 cores, medians of 5 cold loads, two runs a side), before
+§4.1 (12dd962) and after: PHP 12.9 ms a request → 7.5–7.7 ms with the
+per-request cache and 1.3–1.4 ms with APCu (`md5_file` 108 calls over 5.2 MB
+a request → 56 over 2.6 MB → none); parsed 399–453 ms → 69–86 ms, DOMContentLoaded
+and load 399–453 → 331–379 ms, first paint about 100 ms both; on a network of
+100 ms and 10 Mbit/s, parsed 2.8 s → 0.4 s, DOMContentLoaded and load 2.8 s both
+(the scripts' download), first paint 0.4 s both (the scripts already stood at
+the foot of the body).
 
 ## capture.js
 
 ```sh
 node tools/capture.js [--seed 1847 | --seeds 1847,5,9] [--from 0] [--to 240] [--meeting] [--section hymn] [--ives] [--px-per-s 8]
+                      [--query exp=+name] [--stop-at <secs>] [--root <dir>]
                       [--no-harness-check] [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 node tools/capture.js --wav <file.wav> [--events <file.jsonl>] [--out <dir>]     # re-analyse a capture
 ```
@@ -803,6 +1034,18 @@ called). `--meeting` records until meeting 1 ends (cap `--max`, default
 1500 s), read through the dump reader: the last joint's `∴ joint — meeting
 ends · 8s` (the joint's length and 6 s of the bell's tail), a typed
 `meeting-end {dur}`, or else the next meeting's start.
+
+**For an A/B** (PLAN-REFACTOR §4.6): `--query` adds the page's own switches to
+its address (`--query exp=+pooledVoices`: an experiment on, against the same
+seed without it); `--stop-at <secs>` has the page press its own STOP when its
+audio clock reaches that meeting second (polled every 4 ms; the report gives
+the moment it was pressed) and records on to `--to`, so the window holds the
+music, the fade and what follows it; `--root <dir>` serves another build's tree
+(a `git archive` of a commit's `art/kolob art/prosperos-jukebox-v2 includes css
+fonts`: the before), on its own `--port`, and the harness's check reads that
+build. Each capture also writes `…-numbers.json` (the loudness, the peaks and
+the octave bands as numbers) for a script that holds two captures side by
+side.
 
 **The tap** is injected before any page script. Every node that connects to an
 output also feeds a ScriptProcessor; the output may be the destination, or the
@@ -838,8 +1081,11 @@ own notes and events, **in the dump format**, shifted to meeting time, so the
 dump tools can read a browser run too); `…-tap.json`; and `report.md`: the tap
 line and the discontinuity table; integrated loudness (BS.1770-4 / EBU R128,
 gated), LRA, the maximum momentary and short-term loudness, sample peak and a
-true-peak estimate (4× oversampled); loudness and note count by minute; *What
-happened when*; and **the browser's meeting against the harness's**.
+true-peak estimate (4× oversampled); the spectrum by octave band (the window's
+mean power in each octave, 31.5 Hz to 16 kHz, in dB of full scale); loudness
+and note count by minute; *What happened when*; and **the browser's meeting
+against the harness's** (with the page's `exp=` and its `--stop-at` handed to
+the harness too).
 
 **The browser against the harness.** Unless `--no-harness-check` (or
 `--section`, which jumps), the same seed is rendered through the harness,
@@ -854,6 +1100,33 @@ jitter. (The sentence the report prints for a parting still describes the
 pre-2026-09-27 engine; that text is a string in `capture.js`.) For a listening
 packet: `--seeds a,b,c,d,e,f --to 240` records one seed after another, about
 25 min; `--seed n --meeting` records a whole meeting.
+
+## cost.js
+
+```sh
+node tools/cost.js <a> <b>        # two sidecars (.cost.json), or two dump sets rendered with --flags cost
+node tools/cost.js <a>            # one side's table
+node tools/cost.js --a git:HEAD --b worktree [--seeds 3,7,22,37] [--secs 1200] [--flags force=hosanna] [--jobs N] [--top 10]
+```
+
+What PLAN-REFACTOR §4.6 and any change to the audio graph cite: the
+harness's cost (`cost`, "The harness" above) of two builds, side by side. A
+`<spec>` is a sidecar, a dump set holding them, an engine directory,
+`git:<ref>` or `worktree`; a build is rendered here through the harness with
+`cost`, witnessed as every render is (seeds 3, 7, 22 and 37, 1200 s, by
+default), into `out/cost-<stamp>/` with the table as `report.txt`. Several
+seeds a side are summed work by work over the seeds both sides hold. The
+table: for each work, nodes A and B and the shift, per minute, the busiest
+minute (of any seed), automation calls and disconnects with their shifts;
+the graph's whole; the node types; the builders that moved (matched by
+function and file, not line, so a builder whose lines moved is still
+itself; two anonymous functions of one file are one row); and whether each
+side's every count was accounted. Plain text, to paste into a commit
+message. Seeds 22 against 37 (two meetings, not two builds): the ward
+18,813 → 25,088 nodes (+33 %), `guest:bands` gone and `guest:hosanna` new
+(22,466, busiest minute 12,867), the graph 34,628 → 54,477, BiquadFilters
+14,590 → 29,186. A sidecar against itself: every builder built on B what it
+built on A.
 
 ## render.js
 
@@ -874,7 +1147,7 @@ the cores, at most 8).
 node tools/selftest.js
 ```
 
-About a minute, no browser. It checks sixteen things: (1) a real dump from
+About a minute, no browser. It checks eighteen things: (1) a real dump from
 this worktree reads as meetings and sections, the witness names the build's own
 list, and the harness names the same engine in the header's `engine` field;
 (2) a synthetic dump in SCORE §6's **typed** vocabulary reads the same way —
@@ -949,8 +1222,24 @@ room's throw; (16) **the page in pieces** (PLAN-REFACTOR §3.5): the harness's
 whose ink is one step bluer to another; `samecode.js --split` holds a little
 closure cut in two to its moves (the name it reassigns read through the bag by
 a getter: `SAME CODE`), and fails a cut that takes that name once at load and
-one whose list changed a number, naming both.
-All sixteen pass on `art/kolob/_harness.js`. Run it after any change to the engine's
+one whose list changed a number, naming both; (17) **the cost** (PLAN-REFACTOR
+§4.0(b)): seed 22, 240 s, rendered with `cost` — the dump is the plain
+run's, record for record; the sidecar's works, summed by the selftest, come
+to the graph's nodes, automation calls and disconnects and to the notes
+told, none outside; every work that told notes built nodes, the band's
+notes and nodes are `guest:bands`' and the hymn's throats the ward's pump's;
+and `cost.js` holds the sidecar against itself and finds nothing moved;
+(18) **the pool** (PLAN-REFACTOR §4.0(c)): two sets of seeds 3, 7 and 22
+rendered at once on one pool of three write what one set rendered a seed at
+a time writes, every dump and witness the same bytes, and a set whose
+harness writes no dump, queued first on a pool of two, stops it: the set
+beside it begins none of its renders and says it was stopped; (19) **the
+page's tags** (PLAN-REFACTOR §4.1): `loadcheck.js` on scratch copies of the
+page finds every script tag `index.php` prints deferred and the engine's
+printer giving the rooms deferred in the list's order and the guard as a
+module script after them, and fails a copy with `kolob-ui.js`'s tag left plain
+and one whose engine tags are asked for without defer, naming each.
+All nineteen pass on `art/kolob/_harness.js`. Run it after any change to the engine's
 events, to the harness or to these tools. It renders into `out/_selftest/`
 and, like every tool, refuses while the engine is being edited.
 
@@ -968,13 +1257,16 @@ tools/
   distinctness.js    design law 2
   repetition.js      phrase shapes heard before
   tally.js           counts, plan checks, A/B
-  screens.js         staff screenshots + frame time (muted Chrome)
+  cost.js            the audio graph's cost per work (the harness's cost sidecars), A/B
+  screens.js         staff (and wheel) screenshots + frame time (muted Chrome)
+  tracediff.js       two builds' traced drawing (staff= with KOLOB_STAFF_TRACE), call by call, frame by frame
+  pageload.js        the page's load: PHP's time a request, cold loads timed, the load guard with a room missing (muted Chrome)
   capture.js         WAV + spectrogram + LUFS/peak (muted Chrome)
   selftest.js        the instruments, checked
   lib/dump.js        the dump reader: both event vocabularies, meetings, sections, voices, phrases
-  lib/run.js         rendering through the harness: worktree, directory or git:<ref>; the witness's verdict
+  lib/run.js         rendering through the harness: worktree, directory or git:<ref>; the witness's verdict; the pool of harness processes
   lib/engine.js      the engine loaded headless: the one list, the page's list (_viz.php), the page's mock, the roll call, a lab's list (loadcheck, golden)
-  lib/canvas.js      a canvas that records instead of painting, every call folded into one digest (the harness's staff=, loadcheck)
+  lib/canvas.js      a canvas that records instead of painting, every call folded into one digest, and traced on request (the harness's staff=, loadcheck)
   lib/witness.js     preloaded into every harness run: which engine files it actually read
   lib/chrome.js      php -S + muted headless Chrome over CDP
   lib/audio.js       WAV, BS.1770 loudness, true peak, FFT, spectrogram

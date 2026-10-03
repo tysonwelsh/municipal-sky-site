@@ -220,14 +220,14 @@ window.KolobViz = (function () {
   // drains away. DRY is the drying clock: it advances with PT, faster in the
   // sacrament and the postlude.
   var SCROLL_PX_S = 60;                            // the owner's rate
-  var PT = 0, DRY = 0, ptSynced = false, lastAudio = -1;
+  var PT = 0, DRY = 0, ptSynced = false, lastAudio = -1, audioMoved = false;
   var PT_SNAP = 0.5;                               // further off than this, the page jumps to the present
   var PT_TAU = 0.25;                               // the smoothing's time constant, in seconds
   var PT_LEAD = 0.1;                               // the page never runs further than this ahead of the sound
   function audioNow() { return K && K.getAudioTime ? K.getAudioTime() : 0; }
   function tickClock(dt) {                         // dt: the real time since the last frame, uncapped
     var a = audioNow(), moving = a > lastAudio + 1e-6;
-    lastAudio = a;
+    lastAudio = a; audioMoved = moving;
     if (paused) return;
     var p0 = PT;
     PT += dt;
@@ -1004,14 +1004,27 @@ window.KolobViz = (function () {
   }
   function setNow(gr, g) { return gr.noCol ? gr.dueSp === g.sp : !!(gr.col && gr.col.sp === g.sp); }
   function prints(gr) { return gr.lastA >= 0.02 && !(gr.alone && gr.aloneOk === false); }
-  // (a set note as it is struck: its layout about x 0, and its x)
+  // (a set note as it is struck, while a curve is settled: its layout about
+  // x 0, and its x — the curve's first note's place on the page, and from
+  // there the whole device pixels the music between them makes. X rounds
+  // each note to the device pixel at the frame it is read in, so two notes'
+  // distance came out a pixel either way by the frame a curve happened to
+  // settle in, and two runs of a seed could settle one a pixel apart; read
+  // from the curve's own note, it is the distance a frame whose first note
+  // stands on a whole pixel gives, in every run)
+  var settling = null;                             // (the curve's first note: its time and its x, while settleCurve runs)
   function struck(gr, g) {
     var pg = prepGroup(gr, g);
-    return { L: inkLayout(gr, g, pg.heads, pg.o), o: pg.o, x: X(gr.tp) + (gr.noCol ? coDx(gr, g) : gr.col.dx) };
+    var x = settling.x + Math.round((gr.tp - settling.tp) * SCROLL_PX_S * dpr) / dpr;
+    return { L: inkLayout(gr, g, pg.heads, pg.o), o: pg.o, x: x + (gr.noCol ? coDx(gr, g) : gr.col.dx) };
   }
   // (the curve's one layout: its ends and side about its first note's own
   // time's x, its depth; ok false where it is too short to draw)
   function settleCurve(g, m) {
+    settling = { tp: m.tp, x: X(m.tp) };
+    try { return settleAbout(g, m); } finally { settling = null; }
+  }
+  function settleAbout(g, m) {
     var s = g.sp, tie = m.kind === "tie", A = struck(m.g1, g), B = struck(m.g2, g);
     function fq(gr) { var f = gr.fold && gr.fold.sp === s ? gr.fold : null; return f && f.oct ? (m.st === "T" ? -7 : 7) * f.oct : 0; }
     var side = m.vside || 0;                       // (+1: below the heads; the voice's own side, where two share the staff)
@@ -1051,7 +1064,7 @@ window.KolobViz = (function () {
         if (!curveCross(g, pre, near)) sh = pre;
       }
     }
-    var x0 = X(m.tp);
+    var x0 = settling.x;
     return { sp: s, ok: true, side: side, x1: sh.x1 - x0, y1: sh.y1, x2: sh.x2 - x0, y2: sh.y2, h: sh.h, th: sh.th };
   }
   // A slur passes over every head between its ends. The
@@ -1814,6 +1827,7 @@ window.KolobViz = (function () {
 
   // ---- the frame ----------------------------------------------------------------
   var inkLayer = null, bandLayer = null, tapeLayer = null;
+  var fades = null;                                // each layer's fade before the clefs, made where the plate is measured (resize)
   var lastFrame = 0;
   function paintLayer(layer, fn) {
     var c = layer.getContext("2d");
@@ -1826,16 +1840,45 @@ window.KolobViz = (function () {
     try { fn(c); } finally { c.restore(); }                          // one bad frame must not leave the plate clipped
     // the ink dissolves before it reaches the clefs
     c.globalCompositeOperation = "destination-out";
-    var gr = c.createLinearGradient(G.fade0, 0, G.fade1, 0);
-    gr.addColorStop(0, "rgba(0,0,0,1)"); gr.addColorStop(1, "rgba(0,0,0,0)");
-    c.fillStyle = gr; c.fillRect(0, 0, G.fade1 + 1, H);
+    c.fillStyle = fades.get(layer); c.fillRect(0, 0, G.fade1 + 1, H);
     c.globalCompositeOperation = "source-over";
   }
-  var IDLE_FRAME_MS = 80;                          // with no meeting playing or held, the page repaints at about 12 fps, not the display's rate
+  // (the fade: wiped out at the clefs' edge, fading to nothing six spaces
+  // on; one gradient a layer, made where the plate is laid out — a
+  // gradient's ends are read in the layer's own space when it fills, so one
+  // made once fills as one made every frame did)
+  function fadeOf(layer) {
+    var gr = layer.getContext("2d").createLinearGradient(G.fade0, 0, G.fade1, 0);
+    gr.addColorStop(0, "rgba(0,0,0,1)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+    return gr;
+  }
+  // With no meeting playing or held, the page repaints at about 12 fps, not
+  // the display's rate; and so does a held one once its page stands still
+  // (THE HELD PAGE, below).
+  var IDLE_FRAME_MS = 80;
+  // THE HELD PAGE. While the meeting is held (PAUSE) the staff stands: its
+  // clock and its drying wait, and nothing is written while the audio clock
+  // stands. The wheel may still be moving — a turn finishing, the arc
+  // closing on the section's place, the pipes settling on the spectrum the
+  // hold left them — so a held page is painted at the display's rate until
+  // a frame finds the audio clock standing and the wheel drawn exactly as the
+  // frame before (drawWheel says so: heldStill), and only then at the idle
+  // rate, each frame drawing what the last drew. Whatever the page is told
+  // wakes it at once (kick: a press, the console's report moving, a note or
+  // an event, a resize, the labels or the tuning marks), so no change waits
+  // on the idle rate.
+  var idleTimer = null, idleHeld = false, heldStill = false;
+  function kick() {
+    heldStill = false;
+    if (idleTimer && idleHeld) { clearTimeout(idleTimer); idleTimer = null; requestAnimationFrame(frame); }
+  }
   function frame(ts) {
     if (!running) return;
-    if (!playing && !paused && FRAME > 0) setTimeout(function () { requestAnimationFrame(frame); }, IDLE_FRAME_MS);
-    else requestAnimationFrame(frame);
+    idleTimer = null;
+    if (FRAME > 0 && ((!playing && !paused) || heldStill)) {
+      idleHeld = !(!playing && !paused);
+      idleTimer = setTimeout(function () { idleTimer = null; requestAnimationFrame(frame); }, IDLE_FRAME_MS);
+    } else requestAnimationFrame(frame);
     if (!ctx2d || !G) return;
     var raw = lastFrame ? Math.max(0, (ts - lastFrame) / 1000) : 0.016;
     var dt = Math.min(0.1, raw);                     // for the wheel's easing
@@ -1859,7 +1902,8 @@ window.KolobViz = (function () {
     ctx2d.drawImage(inkLayer, 0, 0);
     ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    if (XW > 120) drawWheel(dt);                   // the facade rides inside the wheel (once the band is laid out)
+    var wheelStill = XW > 120 ? drawWheel(dt) : true;   // the facade rides inside the wheel (once the band is laid out)
+    heldStill = paused && !audioMoved && wheelStill;     // (THE HELD PAGE)
     if (freeze && freeze.frozen) running = false;  // (dev: painted at the moment asked; the page stands still — THE FRAME-EXACT CAPTURE)
   }
 
@@ -1881,6 +1925,7 @@ window.KolobViz = (function () {
     sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     buildStaffLayer(sctx);
     inkLayer = layer(); bandLayer = layer(); tapeLayer = layer();
+    fades = new Map([[inkLayer, fadeOf(inkLayer)], [bandLayer, fadeOf(bandLayer)], [tapeLayer, fadeOf(tapeLayer)]]);
     proofLayer = layer(); proofC = proofLayer.getContext("2d");   // (the proof sheet each note is struck on, whole: impress)
     if (wheel) {
       var xr = wheel.getBoundingClientRect();
@@ -1891,6 +1936,7 @@ window.KolobViz = (function () {
       xctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     if (freeze && freeze.frozen) { running = true; frame(lastFrame); }   // (dev: a held page laid out again is painted again at its moment — THE FRAME-EXACT CAPTURE)
+    else kick();                                   // (THE HELD PAGE: a page laid out again is painted at once)
   }
 
   function init(mainCanvas, wheelCanvas) {
@@ -1915,8 +1961,8 @@ window.KolobViz = (function () {
       if (wheel) ro.observe(wheel);
     }
     if (K) {
-      if (K.setNoteListener) K.setNoteListener(onNote);
-      if (K.setEventListener) K.setEventListener(onEvent);
+      if (K.setNoteListener) K.setNoteListener(function (n) { kick(); return onNote(n); });       // (THE HELD PAGE: told, it wakes)
+      if (K.setEventListener) K.setEventListener(function (ev) { kick(); return onEvent(ev); });
     }
     var fz = /[?&]kolobFreeze=([0-9.]+)/.exec(window.location ? window.location.search : "");
     if (fz) freezeAt(+fz[1]);                      // (dev: THE FRAME-EXACT CAPTURE)
@@ -1924,6 +1970,8 @@ window.KolobViz = (function () {
     requestAnimationFrame(frame);
   }
   function setConductor(c, isPlaying, isPaused) {
+    // (THE HELD PAGE: a press, or the report moving, wakes a held page at once)
+    if (!!isPlaying !== playing || !!isPaused !== paused || (c && (c.section !== cond.section || c.sectionIndex !== cond.sectionIndex || c.local !== cond.local || c.plan !== cond.plan))) kick();
     if (c) cond = c;
     var was = playing;
     playing = !!isPlaying;
@@ -1936,7 +1984,7 @@ window.KolobViz = (function () {
   // Johnston's tuning marks on or off (the owner's call; TUNING_MARKS above):
   // from the next frame the page draws them or not (the room the page kept
   // before a marked head stays as it was set)
-  function setTuningMarks(on) { TUNING_MARKS = !!on; }
+  function setTuningMarks(on) { TUNING_MARKS = !!on; kick(); }
 
   // (for the silent checks: what is on the page now — never used by the app)
   // (a dev's view of the page; probe("ink") adds each drawn note's ink and
@@ -2021,5 +2069,5 @@ window.KolobViz = (function () {
   VS.holdsBack = holdsBack;
   Object.defineProperty(VS, "TUNING_MARKS", { enumerable: true, configurable: true, get: function () { return TUNING_MARKS; } });
 
-  return { init: init, setConductor: setConductor, setWheelLabels: setWheelLabels, wheelSeatAt: wheelSeatAt, setTuningMarks: setTuningMarks, probe: probe, freezeAt: freezeAt };
+  return { init: init, setConductor: setConductor, setWheelLabels: function (display, spoken) { setWheelLabels(display, spoken); kick(); }, wheelSeatAt: wheelSeatAt, setTuningMarks: setTuningMarks, probe: probe, freezeAt: freezeAt };
 })();

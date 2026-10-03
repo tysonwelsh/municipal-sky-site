@@ -140,9 +140,11 @@ window.KolobAudio = (function () {
   // is written by THE DRONE STEPS BACK, below)
   var droneDuck = null;
   // voicesBus sits between every layer path and the master. STOP silences it
-  // and LEAVES it silent — long drone cycles keep their oscillators running
-  // for up to 90s after a stop, and the siblings' pattern of restoring the
-  // master gain after the fade let them come back from the dead. Not here.
+  // and LEAVES it silent until PLAY: the siblings' pattern of restoring the
+  // master gain after the fade let a stopped meeting's long drone cycles come
+  // back from the dead. Not here. (Nor could they now: the stopped meeting's
+  // doors are shut after the fade and what still sounded behind them is
+  // stopped, THE DOORS' SOURCES.)
   var voicesBus = null;
   // ROOMS — one space, staged in depth (PLAN-ONE-ROOM phases A/B).
   // Two rooms, and EVERY layer sings in both: the CLOSE room is the
@@ -162,6 +164,25 @@ window.KolobAudio = (function () {
   var roomRampNext = 0.05;         // the first section of a meeting lands at once
   var sharedNoiseBuf = null;
   var NOISE_BUF_DURATION = 30;
+  // THE TAPE OF HISS, DRAWN AHEAD. sharedNoiseBuf is NOISE_BUF_DURATION
+  // seconds of white noise every hiss plays from (noiseSource, below) — 1.44
+  // million samples at 48 kHz, unseeded on purpose (build(), below). Drawn
+  // inside the PLAY press, they were a share of its long task (15 to 30 ms
+  // in a desktop Chrome); so they are drawn from the page's load, a slice
+  // at a time in its idle moments (requestIdleCallback; a timer where there
+  // is none), into an array the house copies into its buffer when it is
+  // built (noiseTape: a copy, a few ms). A press that
+  // comes before the last slice draws the rest itself: the tape is always
+  // whole, never shorter, never part silence. The slices draw for a 48 kHz
+  // context; the context's own rate, known only at the press, says how much
+  // is wanted, and a faster one's press draws what is missing. A house built
+  // again (after a build that threw) draws its own at its press, as every
+  // house once did; a new seed keeps the house, and its tape. Only a page
+  // that can make a context draws ahead (not the tools' bare engine).
+  var NOISE_AHEAD_HZ = 48000;      // the rate the slices draw for
+  var NOISE_SLICE = 65536;         // samples drawn between two asks for time (about a millisecond)
+  var noiseAhead = null;           // what is drawn ahead: { data, filled, job }
+  if ((window.AudioContext || window.webkitAudioContext) && typeof Float32Array === "function") drawNoiseAhead();
 
   var playing = false;
   var masterVolume = 0.6;
@@ -416,12 +437,22 @@ window.KolobAudio = (function () {
   // FAULTS: once per listener, then every thousandth, with the layer or the
   // type it threw on): a bug in the staff or the minutes is seen in the
   // console, not hidden at every note.
+  // ONE NOTE, ONE OBJECT. A note is built once — its layer, pitch, time and
+  // length, with the fields its voice adds copied in — and the same object
+  // is handed to every listener, as an event always was. So a listener
+  // never writes into a note or an event, nor into what one carries (a
+  // telegraph's marks, a line's Score): the next listener would read what it
+  // wrote. The staff copies what it keeps (kolob-viz-intake.js); the minutes
+  // read the note and keep a row of their own (kolob-ui.js); the harness
+  // writes it down as it comes, and holds every note listener to the rule
+  // (_harness.js, THE NOTE UNWRITTEN).
   var noteListeners = [], eventListeners = [];
   function emitNote(layer, freq, startTime, duration, extra) {
     if (HOUSE[layer] && !auditioning && duration > 0) heldByHouse(layer, freq, startTime, duration);
+    if (!noteListeners.length) return;
+    var n = { layer: layer, freq: freq, startTime: startTime, duration: duration || 0 };
+    if (extra) { for (var ek in extra) n[ek] = extra[ek]; }   // e.g. telegraph { marks:[…] }
     for (var i = 0; i < noteListeners.length; i++) {
-      var n = { layer: layer, freq: freq, startTime: startTime, duration: duration || 0 };
-      if (extra) { for (var ek in extra) n[ek] = extra[ek]; }   // e.g. telegraph { marks:[…] }
       try { noteListeners[i](n); } catch (e) { confess("the note listener " + (i + 1) + " threw", e, "on a note of the " + layer); }
     }
   }
@@ -461,13 +492,15 @@ window.KolobAudio = (function () {
   }
   function build() {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
+    sourcesThroughDoors(ctx);        // a meeting's sources are its doors' (THE DOORS' SOURCES)
 
     var noiseSamples = Math.floor(ctx.sampleRate * NOISE_BUF_DURATION);
     sharedNoiseBuf = ctx.createBuffer(1, noiseSamples, ctx.sampleRate);
-    var nd = sharedNoiseBuf.getChannelData(0);
     // unseeded on purpose, like the pour below: the tape of hiss is texture,
-    // not music (the zankyo rule); where a sound starts on it is synth:noise
-    for (var ni = 0; ni < noiseSamples; ni++) nd[ni] = Math.random() * 2 - 1;
+    // not music (the zankyo rule); where a sound starts on it is synth:noise.
+    // Its samples were drawn ahead, from the page's load; whatever is
+    // missing is drawn now (THE TAPE OF HISS, DRAWN AHEAD, above)
+    sharedNoiseBuf.getChannelData(0).set(noiseTape(noiseSamples));
 
     masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
@@ -902,13 +935,14 @@ window.KolobAudio = (function () {
   // panners, field gains and the tabernacle send its voices connect to. The
   // choir writes its lines up to half a minute ahead and the drone holds for
   // a minute and a half, all of it already in the audio graph, so STOP closes
-  // the meeting's doors (disconnects them once the fade is done) and PLAY
+  // the meeting's doors (disconnects them once the fade is done, and stops
+  // what was still sounding behind them: THE DOORS' SOURCES, below) and PLAY
   // opens new ones. Without them the old meeting's lines came back through
   // the bus when PLAY reopened it within ~30 s of a STOP.
   var doors = null;
   var closing = [];                // doors shut at STOP, disconnected after the fade
   var hallRinging = false;         // a meeting was stopped: its echo is still in the rooms
-  function openDoors() { return { pans: {}, field: {}, wide: null, hands: {}, spent: [], ward: null, seats: {} }; }
+  function openDoors() { return { pans: {}, field: {}, wide: null, hands: {}, spent: [], ward: null, seats: {}, sources: new Set() }; }
   function liveDoors() { return doors || (doors = openDoors()); }
   // (each door is shut on its own, in this order — one that throws, gone
   // already or never a node, leaves none of the others open: shut in one
@@ -923,8 +957,48 @@ window.KolobAudio = (function () {
     for (k in d.seats) all.push(d.seats[k]);
     if (d.ward) all.push(d.ward.hall, d.ward.near);
     disconnectEach(all);
+    stopBehind(d);
   }
   function shutClosingDoors() { while (closing.length) shutDoors(closing.pop()); }
+  // THE DOORS' SOURCES. Shut doors used to leave their meeting's sources
+  // running behind them, each to its own end, feeding nothing: the lines the
+  // ward and the organist had written ahead, the pipes ringing out, a drone
+  // partial for up to a minute and a half (seed 7 stopped at 303 s: 103
+  // sources, the last to 325 s). So every source the house makes while a
+  // meeting's doors stand is written into those doors — the context's three
+  // makers are wrapped once, as the house is built (madeInDoors) — and leaves
+  // them at its own end; when the doors are shut (the fade done, or a PLAY
+  // before it, which shuts them at once) each one still there is stopped
+  // then and there, and let go. Nothing of it is heard: the doors are
+  // disconnected first, and all a meeting makes reaches the hall through its
+  // doors alone (PLAN-REFACTOR §4.6: the harness's mock, made to follow
+  // every connection, found no source sounding once the doors were shut that
+  // still reached the output, at any STOP of two dozen runs — seeds, scripts
+  // and every guest). A PLAY that shuts them stops the old meeting's sources
+  // before the new meeting has made one. A source made while no doors stand
+  // (the house being built) is no meeting's; an audition while stopped opens
+  // the doors the next meeting will use, and its sources are theirs. One is
+  // left to its own end: a guest's teardown sentinel (__kolobTeardown,
+  // kolob-guest-room.js), silent, whose end gives back what the guest
+  // borrowed — the band's and the company's lent town air, whose convolver
+  // still rings for 2.6 s after the last note into it: given back the moment
+  // the doors shut, it could be lent to the next meeting's band still ringing.
+  function stopBehind(d) {
+    var now = ctx.currentTime;
+    d.sources.forEach(function (src) { if (!src.__kolobTeardown) cleanup(function () { src.stop(now); }); });
+    d.sources.clear();
+  }
+  function sourcesThroughDoors(c) {
+    ["createOscillator", "createBufferSource", "createConstantSource"].forEach(function (m) {
+      var make = c[m];
+      if (typeof make !== "function") return;
+      c[m] = function madeInDoors() {
+        var src = make.apply(c, arguments), d = doors;
+        if (d) { d.sources.add(src); src.addEventListener("ended", function () { d.sources.delete(src); }); }
+        return src;
+      };
+    });
+  }
 
   // ==========================================================================
   // THE HOUSE LETS GO (PLAN-COMPOSITION §15, a guest rule of the Score).
@@ -988,8 +1062,9 @@ window.KolobAudio = (function () {
       if (!h || !ns.length) return;                // nothing of this layer is still to sound
       h.gain.setValueAtTime(1, te);
       h.gain.linearRampToValueAtTime(0, until);
-      d.spent.push(h);
-      if (d.pans[L]) { d.spent.push.apply(d.spent, d.pans[L]); delete d.pans[L]; }
+      var gone = [h].concat(d.pans[L] || []);          // the hands, and the layer's panners before them
+      d.spent.push.apply(d.spent, gone);
+      delete d.pans[L];
       delete d.hands[L];
       var written = te;
       ns.forEach(function (n) {
@@ -998,14 +1073,14 @@ window.KolobAudio = (function () {
         written = Math.max(written, n.e);
         n.e = heard;
       });
-      // the spent hands leave the hall once the last note written through
-      // them has stopped (its oscillators stop up to half a second after
-      // their written end): a long session does not keep a pile of silent
-      // doors open (the panners stay wired to the hands, so what went
-      // through them can still be traced)
+      // the spent hands, and the panners that fed them, leave the hall once
+      // the last note written through them has stopped (its oscillators stop
+      // up to half a second after their written end), and leave the doors'
+      // list: a long session does not keep a pile of silent doors open, nor
+      // a list of them (three panners a release stayed, for hours)
       cueAt("conductor", written + 1, function () {
-        disconnectEach([h]);
-        var at = d.spent.indexOf(h); if (at >= 0) d.spent.splice(at, 1);
+        disconnectEach(gone);
+        gone.forEach(function (n) { var at = d.spent.indexOf(n); if (at >= 0) d.spent.splice(at, 1); });
       });
       layers.push(L);
     });
@@ -1108,8 +1183,11 @@ window.KolobAudio = (function () {
   }
   // a per-event destination on the FIELD bus: <event gain> -> ambient layer gain,
   // so every field sound keeps the ambient routing (reverb) but its own level.
-  // The event gains belong to the meeting's doors.
-  function fieldDest(key, pan) {
+  // The event gains belong to the meeting's doors. The panner is the event's:
+  // handed the source that sounds through it, it leaves the field's gain
+  // when that source ends (else every chirp, tick and gust of a long session
+  // stayed wired to the field for as long as the doors stood)
+  function fieldDest(key, pan, src) {
     var d = liveDoors();
     var fg = d.field[key];
     if (!fg) {
@@ -1121,7 +1199,45 @@ window.KolobAudio = (function () {
     var sp = ctx.createStereoPanner();
     sp.pan.setValueAtTime(pan < -1 ? -1 : pan > 1 ? 1 : pan, ctx.currentTime);
     sp.connect(fg);
+    if (src && src.addEventListener) src.addEventListener("ended", function () { disconnectEach([sp]); });
     return sp;
+  }
+  // (THE TAPE OF HISS, DRAWN AHEAD, above)
+  function noiseLater(fn) {
+    return window.requestIdleCallback ? { idle: window.requestIdleCallback(fn, { timeout: 1000 }) } : { timer: setTimeout(fn, 0) };
+  }
+  function noiseDrop(job) {
+    if (job && job.idle != null && window.cancelIdleCallback) window.cancelIdleCallback(job.idle);
+    if (job && job.timer != null) clearTimeout(job.timer);
+  }
+  function drawNoiseAhead() {
+    noiseAhead = { data: new Float32Array(NOISE_AHEAD_HZ * NOISE_BUF_DURATION), filled: 0, job: null };
+    noiseAhead.job = noiseLater(noiseSlice);
+  }
+  // a slice: NOISE_SLICE samples, and more while the idle moment has room
+  // for them (a timer's slice has no deadline: one run)
+  function noiseSlice(deadline) {
+    var a = noiseAhead;
+    if (!a) return;                                // (the house has taken the tape)
+    a.job = null;
+    var d = a.data, n = d.length, i = a.filled;
+    do {
+      var end = Math.min(n, i + NOISE_SLICE);
+      for (; i < end; i++) d[i] = Math.random() * 2 - 1;
+    } while (i < n && deadline && deadline.timeRemaining && deadline.timeRemaining() > 2);
+    a.filled = i;
+    if (i < n) a.job = noiseLater(noiseSlice);
+  }
+  // the tape for a buffer of n samples, taken by the house that builds it:
+  // what was drawn ahead, and whatever is missing drawn now
+  function noiseTape(n) {
+    var a = noiseAhead, filled = 0, d;
+    noiseAhead = null;
+    if (a) { noiseDrop(a.job); filled = Math.min(a.filled, n); }
+    if (a && a.data.length >= n) d = a.data.length === n ? a.data : a.data.subarray(0, n);
+    else { d = new Float32Array(n); if (filled) d.set(a.data.subarray(0, filled)); }
+    for (var i = filled; i < n; i++) d[i] = Math.random() * 2 - 1;
+    return d;
   }
   function noiseSource() {
     var n = ctx.createBufferSource();
@@ -1297,7 +1413,7 @@ window.KolobAudio = (function () {
     playing = true;
     if (bg) bg.started();
     clearStopTimer();                // the last STOP's timer is this press's to cancel: its doors are shut here, now
-    shutClosingDoors();              // the last meeting's written-ahead lines stay outside
+    shutClosingDoors();              // the last meeting's written-ahead lines stay outside, and stop
     if (hallRinging) { flushRooms(); hallRinging = false; }   // and its echo with them
     liveDoors();
     houseNotes = {}; houseRest = {};               // the stopped meeting's held notes stay outside with it
@@ -1405,8 +1521,10 @@ window.KolobAudio = (function () {
     }
     if (voicesBus && ctx) {
       var t = ctx.currentTime;
-      // fade the voices bus to zero and LEAVE it there — the drone's
-      // oscillators keep running for up to 90s, silently, until they end
+      // fade the voices bus to zero and LEAVE it there until PLAY; once the
+      // fade is done the doors are shut, and the sources still sounding
+      // behind them (the drone's partials, up to 90 s on; the lines written
+      // ahead) are stopped (THE DOORS' SOURCES)
       voicesBus.gain.cancelScheduledValues(t);
       voicesBus.gain.setValueAtTime(voicesBus.gain.value != null ? voicesBus.gain.value : 1, t);
       voicesBus.gain.linearRampToValueAtTime(0, t + 0.6);
@@ -1419,7 +1537,8 @@ window.KolobAudio = (function () {
     emitEvent({ type: "transport", action: "stop" });
   }
   // THE STOP'S OWN TIMER. 800 ms after a STOP, the fade done, the stopped
-  // meeting's doors are disconnected and the layer gains zeroed. Its handle
+  // meeting's doors are disconnected (and its sources behind them stopped)
+  // and the layer gains zeroed. Its handle
   // is kept, and a transport press cancels the one before it: STOP clears
   // the handle the STOP before it armed, before arming its own, and PLAY
   // clears it before it opens new doors (it shuts the closed ones itself,
@@ -1433,8 +1552,9 @@ window.KolobAudio = (function () {
     clearStopTimer();
     stopTimer = setTimeout(function () {
       stopTimer = null;
-      // the fade is done: the stopped meeting's doors are disconnected (a PLAY
-      // inside these 800 ms has already shut them, and cleared this timer)
+      // the fade is done: the stopped meeting's doors are disconnected and
+      // what still sounded behind them stopped (a PLAY inside these 800 ms
+      // has already shut them, and cleared this timer)
       shutClosingDoors();
       if (!playing && ctx) {
         // belt and braces: zero the layer gains too, so a later sample() of
@@ -1564,7 +1684,7 @@ window.KolobAudio = (function () {
         twoBands: M.visitSecond ? M.visitSecond() : false,
         f0: S.F0, season: S.seasonPos,
         sectionIndex: M.sectionIndex(), planLength: plan.length,
-        plan: plan,                                            // the wheel folds hymns onto one seat
+        plan: plan,                                            // the wheel folds hymns onto one seat (one array a plan, kolob-meeting.js plan(): read, never written)
         fifths: S.Harmony.fifthCount(),
       };
     },
