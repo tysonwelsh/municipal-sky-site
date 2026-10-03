@@ -97,70 +97,31 @@ current rules would now reject is reported and left as filed (it may be
 rated; demoting it is the owner's call). Runs are not re-settled; sittings
 stay complete (the drawing id is unchanged). Idempotent.
 
-## Reset (once, before the campaign)
+## Reset (ran 2026-10-03, retired)
 
-`api/jd2-reset.php` deletes EVERY row of the seven `jd2_*` tables. It is the
-one sanctioned exception to the append-only rule (sessions, judgments,
-rankings and pairs are never deleted, `art/junk-drawer/CLAUDE.md`, Never),
-and it is used **once, by the owner, before the campaign's first sitting**
-(owner, 2026-10-03): the trial prompts, runs, drawings and sittings — rows
-101–110 under the old pool and the medium setting, the trial after it, the
-owner's test sitting on the Titanic prompt — go, and the campaign starts
-clean under the new pool, the new rubric and the reviewed drawing prompt. A
-real run is refused outside its window, `JD2_RESET_WINDOW_FROM` …
-`JD2_RESET_WINDOW_UNTIL` (2026-10-02 … 2026-10-31 UTC; moving it is the
-owner's decision, made in a commit). From the campaign's first sitting on,
-nothing is deleted, and the file should be removed from the repo once it has
-run.
+`api/jd2-reset.php` was the one-shot pre-campaign reset: the one sanctioned
+exception to the append-only rule (sessions, judgments, rankings and pairs
+are never deleted, `art/junk-drawer/CLAUDE.md`, Never). Setup-key gated,
+dry-run first, confirmed by a state-bound token, it deleted every row of the
+seven `jd2_*` tables in one transaction and touched no other table. It ran
+on production, once, by the owner, on 2026-10-03, before the campaign's first
+sitting, and deleted 310 rows of trial data (the trial prompts, runs,
+drawings and sittings, the owner's Titanic test sitting included).
 
-The exact two commands:
-
-```
-https://municipalsky.com/api/jd2-reset.php?key=<jd_setup_key>&dry-run=1          (1. look, and get the token)
-https://municipalsky.com/api/jd2-reset.php?key=<jd_setup_key>&confirm=<token>    (2. delete)
-```
-
-Then, on the Mac, in the checkout that ran the batch:
-`php scripts/jd2-batch-run.php --forget-state` (the runner's state file,
-`local-dev/jd2-batch-state.json`, would otherwise still list the deleted rows
-as drawn; the endpoint cannot reach it). Locally:
-`JD_DEV_MOCK=1 php api/jd2-reset.php [--dry-run | --confirm=<token>]`.
-
-- **The dry run** (`?dry-run=1`, and the default when neither flag is given)
-  prints each table's row count, a one-line census (prompts by origin,
-  sessions by role and status, the newest `filed_at`, the drawings' total
-  `cost_usd`, the intake cost, the pool versions and harnesses present) and
-  the confirmation token. Given both flags, it is a dry run.
-- **The token** is the first 12 hex of a sha256 over the seven counts, each
-  table's newest id and the newest `filed_at`. It names one exact state: a
-  row filed after the dry run changes it, so a stale dry run cannot
-  authorise a later state. A token that does not match is refused (409),
-  nothing is deleted, and the refusal says to run the dry run again; it never
-  prints the right token.
-- **The real run** checks the token against a census taken inside ONE
-  transaction, clears the prompts' two forward references
-  (`shown_run_id`, `pinned_generation_id`), deletes in foreign-key order —
-  `jd2_pairs`, `jd2_rankings`, `jd2_judgments`, `jd2_sessions`,
-  `jd2_generations`, `jd2_runs`, `jd2_prompts` (the intake records are prompt
-  columns and go with them) — checks all seven are empty, commits, and prints
-  each table's count before → after. The tables stay. No `jd_*` table,
-  `page_events` or other table is named by the file.
-- **The record**: one JSON line (time, token, web or CLI, the census, the
-  rows deleted per table, the counts after) appended to `jd2-reset.log`, and
-  `jd2-reset.stamp` beside it, in a directory no web request can reach: on
-  production `/home1/tdrivemy/private_config` (the out-of-webroot directory
-  that holds `secrets.php`), else the system temp dir; anywhere else
-  `local-dev/` (gitignored, deploy-excluded). Not `api/`: `.htaccess` denies
-  only itself, so a `.log` there would be served. The directory is checked
-  writable before anything is deleted; the output names the path used.
-- **Refusals**: a second real run within an hour of the stamp (409); outside
-  the window (409); no writable record directory (500). The gate: on
-  production `?key=` (`jd_require_setup_key`), and wherever `JD_DEV_MODE` is
-  false (a checkout whose `config/secrets.php` reaches the live MySQL, a
-  `php -S` without `JD_DEV_MOCK=1`) the key is required as well — `?key=` on
-  the web, `JD_SETUP_KEY` in the environment on the CLI — or it refuses
-  before opening the database. Only the dev box is open.
-- Tested by `php scripts/test-jd2-reset.php` (hermetic, dev SQLite).
+- **The record**: one JSON line in `jd2-reset.log`, with `jd2-reset.stamp`
+  beside it, in production's out-of-webroot `/home1/tdrivemy/private_config`
+  (the directory that holds `secrets.php`). Local runs wrote theirs to
+  `local-dev/` (gitignored, deploy-excluded).
+- **Retired**: the file is now a stub that answers 410 to every request (on
+  the CLI it prints the same line and exits 1); no includes, no key, no
+  database. It is a stub, not a deleted file, because the FTP deploy is not
+  counted on to remove server files (`scripts/publish.sh` only uploads; the
+  GitHub deploy never deletes a file it has no record of uploading), so a
+  file removed from the repo could stay live. Its test,
+  `scripts/test-jd2-reset.php`, was removed with it; the old code is in git
+  history.
+- From the campaign's first sitting on, nothing in dataset v2 is deleted,
+  with no exception.
 
 ## The shape in one paragraph
 
@@ -747,6 +708,9 @@ after the drawings, stand over the clerk's.
   campaign's first sitting, with a dry run, a state-bound confirmation token
   and a record outside the web root; `scripts/jd2-batch-run.php
   --forget-state`. No schema change.
+- 2026-10-03 — `api/jd2-reset.php` retired after its one run (310 rows of
+  trial data, before the campaign's first sitting): now a stub answering
+  410; `scripts/test-jd2-reset.php` removed. No schema change.
 - 2026-10-03 — harness v5: `JD_SYSTEM_PROMPT` ← the owner's settled text
   (`PLAN-DRAWING-PROMPT.md` §2); harness ids `v5-web.1`, `v5-benchlow.1`,
   `v5-benchmed.1`, `v5-bench.1` (parameters unchanged). The sanitizer strips

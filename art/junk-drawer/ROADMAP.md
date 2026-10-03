@@ -121,6 +121,10 @@ back-end change; the owner decides the wording):
 
 **Before the drawer opens to the public:**
 
+- **Drop `JD_LIMIT_GLOBAL_DAILY` back to 200 once the campaign batch has
+  run** (raised to 560 on 2026-10-03 for the 512-drawing batch; the comment
+  above it in `api/jd-config.php` says so).
+
 - **Visitors wait less for a slow model (owner, 2026-10-02).** Today every
   slot on a visitor turn gets `JD_PROVIDER_TIMEOUT` = 150 s; a model that
   misses it is marked failed, the card says it did not come back, and the
