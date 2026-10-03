@@ -256,8 +256,8 @@ new prompt.
   `JD_PROFILE_LIVE=1 php scripts/jd2-profile-probe.php --web` (16 tiny
   calls, every pool model × every profile) and fix any cell that is not a
   clean SVG; a model can refuse a parameter its docs list.
-- **The cast as of 2026-10-02 (`pool-2026-10-02`, taxonomy v33)**: Claude
-  Opus 5.5 (`claude-opus-5-5`), GPT-6 Astra (`gpt-6-astra`), Kimi K3
+- **The cast as of 2026-10-02 (`pool-2026-10-02b`, taxonomy v33)**: Claude
+  Opus 5.5 (`claude-opus-5-5`), GPT-6.1 Sol (`gpt-6.1-sol`; GPT-6.1 Sol stays registered, pool: false), Kimi K3
   (`kimi-k3`) and Gemini 3.1 Pro (`gemini-3.1-pro-preview`), each its
   vendor's current flagship. Verified the same day: wire ids and prices on
   the vendors' own model and pricing pages (the URLs are in
@@ -265,7 +265,7 @@ new prompt.
   vendor's normal stop, a sanitizer-clean SVG). Two things the probe
   taught: Opus 5.5 cannot disable thinking (a 400 at every effort), so
   every profile sends `output_config.effort` and no `thinking` key; and
-  GPT-6 Astra on Chat Completions accepts `reasoning_effort` up to `xhigh`
+  GPT-6.1 Sol on Chat Completions accepts `reasoning_effort` up to `xhigh`
   and refuses `max` (400) although its model page lists `max`, so
   `bench-max` sends `xhigh`. Those moved two harness ids: `web` →
   `v4-web.4` (Anthropic effort low instead of thinking disabled; OpenAI

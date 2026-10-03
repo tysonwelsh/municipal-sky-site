@@ -55,7 +55,7 @@ back-end change; the owner decides the wording):
   visitors; the owner can still override on the ledger. Check the
   agreement rate against the ~64 owner-chosen sizes in the v1 archive
   first.
-- **Newest models** in the pool — **DONE 2026-10-02** (`pool-2026-10-02`;
+- **Newest models** in the pool — **DONE 2026-10-02** (`pool-2026-10-02b`;
   the "Model pool refresh" item below).
 
 **Instrument / UI (Phase 4b and after):**
@@ -186,8 +186,8 @@ part of the cutover build itself.
   real prompts (`--profile bench-low` and `--profile bench-max` on the same
   CSV) before or during the campaign; the decision does not wait on it.
 - **Model pool refresh — DONE 2026-10-02** (branch
-  `junk-drawer-pool-2026-10`). `poolVersion` `pool-2026-10-02`, taxonomy
-  v33: Claude Opus 5.5 (`claude-opus-5-5`) and GPT-6 Astra (`gpt-6-astra`)
+  `junk-drawer-pool-2026-10`). `poolVersion` `pool-2026-10-02b`, taxonomy
+  v33: Claude Opus 5.5 (`claude-opus-5-5`) and GPT-6.1 Sol (`gpt-6.1-sol`; GPT-6.1 Sol stays registered, pool: false)
   replace Opus 5 and GPT-5.1; Kimi K3 and Gemini 3.1 Pro stay (still each
   vendor's newest). Wire ids and prices checked on the vendors' own pages
   (`jd-prices.json` `_notes`). Same four vendors, so no consent bump.

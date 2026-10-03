@@ -144,7 +144,7 @@ inline.
 | `requested_by` | `owner` \| `visitor` (`JD2_REQUESTED_BY`) |
 | `profile` | the effort profile: `web` \| `bench-medium` \| `bench-low` \| `bench-max` \| `bench` (retired) (`JD2_PROFILE`; see Effort profiles below) |
 | `harness` | the harness id stamped at the time (`JD_HARNESS_BY_PROFILE`) |
-| `pool_version` | the pool snapshot the run drew from (`taxonomy.json` `poolVersion`): `pool-2026-08-14` (Opus 5, GPT-5.1, Kimi K3, Gemini 3.1 Pro; every run filed before the refresh) or `pool-2026-10-02` (Opus 5.5, GPT-6 Astra, Kimi K3, Gemini 3.1 Pro; current) |
+| `pool_version` | the pool snapshot the run drew from (`taxonomy.json` `poolVersion`): `pool-2026-08-14` (Opus 5, GPT-5.1, Kimi K3, Gemini 3.1 Pro; every run filed before the refresh) or `pool-2026-10-02b` (Opus 5.5, GPT-6.1 Sol, Kimi K3, Gemini 3.1 Pro; current) |
 | `deal` | JSON: slot letter → model id, as dealt (replaces v1's `pair_order` arithmetic; any pool size) |
 | `status` | `pending` \| `generated` \| `failed` (`JD2_RUN_STATUS`) |
 | `created` | filing time |
@@ -153,7 +153,7 @@ Keys: `idx_jd2r_prompt_created (prompt_id, created)`.
 
 #### Effort profiles and harness ids (2026-10-02; pool refresh the same day)
 
-Current, under `pool-2026-10-02`:
+Current, under `pool-2026-10-02b`:
 
 | profile | who | Anthropic Opus 5.5 `output_config.effort` | OpenAI gpt-6-astra `reasoning_effort` | Kimi K3 `reasoning_effort` | Gemini 3.1 Pro `thinkingLevel` | output budget | harness |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -168,7 +168,7 @@ Retired harness ids, still stamped on the runs filed under them (under
 | profile | harness | Anthropic | OpenAI | Kimi K3 | Gemini 3.1 Pro | budget | retired because |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `web` | `v4-web.3` | thinking disabled | (none sent: vendor default) | `low` | `low` | 12000 | Opus 5.5 answers 400 to disabled thinking; OpenAI now sends `low` |
-| `bench-max` | `v4-bench.4` | `max` | `high` (GPT-5.1's top) | `max` | `high` | 64000 | GPT-6 Astra's top accepted rung is `xhigh` |
+| `bench-max` | `v4-bench.4` | `max` | `high` (GPT-5.1's top) | `max` | `high` | 64000 | GPT-6.1 Sol's top accepted rung is `xhigh` |
 | `bench` | `v4-bench.3` | `max` | `high` | `high` | `high` | 12000 | the profile split (runs filed before 2026-10-02) |
 
 Harness ids in use for new runs: `v4-web.4`, `v4-benchlow.1`,
@@ -613,8 +613,8 @@ after the drawings, stand over the clerk's.
   rejecting them (`element_not_allowed` before) and reports it;
   `jd2-generate` files it. `api/jd2-resanitize.php` recovers drawings the
   old rules rejected (Runbook).
-- 2026-10-02 — the model-pool refresh: `poolVersion` `pool-2026-10-02`
-  (taxonomy v33: `claude-opus-5-5` and `gpt-6-astra` join, `claude-opus-5` and
+- 2026-10-02 — the model-pool refresh: `poolVersion` `pool-2026-10-02b`
+  (taxonomy v33: `claude-opus-5-5` and `gpt-6.1-sol` join, `claude-opus-5` and
   `gpt-5-1` leave the pool and stay registered); harness ids `v4-web.4` and
   `v4-bench.5`; `jd-prices.json` rows for the two new wire ids. No schema
   change.
