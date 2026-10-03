@@ -1242,6 +1242,34 @@
     if (drawNext) { drawNext = false; drawOn(); }
   }
 
+  /* AN ITEM THE PAYLOAD DOES NOT KNOW YET (owner, 2026-10-03). The payload
+     is data.php as it stood when the page loaded. An item that joined the
+     pile since — a prompt the owner just filed on the bench, a visitor's
+     turn that just went live — has a specimen tag offering REPORT CARD, and
+     open() used to return silently because byId() found nothing. Now the
+     miss fetches that ONE item (data.php?item=<id>, the admin card's mode,
+     whatever its visibility), adds it to the payload, and opens; a second
+     press while the fetch is out is ignored, and an item the server does not
+     know stays a no-op (there is nothing to show). */
+  var lateInflight = null;
+  function fetchLate(id) {
+    if (lateInflight) return lateInflight;
+    var url = (window.JD_DATA_URL || '/art/junk-drawer/data.php') + '?item=' + encodeURIComponent(id);
+    return (lateInflight = fetch(url, { cache: 'no-store' }).then(function (res) {
+      if (!res.ok) throw new Error('data.php?item ' + res.status);
+      return res.json();
+    }).then(function (data) {
+      /* ?item= answers {taxonomy, item} — one entry, not a list */
+      var items = data && data.item ? [data.item] : ((data && data.items) || []);
+      var i;
+      for (i = 0; i < items.length; i++) {
+        if (items[i] && items[i].id && !byId(payload.items, items[i].id)) payload.items.push(items[i]);
+      }
+      return byId(payload.items, id) || null;
+    }).catch(function () { return null; })
+      .then(function (entry) { lateInflight = null; return entry; }));
+  }
+
   function open(id, viaHistory) {
     if (!payload || isOpen) return;
     /* one modal at a time: the turn modal owns Esc and the scrim while it is
@@ -1250,7 +1278,13 @@
     /* …and the analytics folder, which is a third such dialog (2026-08-28) */
     if (window.JD_folder && window.JD_folder.isOpen()) return;
     var entry = byId(payload.items, id);
-    if (!entry) return;
+    if (!entry) {
+      if (lateInflight) return;
+      fetchLate(id).then(function (late) {
+        if (late && !isOpen) open(id, viaHistory);
+      });
+      return;
+    }
     curEntry = entry;
     curResp = respIndex(entry, entry.primary);
     /* (opening on the PRIMARY's thumbnail is render()'s job now — it centres
