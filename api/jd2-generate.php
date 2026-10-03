@@ -213,6 +213,18 @@ try {
     if ($profile !== 'web') {
         // a bench-* call may take JD_BENCH_TIMEOUT on the wire; give PHP the same
         @set_time_limit(jd_profile_timeout($profile) + 60);
+        // FINISH THE CALL EVEN IF THE CALLER IS GONE (campaign night, 2026-10-03).
+        // The host's front proxy cuts any request that runs past ~300 s and
+        // hands the client a bare 503; Kimi K3 at its middle rung regularly
+        // thinks longer than that on some prompts. Without this, PHP died with
+        // the connection, the paid call was lost, the pending row sat until
+        // the stranded rule (timeout + 120 s) let the next --resume ask
+        // again — and the same prompt hung the same way, pass after pass
+        // (rows 13 and 15 of the campaign, three passes each). Now the
+        // process runs on to the provider's answer and stores it; the
+        // caller's next --resume rejoins the stored drawing (a retried
+        // request for a settled slot re-answers its verdict, below).
+        @ignore_user_abort(true);
     }
 
     // --- 8. The slot is checked against the deal, not a fixed list ---------
