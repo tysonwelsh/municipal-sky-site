@@ -8,8 +8,8 @@
 // browser's SVG parser, and the whole trust boundary rests on the two seeing
 // the same document.
 //
-// ONE NAMED NORMALIZATION (owner, 2026-10-02): CDATA sections are unwrapped,
-// not refused. How a model writes SVG is part of what the drawer measures, so
+// TWO NAMED NORMALIZATIONS. The first (owner, 2026-10-02): CDATA sections
+// are unwrapped, not refused. How a model writes SVG is part of what the drawer measures, so
 // a usable drawing is not thrown away over a harmless wrapper (the case: Kimi
 // K3 wrapping its <style> CSS in <![CDATA[ … ]]>), and the fact is RECORDED,
 // not hidden: the verdict carries 'normalized' => ['cdata_unwrapped' => n]
@@ -25,6 +25,20 @@
 // byte-identical regime itself accepts. Only a normalized drawing is
 // re-serialized; every other input still passes byte-identical. Processing
 // instructions and comments inside the raw-text elements stay refused.
+//
+// The second (2026-10-03, harness v5): every <title> and <desc> element
+// (SVG namespace, anywhere in the tree) is REMOVED from the served drawing.
+// Inlined, a model's own <title> shows as a hover tooltip — the model
+// captioning or signing its drawing in front of the rater, a self-caption
+// leaking past the blind. It runs AFTER every rule has passed on the whole
+// document, so a payload hidden inside a <title> or <desc> is still refused
+// with exactly the reason it always got; only a drawing that would have
+// passed has its title/desc stripped. Recorded, not hidden: 'normalized' =>
+// ['title_desc_stripped' => n] (n = every <title> and <desc> element
+// removed, nested ones counted), filed as the word title_desc_stripped; the
+// model's text stays in raw_response, byte-exact. Same path as CDATA:
+// re-serialized (LIBXML_NOEMPTYTAG) and re-checked under the unchanged
+// rules. A drawing with both gets both words (cdata_unwrapped first).
 //
 // THE CLIENT HALF (2026-10-02): the drawer inlines every drawing through
 // DOMParser('image/svg+xml') + importNode, never innerHTML, so the browser
@@ -90,9 +104,10 @@ const JD_SVG_RAW_TEXT_ELEMENTS = ['style', 'title'];
 const JD_SVG_ANIMATION_ELEMENTS = ['animate', 'set', 'animateTransform', 'animateMotion'];
 
 /**
- * @return array{ok:true,svg:string,normalized?:array{cdata_unwrapped:int}}|array{ok:false,reason:string}
+ * @return array{ok:true,svg:string,normalized?:array{cdata_unwrapped?:int,title_desc_stripped?:int}}|array{ok:false,reason:string}
  *
- * 'normalized' is present only when something was changed; then 'svg' is the
+ * 'normalized' is present only when something was changed, and holds only
+ * the words with a nonzero count (cdata_unwrapped first); then 'svg' is the
  * re-serialized document, otherwise it is the input, byte-identical.
  */
 function jd_sanitize_svg(string $svg): array
@@ -151,7 +166,15 @@ function jd_sanitize_svg(string $svg): array
             return ['ok' => false, 'reason' => $reason];
         }
 
-        $clean = $cdataUnwrapped > 0 ? jd_svg_serialize($doc) : null;
+        // 5c. Every rule has passed: strip the model's own <title>/<desc>
+        //     (the header's second normalization).
+        $titleDescStripped = jd_svg_strip_title_desc($doc);
+
+        $normalized = array_filter([
+            'cdata_unwrapped'     => $cdataUnwrapped,
+            'title_desc_stripped' => $titleDescStripped,
+        ]);
+        $clean = $normalized ? jd_svg_serialize($doc) : null;
     } finally {
         libxml_clear_errors();
         libxml_use_internal_errors($previousErrors);
@@ -164,9 +187,10 @@ function jd_sanitize_svg(string $svg): array
     }
 
     // 7. A normalized drawing: the re-serialized document, re-checked from
-    //    the top under the unchanged rules. It holds no CDATA, so this pass
-    //    normalizes nothing and answers byte-identical or with a reason (in
-    //    practice only too_large, if escaping grew text past the cap).
+    //    the top under the unchanged rules. It holds no CDATA and no
+    //    <title>/<desc>, so this pass normalizes nothing and answers
+    //    byte-identical or with a reason (in practice only too_large, if
+    //    escaping grew text past the cap).
     $recheck = jd_sanitize_svg($clean);
     if (empty($recheck['ok'])) {
         return $recheck;
@@ -174,7 +198,26 @@ function jd_sanitize_svg(string $svg): array
     if (isset($recheck['normalized']) || $recheck['svg'] !== $clean) {
         return ['ok' => false, 'reason' => 'parse_error'];   // unreachable: the fixed point failed
     }
-    return ['ok' => true, 'svg' => $clean, 'normalized' => ['cdata_unwrapped' => $cdataUnwrapped]];
+    return ['ok' => true, 'svg' => $clean, 'normalized' => $normalized];
+}
+
+// Remove every SVG-namespace <title> and <desc> element; returns how many
+// there were (nested ones included — a <title> inside a <desc> leaves with
+// it and is counted). Collected first, removed after, so the traversal never
+// walks a list it is mutating. Only ever called on a document every rule has
+// already passed.
+function jd_svg_strip_title_desc(DOMDocument $doc): int
+{
+    $found = [];
+    foreach (['title', 'desc'] as $name) {
+        foreach ($doc->getElementsByTagNameNS(JD_SVG_NS, $name) as $element) {
+            $found[] = $element;
+        }
+    }
+    foreach ($found as $element) {
+        $element->parentNode?->removeChild($element);
+    }
+    return count($found);
 }
 
 // Replace every CDATA section in the document with a text node carrying the

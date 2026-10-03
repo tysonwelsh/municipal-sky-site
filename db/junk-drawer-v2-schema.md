@@ -80,6 +80,23 @@ result). Idempotent. It never touches a `jd_*` table or a session, judgment,
 ranking or pair; a recovered drawing is unrated, so a sitting filed over its
 run reads incomplete until the drawing is rated (the output names those runs).
 
+**After a new normalization** (2026-10-03: `title_desc_stripped`), re-serve
+the drawings already filed `ok` — a dry run unless asked to apply:
+
+```
+https://municipalsky.com/api/jd2-resanitize.php?key=<jd_setup_key>&recheck=ok           (lists)
+https://municipalsky.com/api/jd2-resanitize.php?key=<jd_setup_key>&recheck=ok&apply=1   (applies)
+JD_DEV_MOCK=1 php api/jd2-resanitize.php --recheck=ok [--apply]                         (dev)
+```
+
+Every `ok` generation with a `raw_response` is re-extracted and re-sanitized;
+where the result differs from what is on file, `svg` and `normalized` are
+rewritten and nothing else (status, `raw_response`, usage, latency, cost,
+`priced`, `params`, `disobedience`, `hidden`, `created` stay). A row the
+current rules would now reject is reported and left as filed (it may be
+rated; demoting it is the owner's call). Runs are not re-settled; sittings
+stay complete (the drawing id is unchanged). Idempotent.
+
 ## Reset (once, before the campaign)
 
 `api/jd2-reset.php` deletes EVERY row of the seven `jd2_*` tables. It is the
@@ -216,30 +233,37 @@ inline.
 
 Keys: `idx_jd2r_prompt_created (prompt_id, created)`.
 
-#### Effort profiles and harness ids (2026-10-02; pool refresh the same day)
+#### Effort profiles and harness ids (2026-10-02; pool refresh the same day; v5 prompt 2026-10-03)
 
-Current, under `pool-2026-10-02b`:
+Current, under `pool-2026-10-02b` and the v5 drawing prompt (the owner's
+text, `PLAN-DRAWING-PROMPT.md` §2, settled 2026-10-03):
 
 | profile | who | Anthropic Opus 5.5 `output_config.effort` | OpenAI gpt-6-astra `reasoning_effort` | Kimi K3 `reasoning_effort` | Gemini 3.1 Pro `thinkingLevel` | output budget | harness |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `web` | visitors | `low` | `low` | `low` | `low` | 12000 | `v4-web.4` |
-| `bench-low` | owner | `low` | `low` | `low` | `low` | 64000 | `v4-benchlow.1` |
-| `bench-medium` | owner, **the default** | `medium` | `medium` | `high` (K3 has no medium: its middle rung) | `medium` | 64000 | `v4-benchmed.1` |
-| `bench-max` | owner | `max` | `xhigh` (Chat Completions refuses `max` on this model) | `max` | `high` | 64000 | `v4-bench.5` |
+| `web` | visitors | `low` | `low` | `low` | `low` | 12000 | `v5-web.1` |
+| `bench-low` | owner | `low` | `low` | `low` | `low` | 64000 | `v5-benchlow.1` |
+| `bench-medium` | owner, **the default** | `medium` | `medium` | `high` (K3 has no medium: its middle rung) | `medium` | 64000 | `v5-benchmed.1` |
+| `bench-max` | owner | `max` | `xhigh` (Chat Completions refuses `max` on this model) | `max` | `high` | 64000 | `v5-bench.1` |
 
-Retired harness ids, still stamped on the runs filed under them (under
-`pool-2026-08-14`, with Opus 5 and GPT-5.1 in the first two columns):
+Retired harness ids, still stamped on the runs filed under them. The four
+v4 ids retired 2026-10-03 had exactly the parameters above and the v4
+drawing prompt; the older three ran under `pool-2026-08-14`, with Opus 5
+and GPT-5.1 in the first two columns:
 
 | profile | harness | Anthropic | OpenAI | Kimi K3 | Gemini 3.1 Pro | budget | retired because |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| `web` | `v4-web.4` | `low` | `low` | `low` | `low` | 12000 | the v5 drawing prompt |
+| `bench-low` | `v4-benchlow.1` | `low` | `low` | `low` | `low` | 64000 | the v5 drawing prompt |
+| `bench-medium` | `v4-benchmed.1` | `medium` | `medium` | `high` | `medium` | 64000 | the v5 drawing prompt |
+| `bench-max` | `v4-bench.5` | `max` | `xhigh` | `max` | `high` | 64000 | the v5 drawing prompt |
 | `web` | `v4-web.3` | thinking disabled | (none sent: vendor default) | `low` | `low` | 12000 | Opus 5.5 answers 400 to disabled thinking; OpenAI now sends `low` |
 | `bench-max` | `v4-bench.4` | `max` | `high` (GPT-5.1's top) | `max` | `high` | 64000 | GPT-6.1 Sol's top accepted rung is `xhigh` |
 | `bench` | `v4-bench.3` | `max` | `high` | `high` | `high` | 12000 | the profile split (runs filed before 2026-10-02) |
 
-Harness ids in use for new runs: `v4-web.4`, `v4-benchlow.1`,
-`v4-benchmed.1`, `v4-bench.5`. `v4-benchlow.1` and `v4-benchmed.1` span both
-pool versions (their parameters did not change); `pool_version` tells those
-runs apart.
+Harness ids in use for new runs: `v5-web.1`, `v5-benchlow.1`,
+`v5-benchmed.1`, `v5-bench.1`. (Of the v4 ids, `v4-benchlow.1` and
+`v4-benchmed.1` spanned both pool versions; `pool_version` tells those runs
+apart.)
 
 The values are `JD_EFFORT` in `api/jd-config.php`; every profile leaves
 thinking on, web included since `v4-web.4`. The owner's default is `JD2_OWNER_DEFAULT_PROFILE`
@@ -250,8 +274,9 @@ older client, the bench page) means that default; max effort is the explicit
 different harness ids are never pooled: `v4-bench.3` and `v4-bench.4` differ in
 budget and in Kimi's setting, `v4-bench.4` and `v4-bench.5` in OpenAI's,
 `v4-web.3` and `v4-web.4` in Anthropic's and OpenAI's, and the three bench
-profiles are each their own condition — comparing them is the point. Nor are
-runs under different `pool_version`s.
+profiles are each their own condition — comparing them is the point. Runs
+under v4-* and v5-* were drawn to different briefs and are never pooled.
+Nor are runs under different `pool_version`s.
 
 **The budget rule.** On every provider in the pool one output cap covers
 thinking AND the answer (Anthropic `max_tokens`, OpenAI `max_completion_tokens`,
@@ -283,7 +308,7 @@ SVG (one tiny prompt each, no database; `JD_PROFILE_LIVE=1` to spend).
 | `status` | `pending` \| `ok` \| `failed` \| `rejected` (`JD2_GEN_STATUS`) |
 | `reject_reason` | the sanitizer's frozen reason when `rejected` |
 | `disobedience` | 1 = the SVG had to be dug out of the reply |
-| `normalized` | `VARCHAR(64)`: what the sanitizer changed between `raw_response` and `svg`, a comma-joined list of `JD2_GEN_NORMALIZED` words (today only `cdata_unwrapped`: CDATA sections turned into text and the drawing re-serialized); NULL = nothing, `svg` is the extracted span byte for byte |
+| `normalized` | `VARCHAR(64)`: what the sanitizer changed between `raw_response` and `svg`, a comma-joined list of `JD2_GEN_NORMALIZED` words (`cdata_unwrapped`: CDATA sections turned into text; `title_desc_stripped`, since harness v5: the model's own `<title>`/`<desc>` elements removed; either way the drawing re-serialized; both: `cdata_unwrapped,title_desc_stripped`); NULL = nothing, `svg` is the extracted span byte for byte |
 | `latency_ms` | wall time of the provider call |
 | `usage_json` | JSON: the provider's usage object in its own key names, kept so the row can be re-priced |
 | `cost_usd` | `DECIMAL(10,6)`, snapshotted at write time; NULL when unpriced |
@@ -722,3 +747,10 @@ after the drawings, stand over the clerk's.
   campaign's first sitting, with a dry run, a state-bound confirmation token
   and a record outside the web root; `scripts/jd2-batch-run.php
   --forget-state`. No schema change.
+- 2026-10-03 — harness v5: `JD_SYSTEM_PROMPT` ← the owner's settled text
+  (`PLAN-DRAWING-PROMPT.md` §2); harness ids `v5-web.1`, `v5-benchlow.1`,
+  `v5-benchmed.1`, `v5-bench.1` (parameters unchanged). The sanitizer strips
+  `<title>`/`<desc>` from the served svg: `JD2_GEN_NORMALIZED` gains
+  `title_desc_stripped`; `api/jd2-resanitize.php` gains `recheck=ok`
+  (Runbook). No schema change (`normalized` is `VARCHAR(64)`; the longest
+  value, `cdata_unwrapped,title_desc_stripped`, is 35).

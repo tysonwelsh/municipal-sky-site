@@ -800,7 +800,7 @@ file_put_contents($stateP, json_encode(['version' => 1, 'bases' => ['local' => [
 $gensBefore = (int) one($db, 'SELECT COUNT(*) FROM jd2_generations');
 [$rc, $o] = batch(escapeshellarg($csvP) . ' --local --dry-run --profile bench-low --state ' . escapeshellarg($stateP));
 check('--dry-run --profile bench-low: names the profile and harness; the robot (on file) is a rerun of its prompt, the watering can is new, the P4 row a rerun; nothing drawn',
-    $rc === 0 && str_contains($o, 'profile bench-low (harness v4-benchlow.1, budget 64000 tokens')
+    $rc === 0 && str_contains($o, 'profile bench-low (harness v5-benchlow.1, budget 64000 tokens')
     && preg_match('/#1\s+rerun ' . $robotId . ' \(same text, on file\)/', $o) === 1
     && preg_match('/#2\s+new prompt/', $o) === 1 && preg_match('/#3\s+rerun ' . $p4 . '  /', $o) === 1
     && str_contains($o, '"profile":"bench-low"') && str_contains($o, '"rerun_of":"' . $robotId . '"')
@@ -812,9 +812,9 @@ $byProfile = fn (string $pid) => array_map(fn ($r) => $r['kind'] . ':' . $r['pro
     rows($db, 'SELECT kind, profile, harness FROM jd2_runs WHERE prompt_id = ? ORDER BY id', [$pid]));
 check('the bench-low run: the robot gets a RERUN (one prompt with that text), the watering can a new prompt, P4 a third run; all bench-low',
     $rc === 0 && (int) one($db, "SELECT COUNT(*) FROM jd2_prompts WHERE text = 'a wind-up tin robot'") === 1
-    && $byProfile($robotId) === ['initial:bench-medium:v4-benchmed.1', 'rerun:bench-low:v4-benchlow.1']
-    && $canId !== '' && $byProfile($canId) === ['initial:bench-low:v4-benchlow.1']
-    && in_array('rerun:bench-low:v4-benchlow.1', $byProfile($p4), true)
+    && $byProfile($robotId) === ['initial:bench-medium:v5-benchmed.1', 'rerun:bench-low:v5-benchlow.1']
+    && $canId !== '' && $byProfile($canId) === ['initial:bench-low:v5-benchlow.1']
+    && in_array('rerun:bench-low:v5-benchlow.1', $byProfile($p4), true)
     && (int) one($db, 'SELECT COUNT(*) FROM jd2_generations') === $gensBefore + 12, json_encode([$byProfile($robotId), $byProfile($canId), $byProfile($p4)]) . "\n" . $o);
 $SP = json_decode((string) file_get_contents($stateP), true)['bases']['local'];
 check('the state keys each row by profile and text, records the rerun decision, and leaves the pre-split entry alone',
@@ -830,8 +830,8 @@ check('a rerun row files no intake and no curate (the prompt keeps its own title
 check('the same CSV at bench-max: three more runs, no new prompt — the watering can (filed at bench-low) is now a rerun too',
     $rc === 0 && preg_match('/#2\s+rerun ' . $canId . ' \(same text, on file\)/', $o) === 1
     && (int) one($db, "SELECT COUNT(*) FROM jd2_prompts WHERE text = 'a tin watering can'") === 1
-    && $byProfile($canId) === ['initial:bench-low:v4-benchlow.1', 'rerun:bench-max:v4-bench.5']
-    && $byProfile($robotId) === ['initial:bench-medium:v4-benchmed.1', 'rerun:bench-low:v4-benchlow.1', 'rerun:bench-max:v4-bench.5'],
+    && $byProfile($canId) === ['initial:bench-low:v5-benchlow.1', 'rerun:bench-max:v5-bench.1']
+    && $byProfile($robotId) === ['initial:bench-medium:v5-benchmed.1', 'rerun:bench-low:v5-benchlow.1', 'rerun:bench-max:v5-bench.1'],
     json_encode([$byProfile($robotId), $byProfile($canId)]) . "\n" . $o);
 [$rc, $o] = batch(escapeshellarg($csvP) . ' --local --resume --profile bench-max --state ' . escapeshellarg($stateP));
 check('--resume at bench-max with everything done: nothing drawn (each profile resumes only its own rows)',
@@ -839,7 +839,7 @@ check('--resume at bench-max with everything done: nothing drawn (each profile r
 [$rc, $o] = batch(escapeshellarg($csvP) . ' --local --profile bench-low --state ' . escapeshellarg($stateP));
 check('without --resume, a profile\'s rows already in the state are refused (exit 2)', $rc === 2 && str_contains($o, 'Pass --resume'), $o);
 [$rc, $o] = batch(escapeshellarg($csvP) . ' --local --dry-run --profile bench --state ' . escapeshellarg("$scratch/state-alias.json"));
-check('--profile bench is the owner\'s default, named: bench-medium', $rc === 0 && str_contains($o, 'profile bench-medium (harness v4-benchmed.1'), $o);
+check('--profile bench is the owner\'s default, named: bench-medium', $rc === 0 && str_contains($o, 'profile bench-medium (harness v5-benchmed.1'), $o);
 [$rc, $o] = batch(escapeshellarg($csvP) . ' --local --dry-run --profile bench-ultra --state ' . escapeshellarg("$scratch/state-alias.json"));
 check('an unknown --profile is refused before anything is asked (exit 2)', $rc === 2 && str_contains($o, '--profile must be one of'), $o);
 $visCsv = "$scratch/visitor-text.csv";

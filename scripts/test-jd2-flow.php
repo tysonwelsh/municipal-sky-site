@@ -26,10 +26,16 @@
 // JD_INTAKE_MOCK_FAIL tells the mock to fail), jd2-rate leaving the clerk's
 // size alone, and jd2-curate's tags and owner size.
 //
-// (l) is the sanitizer's named normalization: a mock drawing whose <style>
+// (l) is the sanitizer's named normalizations: a mock drawing whose <style>
 // wraps its CSS in CDATA (the mock's '[cdata]' switch) files ok with
 // normalized = 'cdata_unwrapped', and api/jd2-resanitize.php recovers the same
-// drawings when they are seeded as the old rules filed them.
+// drawings when they are seeded as the old rules filed them; a drawing that
+// carries its own <title>/<desc> (the mock's '[title]' switch, 2026-10-03)
+// files ok with them stripped from svg, normalized = 'title_desc_stripped',
+// and jd2-resanitize --recheck=ok re-serves an ok row seeded as filed before
+// the strip. The local mock fixtures may carry a <title> of their own (the
+// owner's do), so every expectation is computed from the row's raw_response
+// (mock_norm), never assumed.
 //
 // (m) is the sitting's required_cells (taxonomy v35): every sitting is stamped
 // with the cells its rubric required, and a sitting filed under the OLD rubric
@@ -500,8 +506,8 @@ $params = json_decode((string) one($db, "SELECT params FROM jd2_generations WHER
 check('second run on the same prompt: rerun, owner, `bench` filed as ' . JD2_OWNER_DEFAULT_PROFILE . ' with its harness and budget; no new prompt',
       ($r2row['kind'] ?? '') === 'rerun' && $r2row['requested_by'] === 'owner' && $r2row['profile'] === JD2_OWNER_DEFAULT_PROFILE
       && JD2_OWNER_DEFAULT_PROFILE === 'bench-medium'
-      && $r2row['harness'] === jd_harness(JD2_OWNER_DEFAULT_PROFILE) && $r2row['harness'] === 'v4-benchmed.1' && $r2row['status'] === 'generated'
-      && ($params['effort_profile'] ?? '') === JD2_OWNER_DEFAULT_PROFILE && ($params['harness'] ?? '') === 'v4-benchmed.1'
+      && $r2row['harness'] === jd_harness(JD2_OWNER_DEFAULT_PROFILE) && $r2row['harness'] === 'v5-benchmed.1' && $r2row['status'] === 'generated'
+      && ($params['effort_profile'] ?? '') === JD2_OWNER_DEFAULT_PROFILE && ($params['harness'] ?? '') === 'v5-benchmed.1'
       && ($params['max_tokens'] ?? $params['max_completion_tokens'] ?? $params['max_output_tokens'] ?? null) === 64000
       && (int) one($db, 'SELECT COUNT(*) FROM jd2_prompts') === 1
       && (int) one($db, 'SELECT COUNT(*) FROM jd2_runs WHERE prompt_id = ?', [$prompt1]) === 2, json_encode($r2row));
@@ -786,15 +792,15 @@ foreach ($runsBy as $k => [$st, $rid]) {
     $prof[$k] = [$st, $r['profile'] ?? null, $r['harness'] ?? null, $pp['effort_profile'] ?? null,
                  $pp['max_tokens'] ?? $pp['max_completion_tokens'] ?? $pp['max_output_tokens'] ?? null];
 }
-check('no profile sent: the owner run is filed under bench-medium (v4-benchmed.1, 64000)',
-      $prof['default'] === [200, 'bench-medium', 'v4-benchmed.1', 'bench-medium', 64000], json_encode($prof['default']));
+check('no profile sent: the owner run is filed under bench-medium (v5-benchmed.1, 64000)',
+      $prof['default'] === [200, 'bench-medium', 'v5-benchmed.1', 'bench-medium', 64000], json_encode($prof['default']));
 check('bench-low / bench-medium / bench-max filed as sent, each with its own harness and the 64000 budget',
-      $prof['bench-low'] === [200, 'bench-low', 'v4-benchlow.1', 'bench-low', 64000]
-      && $prof['bench-medium'] === [200, 'bench-medium', 'v4-benchmed.1', 'bench-medium', 64000]
-      && $prof['bench-max'] === [200, 'bench-max', 'v4-bench.5', 'bench-max', 64000], json_encode($prof));
+      $prof['bench-low'] === [200, 'bench-low', 'v5-benchlow.1', 'bench-low', 64000]
+      && $prof['bench-medium'] === [200, 'bench-medium', 'v5-benchmed.1', 'bench-medium', 64000]
+      && $prof['bench-max'] === [200, 'bench-max', 'v5-bench.1', 'bench-max', 64000], json_encode($prof));
 $webParams = json_decode((string) one($db, "SELECT g.params FROM jd2_generations g JOIN jd2_runs r ON r.id = g.run_id WHERE r.profile = 'web' LIMIT 1"), true) ?: [];
-check('a visitor turn stays on web: v4-web.4 and the 12000 budget (JD_MAX_TOKENS)',
-      ($webParams['harness'] ?? '') === 'v4-web.4' && JD_MAX_TOKENS === 12000
+check('a visitor turn stays on web: v5-web.1 and the 12000 budget (JD_MAX_TOKENS)',
+      ($webParams['harness'] ?? '') === 'v5-web.1' && JD_MAX_TOKENS === 12000
       && ($webParams['max_tokens'] ?? $webParams['max_completion_tokens'] ?? $webParams['max_output_tokens'] ?? null) === 12000, json_encode($webParams));
 // pool refresh 2026-10-02: Opus 5.5 answers 400 to thinking:disabled at every
 // effort, so no profile may send a `thinking` key; web runs every vendor low
@@ -818,7 +824,28 @@ check('a slot of a run under the retired `bench` profile is refused (409 retired
       && (int) one($db, 'SELECT COUNT(*) FROM jd2_generations WHERE run_id = ?', [$oldRun]) === 0, json_encode($j));
 
 // ============================================================================
-section('(l) the sanitizer\'s normalization: CDATA unwrapped and recorded; jd2-resanitize');
+section('(l) the sanitizer\'s normalizations: CDATA unwrapped, title/desc stripped, recorded; jd2-resanitize');
+/**
+ * The normalized column a mock drawing must file: cdata_unwrapped when the
+ * turn asked for '[cdata]', title_desc_stripped when its raw_response holds
+ * a <title> or <desc> (the '[title]' switch, or the fixture's own).
+ */
+function mock_norm(string $raw, bool $cdata): ?string
+{
+    $words = [];
+    if ($cdata) {
+        $words[] = 'cdata_unwrapped';
+    }
+    if (preg_match('/<(title|desc)\b/', $raw)) {
+        $words[] = 'title_desc_stripped';
+    }
+    return $words ? implode(',', $words) : null;
+}
+/** Does the text hold a <title> or <desc> tag? */
+function has_title_desc(string $svg): bool
+{
+    return (bool) preg_match('/<(title|desc)\b/', $svg);
+}
 /** An owner turn of four slots on a new prompt; returns [responses by slot, run id]. */
 function ownerTurn(string $prompt): array
 {
@@ -839,15 +866,40 @@ function ownerTurn(string $prompt): array
 $gensC = rows($db, 'SELECT * FROM jd2_generations WHERE run_id = ? ORDER BY slot', [$runC]);
 $cdataOk = count($gensC) === 4;
 foreach ($gensC as $g) {
-    $cdataOk = $cdataOk && $g['status'] === 'ok' && $g['normalized'] === 'cdata_unwrapped' && $g['reject_reason'] === null
+    $cdataOk = $cdataOk && $g['status'] === 'ok' && $g['normalized'] === mock_norm((string) $g['raw_response'], true)
+        && $g['reject_reason'] === null && !has_title_desc((string) $g['svg'])
         && str_contains((string) $g['raw_response'], '<![CDATA[') && !str_contains((string) $g['svg'], '<![CDATA[')
         && str_contains((string) $g['svg'], '<style> .jd-mock-cdata &gt; * { opacity: 1; } </style>')
         && ($tc[$g['slot']][1]['svg'] ?? null) === $g['svg'];
 }
-check('a drawing whose <style> wraps its CSS in CDATA files ok, normalized = cdata_unwrapped; svg (served) has no CDATA, raw_response keeps it',
+check('a drawing whose <style> wraps its CSS in CDATA files ok, normalized = cdata_unwrapped (+ title_desc_stripped when the mock carries a title); svg (served) has no CDATA, raw_response keeps it',
       $cdataOk, json_encode(array_map(fn ($g) => [$g['slot'], $g['status'], $g['reject_reason'], $g['normalized']], $gensC)));
-check('a drawing that passed byte-identical files normalized NULL',
-      (int) one($db, "SELECT COUNT(*) FROM jd2_generations WHERE run_id = ? AND status = 'ok' AND normalized IS NULL", [$run1]) === 4);
+$plain = rows($db, "SELECT raw_response, svg, normalized FROM jd2_generations WHERE run_id = ? AND status = 'ok'", [$run1]);
+$plainOk = count($plain) === 4;
+foreach ($plain as $g) {
+    $want = mock_norm((string) $g['raw_response'], false);
+    $plainOk = $plainOk && $g['normalized'] === $want
+        && ($want !== null || $g['svg'] === jd_extract_svg((string) $g['raw_response']));
+}
+check('a drawing with nothing to normalize files normalized NULL and is served byte-identical (one whose mock carries a <title> files title_desc_stripped)',
+      $plainOk, json_encode(array_column($plain, 'normalized')));
+
+[$tt, $runT] = ownerTurn('a copper kettle [title]');
+$gensT = rows($db, 'SELECT * FROM jd2_generations WHERE run_id = ? ORDER BY slot', [$runT]);
+$titleOk = count($gensT) === 4;
+foreach ($gensT as $g) {
+    $titleOk = $titleOk && $g['status'] === 'ok' && $g['normalized'] === 'title_desc_stripped'
+        && str_contains((string) $g['raw_response'], '<title>jd-mock self-caption</title><desc>jd-mock signature</desc>')
+        && !has_title_desc((string) $g['svg']) && !str_contains((string) $g['svg'], 'jd-mock self-caption')
+        && ($tt[$g['slot']][1]['svg'] ?? null) === $g['svg'];
+}
+check('a drawing that captions and signs itself (<title> + <desc>) files ok, normalized = title_desc_stripped; the served svg (and the response) has neither, raw_response keeps both',
+      $titleOk, json_encode(array_map(fn ($g) => [$g['slot'], $g['status'], $g['normalized']], $gensT)));
+[$tb, $runB] = ownerTurn('a copper kettle with a lid [title] [cdata]');
+$both = rows($db, "SELECT normalized FROM jd2_generations WHERE run_id = ? AND status = 'ok'", [$runB]);
+check('CDATA and a title on one drawing: normalized = cdata_unwrapped,title_desc_stripped',
+      count($both) === 4 && array_unique(array_column($both, 'normalized')) === ['cdata_unwrapped,title_desc_stripped'],
+      json_encode(array_column($both, 'normalized')));
 
 // Seed the 2026-10-02 case: the CDATA run as the old rules filed it — every
 // slot rejected element_not_allowed, no svg, the run failed. Usage, latency
@@ -872,7 +924,7 @@ function resanitize(bool $dry): array
 [$rc, $out] = resanitize(true);
 check('jd2-resanitize --dry-run lists 8 rejected drawings: 4 would pass, 4 still rejected; writes nothing',
       $rc === 0 && str_contains($out, 'dry run done — 8 rejected drawing(s) checked: 4 would pass, 4 still rejected')
-      && substr_count($out, 'element_not_allowed → ok (normalized: cdata_unwrapped)  [would apply]') === 4
+      && preg_match_all('/element_not_allowed → ok \(normalized: cdata_unwrapped(,title_desc_stripped)?\)  \[would apply\]/', $out) === 4
       && substr_count($out, 'element_not_allowed → still rejected: element_not_allowed') === 4
       && str_contains($out, "run $runC  status failed → generated  [would apply]")
       && (int) one($db, "SELECT COUNT(*) FROM jd2_generations WHERE run_id = ? AND status = 'rejected'", [$runC]) === 4
@@ -882,7 +934,7 @@ $after = rows($db, 'SELECT id, usage_json, latency_ms, cost_usd, priced, params,
 $gensR = rows($db, 'SELECT * FROM jd2_generations WHERE run_id = ? ORDER BY slot', [$runC]);
 $recOk = count($gensR) === 4;
 foreach ($gensR as $g) {
-    $recOk = $recOk && $g['status'] === 'ok' && $g['reject_reason'] === null && $g['normalized'] === 'cdata_unwrapped'
+    $recOk = $recOk && $g['status'] === 'ok' && $g['reject_reason'] === null && $g['normalized'] === mock_norm((string) $g['raw_response'], true)
         && $g['svg'] === $gensC[array_search($g['slot'], array_column($gensC, 'slot'), true)]['svg'];
 }
 check('applied: the 4 recovered rows are ok with the sanitized svg, normalized set, reject_reason cleared',
@@ -906,6 +958,59 @@ check('idempotent: a second run recovers nothing', $rc === 0
 })();
 check('over the web on a dev box it answers plain text (the key gate is production-only)',
       $st === 200 && str_contains($body, 'DRY RUN') && str_contains($body, 'dry run done'), $body);
+
+// recheck=ok: the [title] run as it was filed BEFORE the strip — status ok,
+// the svg served with its <title>/<desc>, normalized NULL. Re-serving it must
+// strip them, touch nothing else, and be dry-run unless asked to apply.
+$titleSvg = [];
+foreach ($gensT as $g) {
+    $titleSvg[$g['id']] = jd_extract_svg((string) $g['raw_response']);
+    $db->prepare('UPDATE jd2_generations SET svg = ?, normalized = NULL WHERE id = ?')->execute([$titleSvg[$g['id']], $g['id']]);
+}
+$beforeT = rows($db, 'SELECT id, status, raw_response, usage_json, latency_ms, cost_usd, priced, params, disobedience, hidden, created FROM jd2_generations ORDER BY id');
+$okBefore = rows($db, "SELECT id, svg, normalized FROM jd2_generations WHERE status = 'ok' AND run_id <> ? ORDER BY id", [$runT]);
+function resanitizeOk(array $flags): array
+{
+    global $root;
+    $out = [];
+    exec('JD_DEV_MOCK=1 ' . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/api/jd2-resanitize.php')
+        . ' --recheck=ok ' . implode(' ', $flags) . ' 2>&1', $out, $rc);
+    return [$rc, implode("\n", $out)];
+}
+$okTotal = (int) one($db, "SELECT COUNT(*) FROM jd2_generations WHERE status = 'ok' AND raw_response IS NOT NULL");
+[$rc, $out] = resanitizeOk([]);
+check("--recheck=ok is a dry run by default: the 4 seeded rows would change (normalized NULL → title_desc_stripped), every other ok row unchanged; nothing written",
+      $rc === 0 && str_contains($out, 'DRY RUN')
+      && substr_count($out, 'normalized NULL → title_desc_stripped') === 4
+      && str_contains($out, "dry run done — $okTotal ok drawing(s) checked: 4 would change, " . ($okTotal - 4) . ' unchanged, 0 would now be rejected')
+      && (int) one($db, 'SELECT COUNT(*) FROM jd2_generations WHERE run_id = ? AND normalized IS NULL', [$runT]) === 4, $out);
+[$rc, $out] = resanitizeOk(['--apply']);
+$gensT2 = rows($db, 'SELECT * FROM jd2_generations WHERE run_id = ? ORDER BY slot', [$runT]);
+$reOk = count($gensT2) === 4;
+foreach ($gensT2 as $g) {
+    $reOk = $reOk && $g['status'] === 'ok' && $g['normalized'] === 'title_desc_stripped' && !has_title_desc((string) $g['svg'])
+        && $g['svg'] === $gensT[array_search($g['slot'], array_column($gensT, 'slot'), true)]['svg'];
+}
+check('--recheck=ok --apply: the 4 rows now serve the stripped svg (the same bytes jd2-generate files) with normalized title_desc_stripped',
+      $rc === 0 && $reOk && str_contains($out, "done — $okTotal ok drawing(s) checked: 4 changed, " . ($okTotal - 4) . ' unchanged'), $out);
+check('…and nothing else moved: status, raw_response, usage, latency, cost, priced, params, disobedience, hidden, created on every row; svg and normalized on every other ok row',
+      rows($db, 'SELECT id, status, raw_response, usage_json, latency_ms, cost_usd, priced, params, disobedience, hidden, created FROM jd2_generations ORDER BY id') === $beforeT
+      && rows($db, "SELECT id, svg, normalized FROM jd2_generations WHERE status = 'ok' AND run_id <> ? ORDER BY id", [$runT]) === $okBefore);
+[$rc, $out] = resanitizeOk(['--apply']);
+check('--recheck=ok is idempotent: a second applied run changes nothing',
+      $rc === 0 && str_contains($out, "done — $okTotal ok drawing(s) checked: 0 changed, $okTotal unchanged"), $out);
+[$rc, $out] = resanitize(false);
+check('the default (rejected-row) pass still never touches an ok row',
+      $rc === 0 && !str_contains($out, 'recheck=ok') && str_contains($out, '0 recovered'), $out);
+[$st, $body] = (static function () {
+    global $BASE;
+    $ch = curl_init($BASE . '/api/jd2-resanitize.php?recheck=ok');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $b = curl_exec($ch);
+    return [curl_getinfo($ch, CURLINFO_HTTP_CODE), (string) $b];
+})();
+check('over the web, ?recheck=ok without apply=1 is a dry run', $st === 200 && str_contains($body, 'DRY RUN')
+      && str_contains($body, 'dry run done') && str_contains($body, 'recheck=ok'), $body);
 
 // ============================================================================
 section('(m) required_cells: a sitting filed under the old rubric stays complete after the taxonomy gains an axis');

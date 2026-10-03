@@ -5,10 +5,14 @@
 //   JD_DEV_MOCK=1 PHP_CLI_SERVER_WORKERS=6 php -S 127.0.0.1:8000 router.php &
 //   NODE_PATH=<dir holding playwright> node scripts/test-jd2-inline.js
 //
-// The fixture passes api/jd-svg-sanitizer.php byte-identical (checked first,
-// through php), yet inlined with innerHTML the HTML parser opens a <style> at
-// the self-closed <style/> inside <desc> and reads the rest as CSS, which can
-// fetch a remote URL. The test inlines it both ways on the drawer page:
+// The fixture passes api/jd-svg-sanitizer.php (checked first, through php) —
+// byte-identical until 2026-10-03; since harness v5 the sanitizer strips the
+// <desc> from the SERVED drawing (normalized title_desc_stripped), which
+// closes this gap server-side too, but a row filed before the strip still
+// serves the raw bytes until jd2-resanitize --recheck=ok re-serves it, so
+// the client half is tested on the raw text. Inlined with innerHTML, the
+// HTML parser opens a <style> at the self-closed <style/> inside <desc> and
+// reads the rest as CSS, which can fetch a remote URL. The test inlines it both ways on the drawer page:
 //   OLD — innerHTML of JD_svgInst's text (what the drawer did before)
 //   NEW — JD_svgSlot + JD_svgMount, and JD_svgNode (what it does now)
 // and asserts: OLD makes an HTML <style> in the page and a request to
@@ -57,12 +61,14 @@ function check(name, ok, detail) {
 function sanitize(svg) {
   return JSON.parse(execFileSync('php', ['-r',
     'require "api/jd-svg-sanitizer.php"; $f = getenv("JD_FX"); $r = jd_sanitize_svg($f); ' +
-    'echo json_encode(["ok" => $r["ok"], "reason" => $r["reason"] ?? null, "identical" => ($r["svg"] ?? null) === $f]);'],
+    'echo json_encode(["ok" => $r["ok"], "reason" => $r["reason"] ?? null, "identical" => ($r["svg"] ?? null) === $f, ' +
+    '"normalized" => $r["normalized"] ?? null, "servedDesc" => str_contains($r["svg"] ?? "", "<desc")]);'],
   { cwd: ROOT, env: Object.assign({}, process.env, { JD_FX: svg }), encoding: 'utf8' }));
 }
 for (const [name, svg] of [['the fixture', FIXTURE], ['the armed variant', ARMED]]) {
   const v = sanitize(svg);
-  check(name + ' passes the sanitizer byte-identical (the gap is real)', v.ok === true && v.identical === true, JSON.stringify(v));
+  check(name + ' passes the sanitizer, its <desc> stripped from the served svg (normalized title_desc_stripped: 1; before 2026-10-03 it passed byte-identical — the gap was real)',
+    v.ok === true && v.identical === false && v.servedDesc === false && JSON.stringify(v.normalized) === '{"title_desc_stripped":1}', JSON.stringify(v));
 }
 
 (async () => {

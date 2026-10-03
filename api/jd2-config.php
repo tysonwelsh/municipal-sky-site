@@ -87,9 +87,12 @@ const JD2_GEN_STATUS = ['pending', 'ok', 'failed', 'rejected'];
  * jd2_generations.normalized — what the sanitizer changed between the model's
  * raw_response and the svg served, as a comma-joined list of these words
  * (the keys of jd_sanitize_svg()'s 'normalized'); NULL when nothing was.
- * jd2_normalized_column() builds it.
+ * jd2_normalized_column() builds it. cdata_unwrapped (2026-10-02): a CDATA
+ * section became a text node; title_desc_stripped (2026-10-03, harness v5):
+ * the model's own <title>/<desc> elements were removed from the served svg.
+ * Both on one drawing: 'cdata_unwrapped,title_desc_stripped'.
  */
-const JD2_GEN_NORMALIZED = ['cdata_unwrapped'];
+const JD2_GEN_NORMALIZED = ['cdata_unwrapped', 'title_desc_stripped'];
 
 /** jd2_sessions.rater_role — two populations, never pooled. */
 const JD2_RATER_ROLE = ['owner', 'visitor'];

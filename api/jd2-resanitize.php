@@ -1,11 +1,33 @@
 <?php
 // Junk Drawer, dataset v2 — re-check REJECTED drawings under the current
-// sanitizer rules, and recover the ones that now pass.
+// sanitizer rules, and recover the ones that now pass; or, asked with
+// recheck=ok, re-serve the OK drawings under the current normalizations.
 //
 //   CLI:  JD_DEV_MOCK=1 php api/jd2-resanitize.php --dry-run   (the SQLite dev database)
 //         JD_DEV_MOCK=1 php api/jd2-resanitize.php
+//         JD_DEV_MOCK=1 php api/jd2-resanitize.php --recheck=ok            (dry run)
+//         JD_DEV_MOCK=1 php api/jd2-resanitize.php --recheck=ok --apply
 //   web:  https://municipalsky.com/api/jd2-resanitize.php?key=<jd_setup_key>&dry-run=1
 //         https://municipalsky.com/api/jd2-resanitize.php?key=<jd_setup_key>
+//         https://municipalsky.com/api/jd2-resanitize.php?key=<jd_setup_key>&recheck=ok            (dry run)
+//         https://municipalsky.com/api/jd2-resanitize.php?key=<jd_setup_key>&recheck=ok&apply=1
+//
+// RECHECK=OK (2026-10-03, harness v5: the sanitizer strips <title>/<desc>).
+// A normalization added after drawings were filed changes what those
+// drawings SHOULD serve, not whether they pass, so the rejected-row pass
+// never sees them. With recheck=ok every 'ok' row with a raw_response is
+// re-extracted and re-sanitized; where the result differs from what is on
+// file (svg or normalized), the row gets the new svg and normalized —
+// nothing else (status, usage, latency, cost, disobedience, hidden, created
+// stay as filed; raw_response is never touched). A row whose result is
+// identical is counted unchanged. A row the current rules would now REJECT
+// is reported and left exactly as it is: an ok drawing may already be
+// rated, and demoting it is the owner's call, not this script's. The runs
+// are not re-settled (an ok row stays ok). Filed sittings stay complete: the
+// drawing's id is unchanged, and stripping a <title>/<desc> removes text the
+// viewer never saw drawn. This mode is a DRY RUN unless asked to apply
+// (?apply=1, CLI --apply) — it rewrites what the drawer serves. Idempotent:
+// a second applied run finds every row unchanged.
 //
 // When to run it: after a sanitizer change makes the rules more permissive
 // (2026-10-02: CDATA sections are unwrapped, not refused — the Kimi K3 case).
@@ -59,7 +81,18 @@ if (!$isCli) {
     jd_require_setup_key("Forbidden. Call with ?key=<jd_setup_key>.\n");
 }
 
-$dryRun = $isCli ? in_array('--dry-run', array_slice($argv, 1), true) : isset($_GET['dry-run']);
+$cliArgs = $isCli ? array_slice($argv, 1) : [];
+$recheck = $isCli
+    ? (in_array('--recheck=ok', $cliArgs, true) ? 'ok' : null)
+    : (isset($_GET['recheck']) ? (string) $_GET['recheck'] : null);
+if ($recheck !== null && $recheck !== 'ok') {
+    http_response_code(400);
+    echo "recheck must be 'ok' (the only status this script can re-serve).\n";
+    exit(1);
+}
+$dryRun = $recheck === 'ok'
+    ? !($isCli ? in_array('--apply', $cliArgs, true) : (($_GET['apply'] ?? '') === '1'))
+    : ($isCli ? in_array('--dry-run', $cliArgs, true) : isset($_GET['dry-run']));
 
 if (!JD_DEV_MODE && !JD_IS_PRODUCTION && !is_readable(__DIR__ . '/../config/secrets.php')) {
     http_response_code(500);
@@ -77,6 +110,11 @@ if (!jd_has_column($db, 'jd2_generations', 'normalized')) {
     http_response_code(500);
     echo "jd2_generations.normalized is missing: run api/setup-jd2-tables.php first.\n";
     exit(1);
+}
+
+if ($recheck === 'ok') {
+    jd2_resanitize_ok_rows($db, $dryRun);
+    exit(0);
 }
 
 $rows = $db->query(
@@ -166,3 +204,55 @@ foreach (array_keys($runs) as $runId) {
 
 printf("\n%sdone — %d rejected drawing(s) checked: %d %s, %d still rejected\n",
     $dryRun ? 'dry run ' : '', count($rows), $recovered, $dryRun ? 'would pass' : 'recovered', $still);
+
+/**
+ * recheck=ok: re-serve every ok drawing under the current sanitizer (the
+ * header's RECHECK=OK). One line per row that would change or would now be
+ * rejected; unchanged rows are only counted.
+ */
+function jd2_resanitize_ok_rows(PDO $db, bool $dryRun): void
+{
+    echo "recheck=ok — every ok drawing re-sanitized from its raw_response\n\n";
+    $rows = $db->query(
+        "SELECT id, run_id, slot, model_id, svg, normalized, raw_response
+           FROM jd2_generations
+          WHERE status = '" . JD2_GEN_OK . "' AND raw_response IS NOT NULL
+          ORDER BY created, run_id, slot"
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $changed = 0;
+    $same = 0;
+    $wouldReject = 0;
+    foreach ($rows as $g) {
+        $head = sprintf('run %s  slot %s  %-24s', $g['run_id'], $g['slot'], $g['model_id']);
+        $extracted = jd_extract_svg((string) $g['raw_response']);
+        $verdict = $extracted === null ? ['ok' => false, 'reason' => 'no_svg_found'] : jd_sanitize_svg($extracted);
+        if (empty($verdict['ok'])) {
+            echo "$head ok → would now be rejected: {$verdict['reason']}  (left as filed)\n";
+            $wouldReject++;
+            continue;
+        }
+        $normalized = jd2_normalized_column($verdict);
+        $oldNorm = $g['normalized'] === null ? null : (string) $g['normalized'];
+        if ($verdict['svg'] === (string) $g['svg'] && $normalized === $oldNorm) {
+            $same++;
+            continue;
+        }
+        printf("%s normalized %s → %s, svg %d → %d bytes%s\n", $head, $oldNorm ?? 'NULL', $normalized ?? 'NULL',
+            strlen((string) $g['svg']), strlen($verdict['svg']), $dryRun ? '  [would apply]' : '');
+        $changed++;
+        if ($dryRun) {
+            continue;
+        }
+        $u = $db->prepare(
+            'UPDATE jd2_generations SET svg = ?, normalized = ? WHERE id = ? AND status = ?'
+        );
+        $u->execute([$verdict['svg'], $normalized, $g['id'], JD2_GEN_OK]);
+    }
+
+    printf("\n%sdone — %d ok drawing(s) checked: %d %s, %d unchanged, %d would now be rejected (left as filed)\n",
+        $dryRun ? 'dry run ' : '', count($rows), $changed, $dryRun ? 'would change' : 'changed', $same, $wouldReject);
+    if ($dryRun && $changed > 0) {
+        echo "nothing written: apply with ?apply=1 (CLI --apply)\n";
+    }
+}

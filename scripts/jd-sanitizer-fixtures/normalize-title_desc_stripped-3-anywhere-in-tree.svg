@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img">
+  <defs>
+    <symbol id="leaf" viewBox="0 0 10 10"><desc>a leaf, reused</desc><path d="M5 0 C 10 5, 5 10, 5 10 C 0 5, 5 0, 5 0 Z" fill="#4a7"/></symbol>
+  </defs>
+  <g fill="#c84">
+    <title>Teapot — by the model</title>
+    <path d="M20 40 h60 v40 h-60 Z"><title>body</title></path>
+    <circle cx="50" cy="36" r="6"/>
+  </g>
+  <use href="#leaf" x="70" y="20" width="20" height="20"/>
+  <text x="50" y="95" font-size="6" text-anchor="middle">teapot</text>
+</svg>
