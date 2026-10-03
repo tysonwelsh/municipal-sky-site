@@ -148,3 +148,4 @@
 0.12.0 — by how much: the pedestal card asks each adjacent pair's margin after the podium; the six side-by-side cards become the bench's audit mode
 0.13.0 — the bench's closing card is the catalogue entry: the clerk's heading, size and headings shown, every one correctable
 0.14.0 — a fifth rating axis, Paintwork; Structural Coherence on four points; every axis's boundaries redrawn
+0.14.1 — the bench keeps up with the batch: when the backlog runs dry while prompts are still drawing, the strip re-reads the queue every twenty seconds and seats the next prompt as it lands

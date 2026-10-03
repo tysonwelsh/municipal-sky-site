@@ -821,6 +821,29 @@
       : '';
     bar.innerHTML = tag() + left + syncHTML() + acts + stampHTML() + outHTML();
     barHeight();
+    armPoll(it);
+  }
+
+  /* RATING AS THE BATCH LANDS (owner, 2026-10-03). The batch runner draws
+     one prompt at a time, and the queue seats a prompt the moment its run
+     settles, so the owner can start on the first prompt while the other
+     127 are still drawing. When the backlog runs dry AHEAD of the runner
+     ("backlog clear … N still drawing"), the strip re-reads the queue every
+     POLL_MS until the next prompt settles, and seats it — the tab-switch
+     refetch below would otherwise be the only way back in. Never mid-card,
+     never with a run on the stage, never in ?admin, and never once nothing
+     is drawing (a quiet strip does not poll a quiet server). */
+  var POLL_MS = 20000;
+  var pollTimer = null;
+  function armPoll(it) {
+    if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+    if (ADMIN || it || running || !Q || !counts().drawing) return;
+    pollTimer = setTimeout(function () {
+      pollTimer = null;
+      /* a card opened or a run started meanwhile: their close repaints the
+         strip and re-arms; a hidden tab's return refetches on its own */
+      if (!ADMIN && !running && !window.JD_turn.isOpen() && document.visibilityState === 'visible') loadQueue(true);
+    }, POLL_MS);
   }
   /* the strip wraps onto more lines as it fills; the sheet above it and the
      card's clearance read its real height from this property */
