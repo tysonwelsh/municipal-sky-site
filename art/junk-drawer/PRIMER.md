@@ -109,13 +109,14 @@ is live (0.12.0): one card asks each adjacent pair "how much better?"
 (negligibly / slightly / better / much better, a brass shim = gap 0) and
 the server derives every 7-point pair score from the gaps, the six
 side-by-side cards surviving only as the bench's `?pairs=1` audit. Then
-size, and for the owner a note. Owner
+size (on the bench, the catalogue entry), and for the owner a note. Owner
 and visitors use the same card; the bench just seats the backlog in it.
 Since 0.11.0 the **intake clerk** (one Sonnet call, `api/jd2-intake.php`)
 files each prompt's heading, size tier and faceted classification
 (`taxonomy.json` `facets`) the moment it is filed: visitors are no longer
-asked for a size; the bench's size card opens on the clerk's tier, and the
-owner's size (`size_by` `owner`) is never overwritten.
+asked for a size; on the bench the closing card is the catalogue entry
+(0.13.0): the clerk's heading, size tier and headings, every one correctable
+there, and the owner's size (`size_by` `owner`) is never overwritten.
 
 Labels, descriptions, scales, the model pool and the intake model are all
 **data in `taxonomy.json`**; ids are permanent, labels may be reworded, a

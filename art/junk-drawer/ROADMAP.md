@@ -74,6 +74,12 @@ back-end change; the owner decides the wording):
   structural coherence, then layering, then jnsq, then the overall grade,
   per drawing (or per question across drawings) — instead of the full panel
   of selects. Same card for visitors and the bench.
+- **Scope notes as app copy (the owner's pin, PLAN-INTAKE-PROMPT §5) —
+  partly closed 0.13.0.** The taxonomy's `scope` notes now serve as app copy
+  on the bench's catalogue entry card: each heading chip's tooltip, its
+  long-press text on a phone, and the line under its facet. Still open: the
+  same words introducing each heading on the about page, and on the tags
+  wherever the report card shows them to visitors.
 - **The unveil pedestals carry a compact summary**: model, cost, and every
   rating for that drawing in a small well-designed table; the overall
   spark line leaves the plate and moves into the pedestal. **Unblocked**
@@ -290,6 +296,11 @@ time and shows the bench's 1st place, so an adjustment is on view without a
 harvest (the standing "read path for DB ratings" item, closed). Scripts
 take `JD_BENCH_KEY`. See CLAUDE.md.
 
+- **The catalogue entry** (0.13.0, 2026-10-02) — the bench's closing step
+  shows the intake clerk's heading, size and headings, every one correctable
+  (title field, five-tier chooser, chips per facet with scope-note tooltips),
+  filed through `jd2-curate` before the sitting; replaces the size card on
+  the bench.
 - **The size card** (0.9.96, 2026-08-30) — the bench's closing step.
 - **Bench mode** (0.9.73 →) — the backlog runs inside the real turn card.
 - **`jd-inventory.php`** (2026-08-30) — the census of everything on file.

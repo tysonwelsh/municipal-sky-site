@@ -82,9 +82,10 @@ drawings after a sanitizer change (below).
 - `sizing-desk.html` is a v1 tool (it exports `entry.json` size edits) and
   is not re-pointed. v2 sizes are prompt columns (`size_class`,
   `size_scale`, `size_by`): the intake clerk files one the moment a prompt is
-  filed (`size_by` `model`); the bench's size card and `jd2-curate` file the
-  owner's (`owner`), which the clerk never overwrites; a visitor's turn shows
-  the size card only when intake failed (`visitor`).
+  filed (`size_by` `model`); the bench's catalogue entry card and the ledger
+  file the owner's through `jd2-curate` (`owner`), which the clerk never
+  overwrites; a visitor's turn shows the plain size card only when intake
+  failed (`visitor`). See "The bench's closing card" below.
 
 **v1, kept:**
 
@@ -164,6 +165,40 @@ cards, and files direct pairs with a ranking that carries no gaps. One
 sitting never runs both. The bench prefills the gaps from the owner's last
 sitting (`jd2-queue` `prefill.gap_after`); `JD_turn.pedestal.answer()` /
 `.restore(ranking)` are the card's contract hooks.
+
+**The bench's closing card is THE CATALOGUE ENTRY** (0.13.0, owner
+2026-10-02; `entryPanel` and THE CATALOGUE ENTRY in `jd-turn.js`, wired by
+`jd-bench.js`). After the pedestal card the bench shows what the intake clerk
+filed for the prompt and lets the owner correct every part: the HEADING (the
+prompt's title, a text field; the inverted catalogue form is expected, not
+enforced), the SIZE (the five-tier chooser, pre-selected on the tier on file),
+and the HEADINGS per facet as chips (a tap files or unfiles one; each facet's
+`min`/`max` holds — the last subject cannot come off; each heading's `scope`
+note is its tooltip, its long-press text on a phone, and the line under its
+facet). The clerk's two reasons are small print; the footnote is the intake
+version and model, or "intake failed (code)". The "notes for the record"
+textarea stays on it. Its rail station is the size's (the step id stays
+`size` in the code). Only a curate job carrying `catalogue` gets it: visitors
+never see it (their size card still shows only when intake failed), nor does
+the /about/ walkthrough.
+
+What files where: the card hands the job's `file()` its entry; the bench
+sends `jd2-curate` ONLY the fields that differ from the record — `title`
+(trimmed, when it differs; an emptied field keeps the one on file),
+`size_class`, `tags` (when a chip was touched and the sets differ) — in one
+body, so one transaction, and FIRST; then the sitting goes to `jd2-rate`,
+which on the bench no longer carries `size` or `title`. Curate first because
+it only sets columns (a retry is harmless) while a sitting is append-only (a
+retry after a failed entry would file a second sitting). A failure says which
+half stood: "The catalogue entry didn't file" (nothing filed), or the grades
+failed with the entry on file (a refile sends only what is missing).
+**`size_by` on the bench:** pressing a tier — the clerk's own pre-selected one
+included — makes the size the owner's (`size_by` `owner`); filing without
+pressing leaves it as it stands (the clerk's stays `model`). A reopen
+(`?bench&prompt=<id>`) reads the queue, so it shows the owner's edits. The
+NEW PROMPT form lost its size select (the clerk sizes every new prompt; this
+card is where the owner confirms or changes it), so intake now runs on every
+new prompt.
 
 ## How ratings work
 

@@ -370,7 +370,9 @@ instrument versions, `blind` (0 only for the owner's `blind:false`),
 complete session on a `draft` prompt makes it `live` (`approved_at` is not
 written). The size lands only when the card SENT one: `size_class` with
 `size_by` = the rater's role (`owner` from the bench; `visitor` from the turn
-card, never over an owner's size). An absent size never files a NULL over the
+card, never over an owner's size). Since 0.13.0 the bench sends neither
+`title` nor `size` here: its catalogue entry card files them, with the tags,
+through `jd2-curate` before the sitting (below). An absent size never files a NULL over the
 intake clerk's tier — the visitor's card no longer asks when intake sized
 the turn.
 
@@ -448,7 +450,7 @@ owner session.
 
 | endpoint | gate | request → response |
 | --- | --- | --- |
-| `GET api/jd2-queue.php` | origin + bench key; `no-store` | the bench's backlog → `{build, taxonomy_version, instrument_version, axes[], grades[], size_tiers[], comparison, gaps, models{id: label}, items[], progress{prompts, complete, drawing, cells_filed, cells_total}}`; `?prompt=<id>` one prompt in any state, `?all=1` every prompt, `?reveal=1` adds `model_id`, `?count=1` only `{today:{generations, limit, remaining, since, resets_in_s}}` |
+| `GET api/jd2-queue.php` | origin + bench key; `no-store` | the bench's backlog → `{build, taxonomy_version, instrument_version, axes[], grades[], size_tiers[], facets[], comparison, gaps, models{id: label}, items[], progress{prompts, complete, drawing, cells_filed, cells_total}}`; `?prompt=<id>` one prompt in any state, `?all=1` every prompt, `?reveal=1` adds `model_id`, `?count=1` only `{today:{generations, limit, remaining, since, resets_in_s}}` |
 | `GET api/jd2-ledger.php` | origin + bench key; `no-store` | one row per prompt, every visibility → `{build, taxonomy_version, instrument_version, axes[], grades{}, models{}, counts{prompts, live, hidden, draft, bench_open}, items[]}`; `?prompt=<id>` one prompt |
 | `GET api/jd2-analytics.php` | origin; public; `Cache-Control: no-cache`, ETag and 304 (as data.php) | v1's `jd-analytics.php` keys and shapes (`totals, models, cost, firsts, grades, axes, spend, turns`) from the jd2 tables, plus `pairs{models, matrix, wins, bt}`, `margins[]` and `tags{facet: {heading: {label, n, by_model{model: {mean, n}}}}}`; `?origin=owner\|visitor`; `?tag=<facet>:<heading>` keeps the prompts filed under that heading (population and spend; 400 for a heading the taxonomy lacks) |
 
@@ -541,9 +543,10 @@ writes `size_by = 'owner'` with any `size_class` it files.
 
 The intake facts ride every owner-side read: `jd2-queue` items and
 `jd2-ledger` rows carry `tags`, `size_by`, `intake_version`, `intake_model`,
-`intake_at`, the clerk's `reasons` and `fallback` (the ledger also
-`intake_cost_usd` and `intake_error`; its payload names `facets` and
-`size_tiers`); `data.php` items carry `tags` and `size_by`. The export
+`intake_at`, the clerk's `reasons`, `fallback` and `intake_error` (the ledger
+also `intake_cost_usd`; both payloads name `facets`, and `size_tiers`;
+`jd2-queue` items also carry `title_on_file`, the heading as filed or null,
+beside `title`, the heading the card prints); `data.php` items carry `tags` and `size_by`. The export
 carries `tags`, `size_by` and `intake_*` on each prompt, and `size_class`,
 `size_by` and one `tags_<facet>` column per facet in the standing CSV. The
 batch runner calls intake after a new row's first drawing (skipped for
@@ -575,6 +578,11 @@ after the drawings, stand over the clerk's.
   `jd2-curate` takes `tags`; the readers, the export and the batch runner
   carry the intake facts; `jd2-analytics` gains `?tag=` and `tags`;
   `taxonomy.json` v28 (`facets`, `intakeVersion`, `utility.intake`).
+- 2026-10-02 — the bench's catalogue entry card (VERSION 0.13.0): `jd2-queue`
+  adds `facets` to its payload and `title_on_file` and `intake_error` to each
+  item. The bench files the entry's changed fields (`title`, `size_class`,
+  `tags`) through `jd2-curate` first, then the sitting through `jd2-rate`
+  without `size`. No schema change.
 - 2026-10-02 — the effort profiles split: `JD2_PROFILE` gains `bench-max`,
   `bench-medium`, `bench-low` (`bench` kept for the runs already filed under
   it, retired); `JD2_OWNER_DEFAULT_PROFILE` `bench-medium`; per-profile output
