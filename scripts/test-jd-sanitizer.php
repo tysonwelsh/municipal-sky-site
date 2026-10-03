@@ -6,8 +6,23 @@
 // One line per fixture; exit 0 iff every fixture behaved as its filename
 // promises. Fixture names encode the expectation:
 //
-//   ok-<name>.svg                 must pass the sanitizer byte-identical
+//   ok-<name>.svg                 must pass the sanitizer byte-identical,
+//                                 with no 'normalized' in the verdict
 //   reject-<reason>-<name>.svg    must be rejected with exactly <reason>
+//   normalize-<word>-<n>-<name>.svg
+//                                 must pass with 'normalized' => [<word> => n]
+//                                 and nothing else (2026-10-02: the one word
+//                                 is cdata_unwrapped). The output must hold no
+//                                 CDATA marker, keep the document's text,
+//                                 never self-close a <style>/<title> nor carry
+//                                 a '<' inside one, and be a fixed point: the
+//                                 sanitizer passes it again byte-identical
+//                                 with nothing normalized.
+//
+// The CDATA twin: every fixture holding a <![CDATA[ … ]]> is also run with
+// each section replaced by the same characters written as escaped text, and
+// must get the SAME verdict (pass, or the same reason). That is the
+// normalization's promise — a wrapper changes nothing the rules decide.
 //
 // The one reason the sanitizer does not produce is no_svg_found: that verdict
 // belongs to the extraction step, so those fixtures are asserted against
@@ -17,7 +32,8 @@
 require_once __DIR__ . '/../api/jd-config.php';
 require_once __DIR__ . '/../api/jd-svg-sanitizer.php';
 
-// C3.5 — frozen strings. The eval export depends on them.
+// C3.5 — frozen strings. The eval export depends on them. Never rename or
+// remove one; a normalization is not a reason and is not listed here.
 $REASONS = [
     'too_large', 'doctype_forbidden', 'parse_error', 'bad_root', 'no_viewbox',
     'foreign_namespace', 'element_not_allowed', 'event_handler', 'external_ref',
@@ -33,17 +49,82 @@ if (!$files) {
     exit(1);
 }
 
+// The normalization words the sanitizer may report (jd2_generations.normalized).
+$NORMALIZATIONS = ['cdata_unwrapped'];
+
 $passed = 0;
 $failed = 0;
 $covered = [];
+
+/** The fixture with every CDATA section written as escaped text instead. */
+function cdata_twin(string $svg): string
+{
+    return preg_replace_callback('/<!\[CDATA\[(.*?)\]\]>/s',
+        static fn (array $m): string => htmlspecialchars($m[1], ENT_XML1 | ENT_NOQUOTES, 'UTF-8'), $svg);
+}
+
+/** The document's character data (every text and CDATA node, in order). */
+function text_of(string $svg): ?string
+{
+    $doc = new DOMDocument();
+    $prev = libxml_use_internal_errors(true);
+    $ok = $doc->loadXML($svg, LIBXML_NONET);
+    libxml_clear_errors();
+    libxml_use_internal_errors($prev);
+    return $ok ? $doc->documentElement->textContent : null;
+}
+
+/** What is wrong with a normalized output, or null. */
+function normalized_output_problem(string $in, string $out): ?string
+{
+    if ($out === $in) {
+        return 'output is byte-identical to the input (nothing was re-serialized)';
+    }
+    if (str_contains($out, '<![CDATA[') || str_contains($out, ']]>')) {
+        return 'output still carries a CDATA marker';
+    }
+    if (text_of($out) !== text_of($in)) {
+        return 'the document text changed';
+    }
+    if (preg_match('#<(style|title)\b[^>]*/>#', $out)) {
+        return 'a raw-text element was written self-closing';
+    }
+    if (preg_match_all('#<(style|title)\b[^>]*>(.*?)</\1>#s', $out, $m)) {
+        foreach ($m[2] as $inner) {
+            if (str_contains($inner, '<')) {
+                return "a raw-text element's content holds a literal '<'";
+            }
+        }
+    }
+    $again = jd_sanitize_svg($out);
+    if (empty($again['ok']) || $again['svg'] !== $out || isset($again['normalized'])) {
+        return 'not a fixed point: re-sanitizing the output gave ' . json_encode($again);
+    }
+    return null;
+}
 
 foreach ($files as $file) {
     $name = basename($file);
     $contents = file_get_contents($file);
 
+    $expectedNormalized = null;
     if (str_starts_with($name, 'ok-')) {
         $expectation = 'pass';
         $expectedReason = null;
+    } elseif (str_starts_with($name, 'normalize-')) {
+        $expectation = 'normalize';
+        $expectedReason = null;
+        foreach ($NORMALIZATIONS as $word) {
+            if (preg_match('/^normalize-' . preg_quote($word, '/') . '-(\d+)-/', $name, $m)) {
+                $expectedNormalized = [$word => (int) $m[1]];
+                break;
+            }
+        }
+        if ($expectedNormalized === null) {
+            printf("FAIL  %-46s unknown normalization or count encoded in filename\n", $name);
+            $failed++;
+            continue;
+        }
     } elseif (str_starts_with($name, 'reject-')) {
         $expectation = 'reject';
         $expectedReason = null;
@@ -79,8 +160,50 @@ foreach ($files as $file) {
 
     $result = jd_sanitize_svg($contents);
 
+    // The CDATA twin must get the same verdict as the fixture itself.
+    if (str_contains($contents, '<![CDATA[')) {
+        $twin = jd_sanitize_svg(cdata_twin($contents));
+        $same = !empty($twin['ok']) === !empty($result['ok'])
+            && ($twin['reason'] ?? null) === ($result['reason'] ?? null);
+        $twinVerdict = !empty($twin['ok']) ? 'pass' : 'reject/' . $twin['reason'];
+        if (!$same) {
+            printf("FAIL  %-46s CDATA twin got %s, the fixture %s\n", $name, $twinVerdict,
+                !empty($result['ok']) ? 'pass' : 'reject/' . $result['reason']);
+            $failed++;
+            continue;
+        }
+        if (!empty($twin['ok']) && isset($twin['normalized'])) {
+            printf("FAIL  %-46s CDATA twin was normalized (it holds no CDATA)\n", $name);
+            $failed++;
+            continue;
+        }
+        printf("ok    %-46s CDATA twin (escaped text): same verdict, %s\n", $name, $twinVerdict);
+        $passed++;
+    }
+
+    if ($expectation === 'normalize') {
+        if (empty($result['ok'])) {
+            printf("FAIL  %-46s expected pass with %s, rejected as %s\n", $name, json_encode($expectedNormalized), $result['reason']);
+            $failed++;
+        } elseif (($result['normalized'] ?? null) !== $expectedNormalized) {
+            printf("FAIL  %-46s expected normalized %s, got %s\n", $name, json_encode($expectedNormalized),
+                json_encode($result['normalized'] ?? null));
+            $failed++;
+        } elseif (($problem = normalized_output_problem($contents, $result['svg'])) !== null) {
+            printf("FAIL  %-46s %s\n", $name, $problem);
+            $failed++;
+        } else {
+            printf("ok    %-46s passed, normalized %s, re-serialized, fixed point\n", $name, json_encode($result['normalized']));
+            $passed++;
+        }
+        continue;
+    }
+
     if ($expectation === 'pass') {
-        if (!empty($result['ok']) && $result['svg'] === $contents) {
+        if (!empty($result['ok']) && isset($result['normalized'])) {
+            printf("FAIL  %-46s passed but was normalized %s (name it normalize-…)\n", $name, json_encode($result['normalized']));
+            $failed++;
+        } elseif (!empty($result['ok']) && $result['svg'] === $contents) {
             printf("ok    %-46s passed, byte-identical\n", $name);
             $passed++;
         } elseif (!empty($result['ok'])) {

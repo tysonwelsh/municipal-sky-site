@@ -7,6 +7,24 @@
 // Repair would create parser-differential bugs between PHP's libxml and the
 // browser's SVG parser, and the whole trust boundary rests on the two seeing
 // the same document.
+//
+// ONE NAMED NORMALIZATION (owner, 2026-10-02): CDATA sections are unwrapped,
+// not refused. How a model writes SVG is part of what the drawer measures, so
+// a usable drawing is not thrown away over a harmless wrapper (the case: Kimi
+// K3 wrapping its <style> CSS in <![CDATA[ … ]]>), and the fact is RECORDED,
+// not hidden: the verdict carries 'normalized' => ['cdata_unwrapped' => n]
+// and jd2-generate files it in jd2_generations.normalized. Each CDATA
+// section becomes an ordinary text node with the same content BEFORE any
+// rule runs, so its bytes meet exactly the checks any other text meets (the
+// <style> CSS scan for url()/@import/expression/escapes/'<'): a payload
+// rejects with the same reason it would get written without the wrapper.
+// Only then is the document re-serialized from the DOM (empty elements
+// written open/close, never self-closing — see jd_svg_serialize()), and the
+// re-serialized string is run through this whole function again, unchanged
+// rules and no normalization, so what is returned is a string the strict
+// byte-identical regime itself accepts. Only a normalized drawing is
+// re-serialized; every other input still passes byte-identical. Processing
+// instructions and comments inside the raw-text elements stay refused.
 
 const JD_SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -54,17 +72,21 @@ const JD_SVG_REF_ATTRS = ['href', 'src', 'style', 'values', 'from', 'to', 'by', 
 // The stored SVG is inlined with innerHTML, and inside an HTML integration
 // point (`desc`, `title`) these two are tokenized as HTML, not XML: whatever
 // bytes sit between the tags are literal source, so a `</style>` or
-// `</title>` buried in a CDATA section or a comment — both invisible to an
-// element walk, and a comment is invisible to textContent as well — closes
-// the element and turns the rest into real HTML nodes. Only text children
-// are permitted inside them.
+// `</title>` buried in a comment — invisible to an element walk and to
+// textContent — closes the element and turns the rest into real HTML nodes;
+// comments inside them are refused. (A CDATA section was the other carrier:
+// it is now unwrapped into a text node and re-serialized, which escapes its
+// '<' — see the header.)
 const JD_SVG_RAW_TEXT_ELEMENTS = ['style', 'title'];
 
 // C3.3 rule 6 — elements that can retarget another element's attribute.
 const JD_SVG_ANIMATION_ELEMENTS = ['animate', 'set', 'animateTransform', 'animateMotion'];
 
 /**
- * @return array{ok:true,svg:string}|array{ok:false,reason:string}
+ * @return array{ok:true,svg:string,normalized?:array{cdata_unwrapped:int}}|array{ok:false,reason:string}
+ *
+ * 'normalized' is present only when something was changed; then 'svg' is the
+ * re-serialized document, otherwise it is the input, byte-identical.
  */
 function jd_sanitize_svg(string $svg): array
 {
@@ -103,6 +125,10 @@ function jd_sanitize_svg(string $svg): array
             return ['ok' => false, 'reason' => 'no_viewbox'];
         }
 
+        // 5. CDATA sections become text nodes, before any rule runs (the
+        //    header's one named normalization).
+        $cdataUnwrapped = jd_svg_unwrap_cdata($doc);
+
         // 5a. Node types, over the WHOLE document — including the nodes that
         //     sit outside the root element, and the ones the element walk in
         //     5b cannot see. Runs first so a structural violation is reported
@@ -117,6 +143,8 @@ function jd_sanitize_svg(string $svg): array
         if ($reason !== null) {
             return ['ok' => false, 'reason' => $reason];
         }
+
+        $clean = $cdataUnwrapped > 0 ? jd_svg_serialize($doc) : null;
     } finally {
         libxml_clear_errors();
         libxml_use_internal_errors($previousErrors);
@@ -124,12 +152,65 @@ function jd_sanitize_svg(string $svg): array
     }
 
     // 6. Pass — the original string, untouched.
-    return ['ok' => true, 'svg' => $svg];
+    if ($clean === null) {
+        return ['ok' => true, 'svg' => $svg];
+    }
+
+    // 7. A normalized drawing: the re-serialized document, re-checked from
+    //    the top under the unchanged rules. It holds no CDATA, so this pass
+    //    normalizes nothing and answers byte-identical or with a reason (in
+    //    practice only too_large, if escaping grew text past the cap).
+    $recheck = jd_sanitize_svg($clean);
+    if (empty($recheck['ok'])) {
+        return $recheck;
+    }
+    if (isset($recheck['normalized']) || $recheck['svg'] !== $clean) {
+        return ['ok' => false, 'reason' => 'parse_error'];   // unreachable: the fixed point failed
+    }
+    return ['ok' => true, 'svg' => $clean, 'normalized' => ['cdata_unwrapped' => $cdataUnwrapped]];
 }
 
-// Every node in the document that is not an element: CDATA sections and
-// processing instructions are refused outright, comments only inside the raw
-// text elements. Iterative rather than recursive — a 300 KB input can nest
+// Replace every CDATA section in the document with a text node carrying the
+// same characters; returns how many there were. Collected first, replaced
+// after, so the traversal never walks a list it is mutating. Iterative for
+// the reason given at jd_svg_scan_node_types().
+function jd_svg_unwrap_cdata(DOMDocument $doc): int
+{
+    $found = [];
+    $stack = [$doc];
+    while ($stack) {
+        $node = array_pop($stack);
+        foreach ($node->childNodes as $child) {
+            if ($child->nodeType === XML_CDATA_SECTION_NODE) {
+                $found[] = $child;
+            } elseif ($child->hasChildNodes()) {
+                $stack[] = $child;
+            }
+        }
+    }
+    foreach ($found as $cdata) {
+        $cdata->parentNode->replaceChild($doc->createTextNode($cdata->data), $cdata);
+    }
+    return count($found);
+}
+
+// The root element as XML: no declaration (the stored drawing starts at
+// <svg, as jd_extract_svg() leaves it), text escaped by libxml (so no literal
+// '<' or '</style' can survive inside a text node), UTF-8 kept as characters.
+// LIBXML_NOEMPTYTAG writes every empty element as <x></x>: inside an HTML
+// integration point (<desc>, <title>) the innerHTML parser ignores the
+// self-closing slash on a <style/> or <title/> and reads the rest of the
+// document as its raw text, so libxml's default <style/> for an empty
+// <style></style> would turn a safe input into an unsafe output.
+function jd_svg_serialize(DOMDocument $doc): string
+{
+    return (string) $doc->saveXML($doc->documentElement, LIBXML_NOEMPTYTAG);
+}
+
+// Every node in the document that is not an element: processing
+// instructions are refused outright, comments only inside the raw text
+// elements. CDATA sections never reach this scan — jd_svg_unwrap_cdata() has
+// already made them text — so one found here is refused as before. Iterative rather than recursive — a 300 KB input can nest
 // tens of thousands of elements deep and PHP recursion would run out of
 // stack before the sanitizer ran out of rules.
 function jd_svg_scan_node_types(DOMNode $root): ?string
@@ -156,9 +237,10 @@ function jd_svg_scan_node_types(DOMNode $root): ?string
                     }
                     break;
                 default:
-                    // CDATA sections and processing instructions. Nothing an
-                    // LLM legitimately draws needs either, and both are ways
-                    // of carrying bytes that one parser calls inert data and
+                    // Processing instructions (and, defensively, any CDATA
+                    // section the unwrap step did not convert). Nothing an
+                    // LLM legitimately draws needs one, and both are ways of
+                    // carrying bytes that one parser calls inert data and
                     // the other calls markup.
                     return 'element_not_allowed';
             }
@@ -320,8 +402,9 @@ function jd_svg_check_css(string $css): ?string
         return 'style_external';
     }
     // A `<` cannot reach CSS text as markup — XML would have parsed it as a
-    // tag — so it arrives only entity-encoded or smuggled in a node type
-    // jd_svg_scan_node_types() already refuses. Backstop for both.
+    // tag — so it arrives only entity-encoded or out of an unwrapped CDATA
+    // section. Either way it is refused: in raw-text HTML it is the start of
+    // a `</style>` breakout, and CSS never needs one.
     if (str_contains($css, '<')) {
         return 'style_external';
     }
