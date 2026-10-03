@@ -1803,6 +1803,13 @@ html.jd-record-open { overflow: hidden; }
 .rc-can-fold:not(.is-open) .rc-pv-less { display: none; }
 
 /* ---- the annotations table (AXIS | GRADE + OVERALL GRADE footer) -------- */
+/* the house rule above the grades table (taxonomy v35 `houseRule`): the
+   card's running-prose mono at its small size, the second ink */
+.rc-rule {
+  margin: 0 0 0.45rem;
+  font-family: var(--rc-mono); font-size: 0.56rem; line-height: 1.5;
+  letter-spacing: 0.02em; color: var(--form-ink-2);
+}
 table.rc-subj { width: 100%; border-collapse: collapse; table-layout: fixed; }
 table.rc-subj th {
   font-family: var(--form); font-weight: 400;
@@ -1913,10 +1920,13 @@ tr.rc-axdesc td {
 .rc-mark.rc-r3, .rc-bar.rc-r3 { color: #0b6a1f; }   /* no problems / has it — dark green */
 .rc-mark.rc-r2, .rc-bar.rc-r2 { color: #a06200; }   /* small problems / just a hint — ochre */
 .rc-mark.rc-r1, .rc-bar.rc-r1 { color: #8f1d12; }   /* big problems / ain't got it — deep red */
-.rc-mark.rc-q4, .rc-bar.rc-q4 { color: #0b6a1f; }   /* read the brief / neat stack — dark green */
-.rc-mark.rc-q3, .rc-bar.rc-q3 { color: #46761a; }   /* skimmed it / a little shuffled — leaf green */
-.rc-mark.rc-q2, .rc-bar.rc-q2 { color: #a06200; }   /* misread it / out of order — ochre */
-.rc-mark.rc-q1, .rc-bar.rc-q1 { color: #8f1d12; }   /* wrote its own brief / fifty-two pickup — deep red */
+.rc-mark.rc-q4, .rc-bar.rc-q4 { color: #0b6a1f; }   /* fully understands / no problems — dark green */
+.rc-mark.rc-q3, .rc-bar.rc-q3 { color: #46761a; }   /* mostly understands / minor problems — leaf green */
+.rc-mark.rc-q2, .rc-bar.rc-q2 { color: #a06200; }   /* somewhat understands / moderate problems — ochre */
+.rc-mark.rc-q1, .rc-bar.rc-q1 { color: #8f1d12; }   /* barely understands / major problems — deep red */
+/* (the 4-point ramp is every 4-point axis's — Understanding Assignment,
+   Structural Coherence and Paintwork since taxonomy v35 — chosen by
+   JD_axisCls from the axis's own step count) */
 
 /* the grade cell: ONE segmented bar gauge ahead of the pencilled word
    (owner pick, mockup 11 option C — it replaced the dot sparkline whose
@@ -3634,6 +3644,23 @@ html.jd-turn-open { overflow: hidden; }
 }
 .jd-turn-pv:hover { color: var(--tred); border-bottom-color: var(--tred); }
 .jd-turn-assign.is-fit .jd-turn-pv { display: none; }
+/* THE HOUSE RULE (owner, 2026-10-02, taxonomy v35 `houseRule`): what every
+   model was told, as small print under the rail and across the whole card,
+   above the rating panel — the form's fine-print register (--t-label, the
+   second ink), no rule, no box: one line on the desktop bench, two on a
+   phone. */
+.jd-turn-rule {
+  margin: 0 2px var(--sp-2);
+  font-size: var(--t-label); line-height: 1.45; letter-spacing: 0.02em;
+  color: var(--tink-2); text-align: center; text-wrap: balance;
+}
+/* the pruned-prefill note (taxonomy v35): one quiet italic line above the
+   rows, in the third ink — a fact about the prefill, not a warning */
+.jd-turn-pruned {
+  margin: 0 2px var(--sp-2);
+  font-size: var(--t-label); line-height: 1.45; letter-spacing: 0.02em;
+  font-style: italic; color: var(--tink-3);
+}
 @media (max-width: 700px) {
   /* a flex child of the portrait scroller (the wrappers are contents): it
      must never be the block the flexbox squeezes — the elastic exhibit
@@ -5563,11 +5590,13 @@ html.jd-folder-open { overflow: hidden; }
    on a reflowed panel the way it was at 900px and 560px — the lead panel
    labels the row order for the whole card at every width, and each panel's
    aria-label still names every model in full. */
-/* ONE ROW OF FOUR across the full-width card (owner, 2026-09-10 — a
-   two-by-two beside "who takes first" lasted an hour): the lead panel
-   carries the key, the three after it are cropped to the ruler. */
+/* ONE ROW across the full-width card (owner, 2026-09-10 — a two-by-two
+   beside "who takes first" lasted an hour): the lead panel carries the
+   key, the ones after it are cropped to the ruler. One panel per live axis
+   (five since taxonomy v35): jd-furniture sets --fx-rest to the count after
+   the lead, so the row follows the taxonomy. */
 .fx-axgrid {
-  display: grid; grid-template-columns: 1.32fr 1fr 1fr 1fr;
+  display: grid; grid-template-columns: 1.32fr repeat(var(--fx-rest, 3), 1fr);
   gap: 12px 8px;
 }
 .fx-panel { min-width: 0; }
@@ -5605,6 +5634,15 @@ html.jd-folder-open { overflow: hidden; }
   font-family: var(--fmono); font-size: 0.6rem; color: var(--fink-2);
 }
 .fx-legend li { display: inline-flex; align-items: center; gap: 5px; }
+/* each panel's own key (taxonomy v35): which levels its pale and dark
+   segments count — "Minor" / "Moderate + Major" on a 4-point issue axis —
+   named from the axis's own value labels (JD_axisBuckets) */
+.fx-pkey {
+  display: flex; flex-wrap: wrap; gap: 1px 8px; margin: 0 0 3px;
+  font-family: var(--fmono); font-size: 0.52rem; line-height: 1.3; color: var(--fink-3);
+}
+.fx-pkey span { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+.fx-pkey .fx-sw { width: 9px; height: 5px; }
 .fx-sw { display: inline-block; width: 14px; height: 7px; }
 .fx-sw-ci { width: 16px; height: 8px; }
 .fx-legend-tap { color: var(--fink-3); font-style: italic; }

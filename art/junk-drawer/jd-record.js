@@ -441,7 +441,13 @@
        description when the taxonomy carries one */
     var gDesc = 'The drawer’s own five-tier scale, best to worst.' +
       (g.description ? ' ' + g.label + ': ' + g.description : '');
-    return '<table class="rc-subj"><thead><tr>' +
+    /* THE HOUSE RULE (owner, 2026-10-02, taxonomy v35): the sentence the
+       rating card shows above its axes, so a reader of the card judges the
+       grades against what every model was told. From taxonomy.json
+       `houseRule`; a taxonomy without it (the legacy drawer's) prints none. */
+    var rule = String((payload.taxonomy || {}).houseRule || '').trim();
+    return (rule ? '<p class="rc-rule">' + esc(rule) + '</p>' : '') +
+      '<table class="rc-subj"><thead><tr>' +
       /* 52/48 → 44/56 → 47/53 (owner, 2026-08-12): the grade column
          carries the gauge AND the pencilled word, the axis column only a
          name — but 44% squeezed the axis names a touch too hard.

@@ -555,6 +555,46 @@ async function main() {
     check('phone: the catalogue entry fits 390px (no sideways scroll, every chip on the sheet)', phWide);
     await phoneCtx.close();
 
+    // --- the pruned prefill (taxonomy v35) --------------------------------------
+    // P2's owner sitting as if an older rubric had filed it: a cell on the
+    // RETIRED structural-coherence and every layering value off its current
+    // 3-point scale (4). The reopen must carry neither into the new sitting,
+    // and the card says so in one line above the rows.
+    const sid2 = q("SELECT id FROM jd2_sessions WHERE run_id = ? AND rater_role = 'owner' ORDER BY filed_at DESC, id DESC", [P2.run_id])[0].id;
+    const keepLayering = q("SELECT id, value FROM jd2_judgments WHERE session_id = ? AND axis_id = 'layering'", [sid2]);
+    php('if (!JD_DEV_MODE) { exit(2); } $db = jd_db(); $sid = getenv("JD_SID"); ' +
+      '$g = $db->prepare("SELECT DISTINCT generation_id FROM jd2_judgments WHERE session_id = ?"); $g->execute([$sid]); ' +
+      '$ins = $db->prepare("INSERT INTO jd2_judgments (id, session_id, generation_id, kind, axis_id, value) VALUES (?, ?, ?, \'axis\', \'structural-coherence\', 2)"); ' +
+      'foreach ($g->fetchAll(PDO::FETCH_COLUMN) as $gid) { $ins->execute([jd_ulid(), $sid, $gid]); } ' +
+      '$db->prepare("UPDATE jd2_judgments SET value = 4 WHERE session_id = ? AND axis_id = \'layering\'")->execute([$sid]);',
+    { JD_SID: sid2 });
+    await page.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P2.prompt_id, { waitUntil: 'load' });
+    await seated(page, P2.prompt_id);
+    const qp = await page.evaluate((id) => window.JD_bench.queue().items.filter((x) => x.prompt_id === id)[0], P2.prompt_id);
+    check('pruned: the queue drops the retired axis and the off-scale values from the prefill and says prefill_pruned',
+      qp.prefill_pruned === true && qp.responses.every((x) => x.prefill && !('structural-coherence' in x.prefill.axes) &&
+        !('layering' in x.prefill.axes) && Object.keys(x.prefill.axes).length > 0),
+      JSON.stringify(qp.responses.map((x) => x.prefill && x.prefill.axes)));
+    await page.click('.jd-rail-step[data-step="a"]');
+    await page.waitForSelector('.jd-bench select.jd-turn-select');
+    const pr = await page.evaluate(() => ({
+      note: (document.querySelector('.jd-turn-pruned') || {}).textContent || null,
+      layering: (document.querySelector('.jd-bench select[data-axis="layering"]') || {}).value,
+      others: [...document.querySelectorAll('.jd-bench select.jd-turn-select')]
+        .filter((x) => x.getAttribute('data-axis') !== 'layering').every((x) => x.value !== ''),
+      gate: (document.querySelector('.jd-turn-actions [data-act="next"]') || {}).disabled
+    }));
+    await shot(page, '12d-pruned-prefill');
+    check('pruned: the card notes it in one line, leaves Layering unanswered (gate shut) and keeps the rest',
+      pr.note === 'earlier answers on a retired or rescaled axis were not carried over' && pr.layering === '' &&
+      pr.others && pr.gate === true, JSON.stringify(pr));
+    // put P2's sitting back as it was filed (the rest of the run reads it)
+    php('if (!JD_DEV_MODE) { exit(2); } $db = jd_db(); $sid = getenv("JD_SID"); ' +
+      '$db->prepare("DELETE FROM jd2_judgments WHERE session_id = ? AND axis_id = \'structural-coherence\'")->execute([$sid]); ' +
+      '$u = $db->prepare("UPDATE jd2_judgments SET value = ? WHERE id = ?"); ' +
+      'foreach (json_decode(getenv("JD_KEEP"), true) as $r) { $u->execute([$r["value"], $r["id"]]); }',
+    { JD_SID: sid2, JD_KEEP: JSON.stringify(keepLayering.map((x) => ({ id: x.id, value: Number(x.value) }))) });
+
     // --- scrap ---------------------------------------------------------------
     await page.click('.jd-bench-bar [data-bench="scrap"]');
     await seated(page, P1.prompt_id);

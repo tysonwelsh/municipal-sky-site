@@ -121,12 +121,32 @@ async function toPodium(pg, text, tag, shots) {
   const intake = await (await intakeAnswered).json();
   if (shots) await shot(pg, tag + '-1-results');
   await pg.click('[data-act="rate"]');
+  let panel = null;
   for (let d = 0; ; d++) {
     await pg.waitForSelector('.jd-bench', { timeout: 10000 });
     const sels = await pg.$$('.jd-bench select.jd-turn-select');
     for (let i = 0; i < sels.length; i++) {
       const k = await sels[i].evaluate((s) => s.options.length);
       await sels[i].selectOption({ index: 1 + ((i + d) % (k - 1)) });
+    }
+    // the first panel as drawn: the house rule above it (text, lines), the
+    // axis rows in order with their step counts, and each answered gauge's ramp
+    if (d === 0) {
+      await pg.waitForTimeout(450);   // the card widens into its bench layout first
+      panel = await pg.evaluate(() => {
+        const r = document.querySelector('.jd-turn-rule');
+        const lh = r ? parseFloat(getComputedStyle(r).lineHeight) : 0;
+        const axes = [...document.querySelectorAll('.jd-bench select[data-role="axis"]')].map((sel) => {
+          const bar = sel.parentNode.querySelector('.rc-bar');
+          return { id: sel.getAttribute('data-axis'), steps: sel.options.length - 1,
+            cls: bar ? bar.className : '' };
+        });
+        const benchEl = document.querySelector('.jd-bench');
+        return { rule: r ? r.textContent : null, lines: r && lh ? Math.round(r.getBoundingClientRect().height / lh) : 0,
+          above: !!(r && benchEl && (r.compareDocumentPosition(benchEl) & Node.DOCUMENT_POSITION_FOLLOWING)),
+          axes, pruned: !!document.querySelector('.jd-turn-pruned'),
+          overflow: document.documentElement.scrollWidth > window.innerWidth };
+      });
     }
     if (d === 0 && shots) await shot(pg, tag + '-2-bench');
     const nextTo = await pg.$eval('.jd-turn-actions [data-act="next"]', (b) => b.textContent);
@@ -139,7 +159,7 @@ async function toPodium(pg, text, tag, shots) {
     await pg.click('.jd-pod-tier[data-rank="' + k + '"] .jd-pod-block');
     await pg.click('.jd-pod-print[data-pod="' + order[k - 1] + '"]');
   }
-  return { intake, order };
+  return { intake, order, panel };
 }
 // the pedestal card's state, read off the DOM and the hooks
 const ped = (pg) => pg.evaluate(() => {
@@ -207,6 +227,22 @@ async function main() {
     await pg.goto(BASE + '/art/junk-drawer/', { waitUntil: 'load' });
     const t = await toPodium(pg, prompt + ' ' + tag, tag, true);
     const intake = t.intake;
+    // THE FIVE-AXIS RATING CARD (taxonomy v35) and the house rule over it
+    const live = taxonomy.axes.filter((a) => !a.defunct);
+    const P = t.panel || { axes: [] };
+    check(tag + ': the rating panel asks every live axis in taxonomy order, each on its own scale (' +
+      live.map((a) => a.id + ' ' + a.values.length).join(', ') + ')',
+      JSON.stringify(P.axes.map((a) => [a.id, a.steps])) === JSON.stringify(live.map((a) => [a.id, a.values.length])),
+      JSON.stringify(P.axes));
+    check(tag + ': a 4-point axis pencils on the rc-q ramp and a 3-point one on rc-r (JD_axisCls)',
+      P.axes.length === live.length && P.axes.every((a) => new RegExp('\\brc-' + (a.steps === 4 ? 'q' : 'r') + '[1-4]\\b').test(a.cls)),
+      JSON.stringify(P.axes));
+    check(tag + ': the house rule renders above the panel from taxonomy.json houseRule, ' +
+      (tag === 'phone' ? 'in at most three lines at 390px' : 'on one line at 1280px'),
+      typeof taxonomy.houseRule === 'string' && taxonomy.houseRule.length > 0 && P.rule === taxonomy.houseRule && P.above &&
+      P.lines >= 1 && P.lines <= (tag === 'phone' ? 3 : 1), JSON.stringify({ rule: P.rule, lines: P.lines, above: P.above }));
+    check(tag + ': a visitor turn has nothing pruned and no sideways scroll', !P.pruned && !P.overflow,
+      JSON.stringify({ pruned: P.pruned, overflow: P.overflow }));
     check(tag + ': the intake clerk answered the turn (title, size, headings)',
       !!(intake.ok && !intake.fallback && intake.title && intake.size_class && intake.tags), JSON.stringify(intake));
     await shot(pg, tag + '-3-podium');
@@ -457,6 +493,16 @@ async function main() {
   await page.waitForTimeout(500);
   const strip = await page.$$eval('.rc-alt-h2h', (s) => s.map((x) => x.textContent + ' [' + x.title + ']'));
   check('report card: the strip carries a head-to-head line per drawing', strip.length === 4, strip.join(' / '));
+  const rcRule = await page.evaluate(() => {
+    const r = document.querySelector('.rc-rule'), t = document.querySelector('table.rc-subj');
+    return { text: r ? r.textContent : null,
+      before: !!(r && t && (r.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING)),
+      rows: [...document.querySelectorAll('table.rc-subj tbody .rc-subj-name')].map((x) => x.textContent) };
+  });
+  check('report card: the house rule (taxonomy.json houseRule) sits above the grades table, which lists every live axis in order',
+    rcRule.text === taxonomy.houseRule && rcRule.before &&
+    JSON.stringify(rcRule.rows) === JSON.stringify(taxonomy.axes.filter((a) => !a.defunct).map((a) => a.label)),
+    JSON.stringify(rcRule));
   await shot(page, 'phone-7-report-card');
   await deskPage.goto(BASE + '/art/junk-drawer/#' + filed.desk.prompt_id, { waitUntil: 'load' });
   await deskPage.waitForSelector('.rc-alt-h2h', { timeout: 20000 }).catch(() => {});

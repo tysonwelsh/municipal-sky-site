@@ -35,7 +35,17 @@
 // owner's pairs ride on the item as `pairs_prefill` by slot. `needs` says in
 // plain words what the owner's sitting still lacks (jd2_needs). `progress`
 // counts the whole campaign — every prompt not hidden whose bench run has
-// settled — whatever the view, so the bench can say "12 of 40 done".
+// settled — whatever the view, so the bench can say "12 of 40 done"; a
+// prompt's cells are counted against what its owner sitting had to carry
+// (jd2_session_cells), the live axes when there is none.
+//
+// THE PREFILL CARRIES ONLY WHAT THE CARD CAN FILE (taxonomy v35, 2026-10-02).
+// A value on a defunct axis, or off its axis's current scale (and a grade off
+// the grade scale), is dropped from `prefill` rather than carried into the
+// new sitting — jd2-rate would refuse it, and a retired axis is never asked
+// again. The item then says `prefill_pruned: true`, and the card notes that
+// those earlier answers were not carried over. The visitor's sitting
+// (`visitor`) is shown, never refiled, so it is passed as filed.
 
 require_once __DIR__ . '/jd2-config.php';
 require_once __DIR__ . '/jd-origin.php';
@@ -82,7 +92,6 @@ try {
         jd_fail(404, 'not_found', 'That prompt is not on file.');
     }
 
-    $required = jd2_required_cells($taxonomy);
     $items = [];
     $progress = ['prompts' => 0, 'complete' => 0, 'drawing' => 0, 'cells_filed' => 0, 'cells_total' => 0];
 
@@ -100,6 +109,7 @@ try {
             } elseif ($rateable) {
                 $progress['prompts']++;
                 $progress['complete'] += $view['complete'] ? 1 : 0;
+                $required = $view['cells'];   // the owner sitting's own cells, else the live axes
                 $progress['cells_total'] += count($run['counting']) * count($required);
                 foreach ($run['counting'] as $gid) {
                     $j = $view['standing']['judgments'][$gid] ?? null;
@@ -115,7 +125,7 @@ try {
         if ($only !== null ? (string) $p['id'] !== $only : (!$all && !$open)) {
             continue;
         }
-        $items[] = jd2q_item($db, $p, $runs, $view, $reveal);
+        $items[] = jd2q_item($db, $p, $runs, $view, $reveal, $taxonomy);
     }
 } catch (PDOException $e) {
     error_log('jd2-queue: ' . $e->getMessage());
@@ -170,7 +180,7 @@ jd_json_out(200, [
 // ---------------------------------------------------------------------------
 
 /** One backlog row: the prompt, its bench run's drawings with both prefills, and what is missing. */
-function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal): array
+function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal, array $taxonomy): array
 {
     $run = $view['run'];
     $owner = $view['standing'];
@@ -179,6 +189,8 @@ function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal): a
 
     $responses = [];
     $slotOf = [];
+    $pruned = false;
+    $scales = ['axes' => jd_axis_ranks($taxonomy), 'grade' => jd_grade_ranks($taxonomy)];
     foreach ($run['gens'] ?? [] as $g) {
         if ($g['status'] !== JD2_GEN_OK) {
             continue;   // a failed or rejected slot has nothing to seat
@@ -195,7 +207,7 @@ function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal): a
         $r += [
             'svg_url' => '/api/jd2-gen-svg.php?gen=' . rawurlencode($gid),
             'hidden' => (int) $g['hidden'] === 1,
-            'prefill' => jd2q_cells($owner, $gid, true),
+            'prefill' => jd2q_prune(jd2q_cells($owner, $gid, true), $scales, $pruned),
             'visitor' => jd2q_cells($visitor, $gid, false),
         ];
         $responses[] = $r;
@@ -225,6 +237,9 @@ function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal): a
         'settled' => $view['settled'],
         'responses' => $responses,
         'pairs_prefill' => $pairs,
+        // true when a prefill value sat on a retired axis or off its current
+        // scale and was left out (jd2q_prune)
+        'prefill_pruned' => $pruned,
         'complete' => $view['complete'],
         'needs' => $view['needs'],
     ];
@@ -242,6 +257,36 @@ function jd2_q_intake(array $p): array
             'intake_model' => $f['intake_model'], 'intake_at' => $f['intake_at'],
             'reasons' => $f['intake_reasons'], 'fallback' => $f['intake_fallback'],
             'intake_error' => $f['intake_error']];
+}
+
+/**
+ * The owner's prefill, cut to what a sitting filed NOW can carry: an axis
+ * value only on a live axis and on its current scale, a grade only on the
+ * grade scale. Sets $pruned when anything was dropped. Places and gaps are
+ * not on a taxonomy scale and pass as they are.
+ *
+ * @param array{axes:array<string,float[]>,grade:float[]} $scales  jd_axis_ranks, jd_grade_ranks
+ */
+function jd2q_prune(?array $cells, array $scales, bool &$pruned): ?array
+{
+    if ($cells === null) {
+        return null;
+    }
+    $keep = [];
+    foreach ((array) $cells['axes'] as $axis => $value) {
+        $on = isset($scales['axes'][(string) $axis]) ? jd_rank_on_scale($value, $scales['axes'][(string) $axis]) : null;
+        if ($on === null) {
+            $pruned = true;
+            continue;
+        }
+        $keep[(string) $axis] = $value;
+    }
+    $cells['axes'] = (object) $keep;
+    if ($cells['grade'] !== null && jd_rank_on_scale($cells['grade'], $scales['grade']) === null) {
+        $cells['grade'] = null;
+        $pruned = true;
+    }
+    return $cells;
 }
 
 /** One drawing's cells in a standing: {grade, axes{}, rank_pos[, gap_after]}, or null when the sitting has none. */

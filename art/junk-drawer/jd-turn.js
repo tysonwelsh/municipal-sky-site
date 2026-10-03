@@ -1625,6 +1625,27 @@
     return '<div class="jd-row jd-row--head" aria-hidden="true">' +
       '<span>Subject</span><span>Your rating</span></div>';
   }
+  /* THE HOUSE RULE (owner, 2026-10-02, taxonomy v35): what every model was
+     told, in one sentence from taxonomy.json `houseRule`, above the rating
+     panel — visitors and the bench alike — because three axes (Structural
+     Coherence's framing, Layering's setting, Paintwork's shadow beneath)
+     are judged against a system prompt no rater otherwise sees. Small
+     print under the rail, across the whole card: one line on the desktop
+     bench, two on a phone. A taxonomy without the key prints nothing. */
+  function houseRuleHTML() {
+    var t = String(tax().houseRule || '').trim();
+    return t ? '<p class="jd-turn-rule">' + esc(t) + '</p>' : '';
+  }
+  /* THE PRUNED PREFILL (taxonomy v35): a bench reopen whose earlier sitting
+     carried a value on a retired axis, or off an axis's current scale,
+     starts without it (jd2-queue's prefill_pruned, and curateOpen's own
+     check) — say so once, above the rows, so a blank row is not a mystery */
+  function prunedHTML() {
+    return work && work.prefillPruned
+      ? '<p class="jd-turn-pruned" role="note">earlier answers on a retired or ' +
+        'rescaled axis were not carried over</p>'
+      : '';
+  }
   /* the bench gate (owner, 2026-08-27): a drawing's panel doesn't hand off
      — to the next drawing or to the ranking — until every scale on it is
      answered, the overall grade included. Same disabled-until-done contract
@@ -1828,7 +1849,7 @@
     var r = work.ratings[slot];
     var idx = ok.indexOf(slot);
     var two = ok.length > 1;
-    var h = '<div class="jd-bench">' +
+    var h = houseRuleHTML() + '<div class="jd-bench">' +
       '<div class="jd-bench-l"><div class="jd-turn-pin">' +
       /* no REPLAY pencil since 2026-09-16 — the filmstrip mounted under
          this plate by paint() carries the replay now, and the pencil beside
@@ -1839,6 +1860,7 @@
          2026-08-28) — and, the wrappers being display:contents in the
          portrait stack, sits between the sticky plate and the rows there */
       briefHTML() +
+      prunedHTML() +
       benchHeadHTML();
     /* axes first, in taxonomy order, THEN the overall grade (owner
        directive r4): the report card files axes in <tbody> and the overall
@@ -4479,6 +4501,15 @@
          "this one is Kimi's" and drive the rail to it. The bench never
          sets it, so its blind deal is untouched (2026-09-14). */
       if (!job.fixedOrder) JD_shuffle(order);
+      /* THE PREFILL CARRIES ONLY WHAT THIS CARD CAN FILE (taxonomy v35): an
+         answer on a retired axis, or off its axis's current scale (a grade
+         off the grade scale), is left out rather than carried into the new
+         sitting — jd2-rate would refuse the whole filing over it. The queue
+         prunes first and says so (job.prefillPruned); this is the card's
+         own check of the same rule against the taxonomy it renders. */
+      var liveAx = {}, pruned = !!job.prefillPruned;
+      JD_liveAxes(tax()).forEach(function (ax) { liveAx[ax.id] = ax; });
+      function onGradeScale(v) { return v != null && !!window.JD_gradeOf(tax(), v); }
       order.forEach(function (resp, k) {
         var slot = JD_SLOTS[k];
         work.slots[slot] = {
@@ -4490,8 +4521,12 @@
            scale the taxonomy reworks did not touch */
         r.grade = resp.grade != null ? resp.grade
           : (resp.grade_seed != null ? resp.grade_seed : null);
+        if (r.grade != null && !onGradeScale(r.grade)) { r.grade = null; pruned = true; }
         Object.keys(resp.axes || {}).forEach(function (a) {
-          r.axes[a] = resp.axes[a];
+          var v = resp.axes[a];
+          if (v == null) return;
+          if (!liveAx[a] || !window.JD_byRank(liveAx[a].values, v)) { pruned = true; return; }
+          r.axes[a] = v;
         });
         /* a filed rank resumes only while it fits this podium — a stale row
            from a different response count would seat a print on a step that
@@ -4528,6 +4563,7 @@
         });
         pedRestore(shape);
       }
+      work.prefillPruned = pruned;
       /* the sitting's note starts empty: it is this sitting's rationale */
       work.note = '';
       /* THE CATALOGUE ENTRY (0.13.0): the bench's job carries what is on

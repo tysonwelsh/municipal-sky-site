@@ -313,6 +313,8 @@
     return post(API_R, body).then(function (res) {
       filedNow[it.prompt_id] = true;
       it.complete = !!res.complete;
+      /* the new sitting is on today's rubric: nothing left to prune */
+      it.prefill_pruned = false;
       if (res.complete) it.needs = [];
       if (size && !viaEntry) { it.size_class = size; it.size_by = 'owner'; }
       /* fold the answers back into the queue copy, so prev re-seats what
@@ -397,6 +399,9 @@
         withNote: true,
         /* ?pairs=1: the six side-by-side cards instead of the pedestal card */
         pairsAudit: PAIRS_AUDIT,
+        /* the queue left an earlier answer out of the prefill (a retired or
+           rescaled axis, taxonomy v35): the card says so above its rows */
+        prefillPruned: !!it.prefill_pruned,
         responses: usable.map(function (r) {
           var pf = r.prefill || {};
           return {

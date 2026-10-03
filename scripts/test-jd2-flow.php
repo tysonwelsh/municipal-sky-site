@@ -31,7 +31,14 @@
 // normalized = 'cdata_unwrapped', and api/jd2-resanitize.php recovers the same
 // drawings when they are seeded as the old rules filed them.
 //
-// One PASS/FAIL line per check, grouped by case (a)–(l); exit 0 iff all pass.
+// (m) is the sitting's required_cells (taxonomy v35): every sitting is stamped
+// with the cells its rubric required, and a sitting filed under the OLD rubric
+// (seeded as taxonomy v34 with no stamp, the one production had) is backfilled
+// by the runner and then stays complete — on data.php, the bench queue and the
+// ledger — after the taxonomy gained Paintwork and the four-point Structural
+// Coherence; the queue's prefill drops its retired-axis values and says so.
+//
+// One PASS/FAIL line per check, grouped by case (a)–(m); exit 0 iff all pass.
 
 putenv('JD_DEV_MOCK=1');
 putenv('JD_DEV_LATENCY_MS=1');
@@ -333,6 +340,9 @@ check('session: visitor, filed, stamped taxonomy and instrument, blind, seat_ord
       && json_decode($s['seat_order'], true) === $slotGen1, json_encode($s));
 check('every cell filed: 4 grades + 4 × live axes', (int) one($db, 'SELECT COUNT(*) FROM jd2_judgments WHERE session_id = ?', [$session1])
       === 4 * (1 + count($liveAxes)));
+check("the sitting is stamped with the cells its rubric required: required_cells = the live axes in taxonomy order, then grade",
+      json_decode((string) ($s['required_cells'] ?? ''), true) === array_merge(array_keys($liveAxes), ['grade']),
+      (string) ($s['required_cells'] ?? 'NULL'));
 $pairs1 = rows($db, 'SELECT * FROM jd2_pairs WHERE session_id = ?', [$session1]);
 $derived = count($pairs1) === 6;
 foreach ($pairs1 as $pr) {
@@ -896,6 +906,94 @@ check('idempotent: a second run recovers nothing', $rc === 0
 })();
 check('over the web on a dev box it answers plain text (the key gate is production-only)',
       $st === 200 && str_contains($body, 'DRY RUN') && str_contains($body, 'dry run done'), $body);
+
+// ============================================================================
+section('(m) required_cells: a sitting filed under the old rubric stays complete after the taxonomy gains an axis');
+$cellsNow = jd2_required_cells($taxonomy);
+check('the live rubric asks for more than the v34 one did (the fixture means something): '
+      . implode(', ', array_diff($cellsNow, JD2_CELLS_BEFORE_V35)) . ' new, '
+      . implode(', ', array_diff(JD2_CELLS_BEFORE_V35, $cellsNow)) . ' retired',
+      array_diff($cellsNow, JD2_CELLS_BEFORE_V35) !== [] && array_diff(JD2_CELLS_BEFORE_V35, $cellsNow) !== []);
+check('every sitting filed through jd2-rate so far carries required_cells = today\'s cells',
+      (int) one($db, 'SELECT COUNT(*) FROM jd2_sessions') > 0
+      && (int) one($db, 'SELECT COUNT(*) FROM jd2_sessions WHERE required_cells IS NULL OR required_cells <> ?', [json_encode($cellsNow)]) === 0);
+[$tv, $runV] = ownerTurn('a pewter thimble with a dent');
+$promptV = $tv['a'][1]['prompt_id'] ?? null;
+$gv = [];
+foreach (rows($db, "SELECT id, slot FROM jd2_generations WHERE run_id = ? AND status = 'ok' ORDER BY slot", [$runV]) as $g) {
+    $gv[$g['slot']] = $g['id'];
+}
+// Seed the sitting the way taxonomy v34 filed it, before the column existed:
+// the grade and the v34 rubric's four axes (structural-coherence on its three
+// points), places a..d with a gap of 1 under each, the six pairs derived from
+// them — and required_cells NULL. Written straight to the tables: jd2-rate
+// would (rightly) refuse a retired axis today.
+$sidV = jd_ulid();
+$db->prepare("INSERT INTO jd2_sessions (id, run_id, rater_role, rater_hash, client, taxonomy_version, instrument_version,
+                                        required_cells, blind, seat_order, started_at, filed_at, status)
+              VALUES (?, ?, 'owner', ?, 'web', 34, 'v2.0', NULL, 1, ?, ?, ?, 'filed')")
+   ->execute([$sidV, $runV, jd_curator_hash(), json_encode((object) $gv), jd_now(), jd_now()]);
+$insJ = $db->prepare('INSERT INTO jd2_judgments (id, session_id, generation_id, kind, axis_id, value) VALUES (?, ?, ?, ?, ?, ?)');
+$insR = $db->prepare('INSERT INTO jd2_rankings (id, session_id, generation_id, rank_pos, gap_after) VALUES (?, ?, ?, ?, ?)');
+$slotsV = array_keys($gv);
+foreach ($slotsV as $i => $slot) {
+    $insJ->execute([jd_ulid(), $sidV, $gv[$slot], 'grade', '', 4.0]);
+    foreach (JD2_CELLS_BEFORE_V35 as $cell) {
+        if ($cell !== 'grade') {
+            $insJ->execute([jd_ulid(), $sidV, $gv[$slot], 'axis', $cell, 3.0]);
+        }
+    }
+    $insR->execute([jd_ulid(), $sidV, $gv[$slot], $i + 1, $i + 1 < count($slotsV) ? 1 : null]);
+}
+$insP = $db->prepare("INSERT INTO jd2_pairs (id, session_id, gen_a, gen_b, score, source, method) VALUES (?, ?, ?, ?, ?, 'derived', ?)");
+foreach ($slotsV as $i => $a) {
+    foreach (array_slice($slotsV, $i + 1, null, true) as $j => $b) {
+        $insP->execute([jd_ulid(), $sidV, $gv[$a], $gv[$b], min(3, $j - $i), JD2_DERIVE_METHOD]);
+    }
+}
+$db->prepare("UPDATE jd2_prompts SET visibility = 'live' WHERE id = ?")->execute([$promptV]);
+check('seed: an owner sitting stamped taxonomy v34, four drawings, required_cells NULL, the prompt live',
+      count($gv) === 4 && one($db, 'SELECT required_cells FROM jd2_sessions WHERE id = ?', [$sidV]) === null
+      && (int) one($db, 'SELECT COUNT(*) FROM jd2_judgments WHERE session_id = ?', [$sidV]) === 4 * count(JD2_CELLS_BEFORE_V35));
+check("unstamped, it is judged on today's live axes and reads INCOMPLETE — the drawer would lose it",
+      jd2_display_session($db, $runV, array_values($gv), $taxonomy) === null
+      && !in_array($promptV, array_column(manifest()[1]['items'] ?? [], 'id'), true));
+$setup = [];
+exec('JD_DEV_MOCK=1 ' . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/api/setup-jd2-tables.php') . ' 2>&1', $setup, $rc);
+$setupOut = implode("\n", $setup);
+check('the runner backfills it: "backfilled 1 session(s)", required_cells = the v34 rubric (JD2_CELLS_BEFORE_V35), nothing else touched',
+      $rc === 0 && str_contains($setupOut, 'backfilled 1 session(s)')
+      && json_decode((string) one($db, 'SELECT required_cells FROM jd2_sessions WHERE id = ?', [$sidV]), true) === JD2_CELLS_BEFORE_V35
+      && (int) one($db, 'SELECT COUNT(*) FROM jd2_sessions WHERE id <> ? AND (required_cells IS NULL OR required_cells <> ?)',
+                   [$sidV, json_encode($cellsNow)]) === 0, $setupOut);
+$dv = jd2_display_session($db, $runV, array_values($gv), $taxonomy);
+check('now it is COMPLETE under the rubric it was rated under (jd2_display_session stands on it)',
+      ($dv['session']['id'] ?? null) === $sidV && ($dv['complete'] ?? false) === true);
+[$st, $m] = manifest();
+check('data.php shows the prompt again: the drawer is not emptied by the new axes',
+      $st === 200 && in_array($promptV, array_column($m['items'] ?? [], 'id'), true));
+[$st, $q] = req('GET', '/api/jd2-queue.php?prompt=' . $promptV, null, true);
+$qi = $q['items'][0] ?? [];
+$pf = (array) ($qi['responses'][0]['prefill']['axes'] ?? []);
+check('the bench queue counts it done (complete, nothing needed) and is not in the default backlog',
+      $st === 200 && ($qi['complete'] ?? null) === true && ($qi['needs'] ?? null) === []
+      && !in_array($promptV, array_column(req('GET', '/api/jd2-queue.php', null, true)[1]['items'] ?? [], 'prompt_id'), true),
+      json_encode([$qi['complete'] ?? null, $qi['needs'] ?? null]));
+check('…and its prefill drops the retired axis (structural-coherence) and says so: prefill_pruned true, the live axes kept',
+      ($qi['prefill_pruned'] ?? null) === true && !array_key_exists('structural-coherence', $pf)
+      && array_keys($pf) === array_values(array_intersect(array_keys($liveAxes), JD2_CELLS_BEFORE_V35))
+      && (float) ($qi['responses'][0]['prefill']['grade'] ?? 0) === 4.0, json_encode($qi['responses'][0]['prefill'] ?? null));
+[$st, $l] = req('GET', '/api/jd2-ledger.php?prompt=' . $promptV, null, true);
+$ls = $l['items'][0]['runs'][0]['sessions'][0] ?? [];
+check('the ledger reads the sitting complete, with the cells it had to carry',
+      $st === 200 && ($ls['complete'] ?? null) === true && ($ls['required_cells'] ?? null) === JD2_CELLS_BEFORE_V35, json_encode($ls));
+[$st, $q] = req('GET', '/api/jd2-queue.php?prompt=' . $prompt1, null, true);
+check('a prompt whose owner sitting is on the current rubric carries prefill_pruned false',
+      $st === 200 && ($q['items'][0]['prefill_pruned'] ?? null) === false, json_encode($q['items'][0]['prefill_pruned'] ?? null));
+$setup = [];
+exec('JD_DEV_MOCK=1 ' . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/api/setup-jd2-tables.php') . ' 2>&1', $setup, $rc);
+check('the backfill is idempotent: a second run has nothing to backfill', $rc === 0
+      && str_contains(implode("\n", $setup), 'nothing to backfill'), implode("\n", $setup));
 
 printf("\n%d passed, %d failed\n", $passed, $failed);
 if ($failed > 0) {
