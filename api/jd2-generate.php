@@ -223,6 +223,21 @@ try {
 
     // --- 9. Slot idempotency ------------------------------------------------
     $existing = jd2_load_generation($db, $runId, $slot);
+    if ($existing !== null && $existing['status'] === JD2_GEN_PENDING
+            && jd2_generation_stranded($existing, $profile)) {
+        // A STRANDED slot (2026-10-02): the request that claimed it never
+        // settled — the host answered the caller a bare 503 mid-call and the
+        // PHP process died with the row still 'pending', so every retry was
+        // told "already being drawn" forever (two of forty in the first
+        // medium batch). A pending row older than the profile's own wire
+        // timeout plus a margin cannot still be in flight; it carries no
+        // drawing, no usage and no cost, so it is removed and the slot is
+        // drawn afresh by this request. A settled row is never touched.
+        $db->prepare('DELETE FROM jd2_generations WHERE id = ? AND status = ?')
+           ->execute([$existing['id'], JD2_GEN_PENDING]);
+        error_log('jd2-generate: stranded pending slot ' . $slot . ' of run ' . $runId . ' redrawn');
+        $existing = null;
+    }
     if ($existing !== null) {
         jd2_respond_for_generation($existing, $ctx);
     }
@@ -446,9 +461,20 @@ function jd2_file_prompt_and_run(PDO $db, array $p, string $profile, array $taxo
     }
 }
 
+/** A pending generation whose claim is older than its profile's wire timeout
+ *  (+120 s) can no longer be in flight (step 9). Times are UTC strings. */
+function jd2_generation_stranded(array $generation, string $profile): bool
+{
+    $created = strtotime(((string) ($generation['created'] ?? '')) . ' UTC');
+    if ($created === false) {
+        return false;
+    }
+    return (time() - $created) > (jd_profile_timeout($profile) + 120);
+}
+
 function jd2_load_generation(PDO $db, string $runId, string $slot): ?array
 {
-    $q = $db->prepare('SELECT id, status, svg FROM jd2_generations WHERE run_id = ? AND slot = ?');
+    $q = $db->prepare('SELECT id, status, svg, created FROM jd2_generations WHERE run_id = ? AND slot = ?');
     $q->execute([$runId, $slot]);
     $row = $q->fetch(PDO::FETCH_ASSOC);
     return $row === false ? null : $row;

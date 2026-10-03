@@ -257,6 +257,21 @@ check('prompt: visitor origin, draft, consent and visitor fields filed',
 [$st, $j] = gen(['client_ref' => $ref1, 'slot' => 'a', 'prompt' => 'something else', 'client' => 'web',
                  'consent' => ['version' => JD_CONSENT_VERSION], 'website' => '']);
 check('a retried slot re-answers its stored drawing (idempotent)', $st === 200 && $j['gen_id'] === $t1['a'][1]['gen_id']);
+// a STRANDED pending slot (its claim older than the profile's timeout) is redrawn, not refused — on its own turn
+[$tS, $runS, $promptS, $refS] = visitorTurn('a stranded slot test');
+$oldGen = $tS['a'][1]['gen_id'];
+$db->prepare("UPDATE jd2_generations SET status = 'pending', svg = NULL, created = ? WHERE id = ?")
+   ->execute([gmdate('Y-m-d H:i:s', time() - 3600), $oldGen]);
+[$st, $j] = gen(['client_ref' => $refS, 'slot' => 'a', 'prompt' => 'x', 'client' => 'web',
+                 'consent' => ['version' => JD_CONSENT_VERSION], 'website' => '']);
+$redrawn = rows($db, 'SELECT id, status FROM jd2_generations WHERE run_id = ? AND slot = ?', [$runS, 'a'])[0] ?? [];
+check('a stranded pending slot is redrawn: 200, a new ok row, the dead claim gone',
+      $st === 200 && ($redrawn['status'] ?? '') === 'ok' && ($redrawn['id'] ?? '') !== $oldGen && $j['gen_id'] === ($redrawn['id'] ?? null),
+      json_encode([$st, $j, $redrawn]));
+// the stranded-slot turn was only a fixture: remove it so the later prompt counts hold
+$db->prepare('DELETE FROM jd2_generations WHERE run_id = ?')->execute([$runS]);
+$db->prepare('DELETE FROM jd2_runs WHERE id = ?')->execute([$runS]);
+$db->prepare('DELETE FROM jd2_prompts WHERE id = ?')->execute([$promptS]);
 [$st, $j] = gen(['client_ref' => $ref1, 'slot' => 'e', 'prompt' => 'x', 'client' => 'web',
                  'consent' => ['version' => JD_CONSENT_VERSION], 'website' => '']);
 check('a slot the deal does not hold is refused against the deal', $st === 400
