@@ -186,9 +186,11 @@ part of the cutover build itself.
   real prompts (`--profile bench-low` and `--profile bench-max` on the same
   CSV) before or during the campaign; the decision does not wait on it.
 - **Model pool refresh — DONE 2026-10-02** (branch
-  `junk-drawer-pool-2026-10`). `poolVersion` `pool-2026-10-02b`, taxonomy
-  v33: Claude Opus 5.5 (`claude-opus-5-5`) and GPT-6.1 Sol (`gpt-6.1-sol`; GPT-6.1 Sol stays registered, pool: false)
-  replace Opus 5 and GPT-5.1; Kimi K3 and Gemini 3.1 Pro stay (still each
+  `junk-drawer-pool-2026-10`). Taxonomy v33 wired Claude Opus 5.5
+  (`claude-opus-5-5`) and GPT-6 Astra; v34 (owner call, same day) moved
+  the OpenAI chair to the Sol tier — GPT-6.1 Sol (`gpt-6.1-sol`, $2/$10,
+  Opus 5.5's peer) — with Astra kept registered, pool: false;
+  `poolVersion` `pool-2026-10-02b`. They replace Opus 5 and GPT-5.1; Kimi K3 and Gemini 3.1 Pro stay (still each
   vendor's newest). Wire ids and prices checked on the vendors' own pages
   (`jd-prices.json` `_notes`). Same four vendors, so no consent bump.
   Harness ids moved where parameters did: `web` → `v4-web.4` (Opus 5.5
