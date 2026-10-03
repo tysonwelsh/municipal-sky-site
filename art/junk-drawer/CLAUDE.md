@@ -252,7 +252,31 @@ new prompt.
   `api_model` is in the pool, and `poolVersion` names the snapshot that every
   run records. To refresh the pool: verify the wire ids and prices, add
   `api/jd-prices.json` rows, bump `poolVersion`, and bump the consent version
-  if the provider list changes (privacy.php §4 must match).
+  if the provider list changes (privacy.php §4 must match). Then run
+  `JD_PROFILE_LIVE=1 php scripts/jd2-profile-probe.php --web` (16 tiny
+  calls, every pool model × every profile) and fix any cell that is not a
+  clean SVG; a model can refuse a parameter its docs list.
+- **The cast as of 2026-10-02 (`pool-2026-10-02`, taxonomy v33)**: Claude
+  Opus 5.5 (`claude-opus-5-5`), GPT-6 Astra (`gpt-6-astra`), Kimi K3
+  (`kimi-k3`) and Gemini 3.1 Pro (`gemini-3.1-pro-preview`), each its
+  vendor's current flagship. Verified the same day: wire ids and prices on
+  the vendors' own model and pricing pages (the URLs are in
+  `jd-prices.json` `_notes`), and all 16 probe cells live (200, the
+  vendor's normal stop, a sanitizer-clean SVG). Two things the probe
+  taught: Opus 5.5 cannot disable thinking (a 400 at every effort), so
+  every profile sends `output_config.effort` and no `thinking` key; and
+  GPT-6 Astra on Chat Completions accepts `reasoning_effort` up to `xhigh`
+  and refuses `max` (400) although its model page lists `max`, so
+  `bench-max` sends `xhigh`. Those moved two harness ids: `web` →
+  `v4-web.4` (Anthropic effort low instead of thinking disabled; OpenAI
+  `reasoning_effort` low instead of nothing), `bench-max` → `v4-bench.5`
+  (OpenAI `xhigh` instead of GPT-5.1's top, `high`). The previous cast
+  (`pool-2026-08-14`: `claude-opus-5`, `gpt-5-1`, `kimi-k3`,
+  `gemini-3-1-pro`) keeps its registry entries with `pool: false`; runs
+  record their `pool_version`, so the two casts are never pooled. The
+  vendors did not change, so neither did the consent (`jd-consent-6`).
+  `JD_MODEL_POOL` in `jd-config.php` is v1 history (read only by the frozen
+  `jd-generate.php`) and still names the old cast on purpose.
 - **`utility`** names the helper models outside the pool, by use:
   `utility.intake` is the intake clerk `jd2-intake.php` calls
   (`jd2_utility_model`; a taxonomy without it makes intake answer 500).

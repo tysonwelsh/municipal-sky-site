@@ -143,7 +143,9 @@ The drawer is **empty on purpose**. It fills through the campaign below.
 
 ## 7. What remains, in the owner's order
 
-1. **Model-pool refresh** (before anything is generated): newest models from
+1. **Model-pool refresh — DONE 2026-10-02** (`pool-2026-10-02`: Opus 5.5,
+   GPT-6 Astra, Kimi K3, Gemini 3.1 Pro; `CLAUDE.md`, "The pool is data").
+   The original note: newest models from
    each vendor; verify wire ids and prices against the providers' current
    lists; edit `taxonomy.json` `models[]` (`pool`, `provider`, `api_model`)
    and `api/jd-prices.json`; bump `poolVersion`; bump the consent version

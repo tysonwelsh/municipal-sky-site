@@ -144,32 +144,49 @@ inline.
 | `requested_by` | `owner` \| `visitor` (`JD2_REQUESTED_BY`) |
 | `profile` | the effort profile: `web` \| `bench-medium` \| `bench-low` \| `bench-max` \| `bench` (retired) (`JD2_PROFILE`; see Effort profiles below) |
 | `harness` | the harness id stamped at the time (`JD_HARNESS_BY_PROFILE`) |
-| `pool_version` | the pool snapshot the run drew from (`taxonomy.json` `poolVersion`) |
+| `pool_version` | the pool snapshot the run drew from (`taxonomy.json` `poolVersion`): `pool-2026-08-14` (Opus 5, GPT-5.1, Kimi K3, Gemini 3.1 Pro; every run filed before the refresh) or `pool-2026-10-02` (Opus 5.5, GPT-6 Astra, Kimi K3, Gemini 3.1 Pro; current) |
 | `deal` | JSON: slot letter → model id, as dealt (replaces v1's `pair_order` arithmetic; any pool size) |
 | `status` | `pending` \| `generated` \| `failed` (`JD2_RUN_STATUS`) |
 | `created` | filing time |
 
 Keys: `idx_jd2r_prompt_created (prompt_id, created)`.
 
-#### Effort profiles and harness ids (2026-10-02)
+#### Effort profiles and harness ids (2026-10-02; pool refresh the same day)
 
-| profile | who | Anthropic Opus 5 `output_config.effort` | OpenAI gpt-5.1 `reasoning_effort` | Kimi K3 `reasoning_effort` | Gemini 3.1 Pro `thinkingLevel` | output budget | harness |
+Current, under `pool-2026-10-02`:
+
+| profile | who | Anthropic Opus 5.5 `output_config.effort` | OpenAI gpt-6-astra `reasoning_effort` | Kimi K3 `reasoning_effort` | Gemini 3.1 Pro `thinkingLevel` | output budget | harness |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `web` | visitors | thinking disabled | (none sent: vendor default) | `low` | `low` | 12000 | `v4-web.3` |
+| `web` | visitors | `low` | `low` | `low` | `low` | 12000 | `v4-web.4` |
 | `bench-low` | owner | `low` | `low` | `low` | `low` | 64000 | `v4-benchlow.1` |
 | `bench-medium` | owner, **the default** | `medium` | `medium` | `high` (K3 has no medium: its middle rung) | `medium` | 64000 | `v4-benchmed.1` |
-| `bench-max` | owner | `max` | `high` | `max` | `high` | 64000 | `v4-bench.4` |
-| `bench` | retired: runs filed before 2026-10-02 | `max` | `high` | `high` | `high` | 12000 | `v4-bench.3` |
+| `bench-max` | owner | `max` | `xhigh` (Chat Completions refuses `max` on this model) | `max` | `high` | 64000 | `v4-bench.5` |
 
-The values are `JD_EFFORT` in `api/jd-config.php`; every bench profile leaves
-thinking on. The owner's default is `JD2_OWNER_DEFAULT_PROFILE`
+Retired harness ids, still stamped on the runs filed under them (under
+`pool-2026-08-14`, with Opus 5 and GPT-5.1 in the first two columns):
+
+| profile | harness | Anthropic | OpenAI | Kimi K3 | Gemini 3.1 Pro | budget | retired because |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `web` | `v4-web.3` | thinking disabled | (none sent: vendor default) | `low` | `low` | 12000 | Opus 5.5 answers 400 to disabled thinking; OpenAI now sends `low` |
+| `bench-max` | `v4-bench.4` | `max` | `high` (GPT-5.1's top) | `max` | `high` | 64000 | GPT-6 Astra's top accepted rung is `xhigh` |
+| `bench` | `v4-bench.3` | `max` | `high` | `high` | `high` | 12000 | the profile split (runs filed before 2026-10-02) |
+
+Harness ids in use for new runs: `v4-web.4`, `v4-benchlow.1`,
+`v4-benchmed.1`, `v4-bench.5`. `v4-benchlow.1` and `v4-benchmed.1` span both
+pool versions (their parameters did not change); `pool_version` tells those
+runs apart.
+
+The values are `JD_EFFORT` in `api/jd-config.php`; every profile leaves
+thinking on, web included since `v4-web.4`. The owner's default is `JD2_OWNER_DEFAULT_PROFILE`
 (`bench-medium`, owner 2026-10-02). On the wire, the bare word `bench` (an
 older client, the bench page) means that default; max effort is the explicit
 `bench-max`. A slot of a run stored under the retired `bench` is refused
 (409 `retired_profile`); the owner reruns the prompt instead. Runs under
 different harness ids are never pooled: `v4-bench.3` and `v4-bench.4` differ in
-budget and in Kimi's setting, and the three bench profiles are each their own
-condition — comparing them is the point.
+budget and in Kimi's setting, `v4-bench.4` and `v4-bench.5` in OpenAI's,
+`v4-web.3` and `v4-web.4` in Anthropic's and OpenAI's, and the three bench
+profiles are each their own condition — comparing them is the point. Nor are
+runs under different `pool_version`s.
 
 **The budget rule.** On every provider in the pool one output cap covers
 thinking AND the answer (Anthropic `max_tokens`, OpenAI `max_completion_tokens`,
@@ -596,3 +613,8 @@ after the drawings, stand over the clerk's.
   rejecting them (`element_not_allowed` before) and reports it;
   `jd2-generate` files it. `api/jd2-resanitize.php` recovers drawings the
   old rules rejected (Runbook).
+- 2026-10-02 — the model-pool refresh: `poolVersion` `pool-2026-10-02`
+  (taxonomy v33: `claude-opus-5-5` and `gpt-6-astra` join, `claude-opus-5` and
+  `gpt-5-1` leave the pool and stay registered); harness ids `v4-web.4` and
+  `v4-bench.5`; `jd-prices.json` rows for the two new wire ids. No schema
+  change.

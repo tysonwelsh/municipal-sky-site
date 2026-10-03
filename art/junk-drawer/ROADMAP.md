@@ -55,8 +55,8 @@ back-end change; the owner decides the wording):
   visitors; the owner can still override on the ledger. Check the
   agreement rate against the ~64 owner-chosen sizes in the v1 archive
   first.
-- **Newest models** in the pool (newest Opus, newest OpenAI, etc.) —
-  already decided: refresh before regenerating; pool is data + `poolVersion`.
+- **Newest models** in the pool — **DONE 2026-10-02** (`pool-2026-10-02`;
+  the "Model pool refresh" item below).
 
 **Instrument / UI (Phase 4b and after):**
 
@@ -178,10 +178,20 @@ part of the cutover build itself.
   OPTIONAL, the owner's call: a low/medium/max comparison on a handful of
   real prompts (`--profile bench-low` and `--profile bench-max` on the same
   CSV) before or during the campaign; the decision does not wait on it.
-- **Model pool refresh** before the rating campaign: verify wire ids and
-  prices against the providers' lists, add `jd-prices.json` rows, bump
-  `poolVersion` in `taxonomy.json`, bump the consent version if the
-  provider list changes (privacy.php §4 must match).
+- **Model pool refresh — DONE 2026-10-02** (branch
+  `junk-drawer-pool-2026-10`). `poolVersion` `pool-2026-10-02`, taxonomy
+  v33: Claude Opus 5.5 (`claude-opus-5-5`) and GPT-6 Astra (`gpt-6-astra`)
+  replace Opus 5 and GPT-5.1; Kimi K3 and Gemini 3.1 Pro stay (still each
+  vendor's newest). Wire ids and prices checked on the vendors' own pages
+  (`jd-prices.json` `_notes`). Same four vendors, so no consent bump.
+  Harness ids moved where parameters did: `web` → `v4-web.4` (Opus 5.5
+  refuses disabled thinking, so Anthropic sends effort `low`; OpenAI now
+  sends `reasoning_effort` `low`), `bench-max` → `v4-bench.5` (Astra
+  refuses `max` on Chat Completions; `xhigh` is its top accepted rung).
+  `scripts/jd2-profile-probe.php --web` ran live: all 16 cells (4 models ×
+  bench-low/medium/max + web) 200 with a clean SVG, $0.088. The batch
+  should be run under the new pool; the 39/40 medium trial stays under
+  `pool-2026-08-14` and is not pooled with it.
 
 ### A basic vector editor on the report card (owner, 2026-09-11)
 
