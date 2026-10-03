@@ -11,7 +11,11 @@
  * of bench-low, bench-medium, bench-max, web) — together they re-run one
  * cell; --web (add the web profile to the default three bench profiles);
  * --prompt TEXT (default "a plain red circle"); --json FILE (also write every
- * cell, with the provider's raw usage object, as JSON lines).
+ * cell, with the provider's raw usage object, as JSON lines); --save DIR
+ * (2026-10-03: also write each cell's drawing to DIR as
+ * <model>.<profile>.svg — the SERVED svg, sanitized — and its byte-exact
+ * reply as <model>.<profile>.raw.txt, so a real prompt can be looked at,
+ * not just passed).
  *
  * The web profile (2026-10-02, the pool refresh) is the visitor turn's: its
  * own 12000 budget and the visitor's JD_PROVIDER_TIMEOUT, both through the
@@ -37,7 +41,9 @@
  * tokens (its `reasoning` bucket: Anthropic output_tokens_details.
  * thinking_tokens, OpenAI/Kimi reasoning_tokens, Gemini thoughtsTokenCount)
  * · latency · cost (jd-prices.json) · SVG: `ok` when
- * jd_extract_svg() found one AND jd_sanitize_svg() passed it, else why not.
+ * jd_extract_svg() found one AND jd_sanitize_svg() passed it, else why not
+ * · normalized: what the sanitizer changed (jd2_normalized_column(); `—`
+ * when nothing).
  *
  * The cells (12, or 16 with --web) run as concurrent child processes of this script
  * (--cell MODEL:PROFILE prints one JSON line), so the wall time is the
@@ -60,13 +66,13 @@ const PROBE_PROFILES = ['bench-low', 'bench-medium', 'bench-max'];
 const PROBE_ALL_PROFILES = ['bench-low', 'bench-medium', 'bench-max', 'web'];
 
 $args = array_slice($argv, 1);
-$opt = ['model' => null, 'profile' => null, 'prompt' => 'a plain red circle', 'json' => null, 'cell' => null, 'web' => false];
+$opt = ['model' => null, 'profile' => null, 'prompt' => 'a plain red circle', 'json' => null, 'cell' => null, 'web' => false, 'save' => null];
 for ($i = 0; $i < count($args); $i++) {
     $a = $args[$i];
     $name = substr($a, 2);
     if ($a === '--web') {
         $opt['web'] = true;
-    } elseif (in_array($a, ['--model', '--profile', '--prompt', '--json', '--cell'], true)) {
+    } elseif (in_array($a, ['--model', '--profile', '--prompt', '--json', '--cell', '--save'], true)) {
         $opt[$name] = $args[++$i] ?? probe_bail("$a needs a value.");
     } else {
         probe_bail("Unknown argument $a. See the header of scripts/jd2-profile-probe.php.");
@@ -89,7 +95,7 @@ if ($opt['cell'] !== null) {
     if (!isset($pool[$modelId]) || !in_array($profile, PROBE_ALL_PROFILES, true)) {
         probe_bail("--cell must be MODEL:PROFILE with a pool model and a probe profile.");
     }
-    echo json_encode(probe_cell($pool[$modelId], $profile, $opt['prompt']), JSON_UNESCAPED_SLASHES) . "\n";
+    echo json_encode(probe_cell($pool[$modelId], $profile, $opt['prompt'], $opt['save']), JSON_UNESCAPED_SLASHES) . "\n";
     exit(0);
 }
 
@@ -105,6 +111,12 @@ foreach ($profiles as $p) {
     if (!in_array($p, PROBE_ALL_PROFILES, true)) {
         probe_bail("--profile $p is not one of " . implode(', ', PROBE_ALL_PROFILES) . '.');
     }
+}
+if ($opt['save'] !== null) {
+    if (!is_dir($opt['save']) && !mkdir($opt['save'], 0775, true)) {
+        probe_bail("--save {$opt['save']}: cannot create the directory.");
+    }
+    $opt['save'] = realpath($opt['save']);
 }
 
 echo 'jd2-profile-probe · prompt "' . $opt['prompt'] . '" · ' . count($models) . ' model(s) × ' . count($profiles)
@@ -128,6 +140,9 @@ $procs = [];
 foreach ($models as $m) {
     foreach ($profiles as $p) {
         $cmd = [PHP_BINARY, __FILE__, '--cell', "$m:$p", '--prompt', $opt['prompt']];
+        if ($opt['save'] !== null) {
+            array_push($cmd, '--save', $opt['save']);
+        }
         $proc = proc_open($cmd, [0 => ['file', '/dev/null', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
         $procs[] = ['m' => $m, 'p' => $p, 'proc' => $proc, 'out' => $pipes[1], 'err' => $pipes[2]];
     }
@@ -145,23 +160,26 @@ foreach ($procs as $c) {
 
 $order = array_flip(PROBE_ALL_PROFILES);
 usort($cells, fn ($a, $b) => [$a['model'], $order[$a['profile']] ?? 9] <=> [$b['model'], $order[$b['profile']] ?? 9]);
-echo "\n| model | profile | effort sent | budget | HTTP | stop | output tok | thinking tok | latency | cost | SVG |\n";
-echo "|---|---|---|---|---|---|---|---|---|---|---|\n";
+echo "\n| model | profile | harness | effort sent | budget | HTTP | stop | output tok | thinking tok | latency | cost | SVG | normalized |\n";
+echo "|---|---|---|---|---|---|---|---|---|---|---|---|---|\n";
 $total = 0.0;
 foreach ($cells as $c) {
     $total += (float) ($c['cost_usd'] ?? 0);
-    echo sprintf("| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
-        $c['model'], $c['profile'], $c['effort'] ?? '—', $c['max_tokens'] ?? '—', $c['http'] ?? '—',
+    echo sprintf("| %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s | %s |\n",
+        $c['model'], $c['profile'], $c['harness'] ?? '—', $c['effort'] ?? '—', $c['max_tokens'] ?? '—', $c['http'] ?? '—',
         $c['stop'] ?? '—', $c['output'] ?? '—', $c['reasoning'] ?? '—',
         isset($c['latency_s']) ? sprintf('%.1f s', $c['latency_s']) : '—',
         isset($c['cost_usd']) ? sprintf('$%.4f', $c['cost_usd']) : 'unpriced',
-        $c['svg'] ?? ('error: ' . ($c['error'] ?? '?')));
+        $c['svg'] ?? ('error: ' . ($c['error'] ?? '?')), $c['normalized'] ?? '—');
 }
 echo sprintf("\ntotal $%.4f\n", $total);
 foreach ($cells as $c) {
     if (($c['svg'] ?? '') !== 'ok' && !empty($c['error_body'])) {
         echo "\n{$c['model']} · {$c['profile']}: " . $c['error_body'] . "\n";
     }
+}
+if ($opt['save'] !== null) {
+    echo "\nsaved each cell's served svg and raw reply in {$opt['save']}\n";
 }
 if ($opt['json'] !== null) {
     file_put_contents($opt['json'], implode('', array_map(fn ($c) => json_encode($c, JSON_UNESCAPED_SLASHES) . "\n", $cells)));
@@ -178,7 +196,7 @@ function probe_bail(string $msg): never
 }
 
 /** One call through the real provider path, measured and judged. */
-function probe_cell(array $m, string $profile, string $prompt): array
+function probe_cell(array $m, string $profile, string $prompt, ?string $saveDir = null): array
 {
     $provider = $m['provider'];
     $effort = jd_effort($provider, $profile);
@@ -192,6 +210,11 @@ function probe_cell(array $m, string $profile, string $prompt): array
     $t = $cost['tokens'];
     $svg = 'no answer';
     $bytes = null;
+    $normalized = null;
+    $stem = $saveDir === null ? null : $saveDir . '/' . $m['model_id'] . '.' . $profile;
+    if ($stem !== null && isset($r['raw'])) {
+        file_put_contents("$stem.raw.txt", (string) $r['raw']);
+    }
     if (!empty($r['ok'])) {
         $extracted = jd_extract_svg((string) $r['raw']);
         if ($extracted === null) {
@@ -200,6 +223,12 @@ function probe_cell(array $m, string $profile, string $prompt): array
             $verdict = jd_sanitize_svg($extracted);
             $svg = !empty($verdict['ok']) ? 'ok' : 'rejected: ' . ($verdict['reason'] ?? '?');
             $bytes = strlen($extracted);
+            if (!empty($verdict['ok'])) {
+                $normalized = jd2_normalized_column($verdict);
+                if ($stem !== null) {
+                    file_put_contents("$stem.svg", $verdict['svg']);
+                }
+            }
         }
     } elseif (($r['error'] ?? '') !== '') {
         $svg = (string) $r['error'];
@@ -219,6 +248,7 @@ function probe_cell(array $m, string $profile, string $prompt): array
         'cost_usd' => $cost['cost_usd'] === null ? null : round($cost['cost_usd'], 6),
         'svg' => $svg,
         'svg_bytes' => $bytes,
+        'normalized' => $normalized,
         'error' => $r['error'] ?? null,
         // a refusal's body (the vendor's own error text) is short and is the evidence
         'error_body' => empty($r['ok']) ? mb_substr((string) ($r['raw'] ?? ''), 0, 600) : null,
