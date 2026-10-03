@@ -27,11 +27,15 @@
 // again before the compare: a canvas by its first size and its place among
 // the canvases first sized so (C1374x400#1: the second canvas made
 // 1374 × 400), a path by its place among the paths, a gradient as G (it is
-// told by its stops, written beside it). --inline <canvas> takes a canvas of
-// B's that is laid down whole (a cache) at its word: each drawImage of it is
-// read as the calls drawn on it since it was last cleared, on the canvas it
-// is laid on, and its own calls leave the compare — so a frame that laid an
-// out-of-date drawing shows as one whose calls differ.
+// told by its stops, written beside it). A canvas's own lines from its width
+// to its height (the page sets the width first) are named so once its height
+// comes, in the same frame: the raw names count every canvas, path and
+// gradient made, so they differ between builds that make different ones.
+// --inline <canvas> takes a canvas of B's that is laid down whole (a cache)
+// at its word: each drawImage of it is read as the calls drawn on it since
+// it was last cleared (a gradient made on it, with its stops, among them),
+// on the canvas it is laid on, and its own calls leave the compare — so a
+// frame that laid an out-of-date drawing shows as one whose calls differ.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -57,7 +61,10 @@ function namer() {
     if (!canv.has(id)) canv.set(id, "C~" + ++unsized);   // (seen before it was sized)
     return canv.get(id);
   }
-  return function (line) {
+  // (a canvas's lines between its width and its height keep their raw name;
+  // the frame's lines are named again once it has its own: name.settle)
+  const named = new Map();
+  function name(line) {
     let m = /^C(\d+)\.=(width|height)\((\d+(?:\.\d+)?)\)$/.exec(line);
     if (m) {
       const id = "C" + m[1];
@@ -67,6 +74,7 @@ function namer() {
           const key = wpend.get(id) + "x" + m[3], k = sized.get(key) || 0;
           sized.set(key, k + 1);
           canv.set(id, "C" + key + "#" + k);
+          named.set(id, canv.get(id));
           wpend.delete(id);
         }
       }
@@ -80,7 +88,15 @@ function namer() {
       if (wpend.has(id) && !canv.has(id)) return pre + id;        // (between its width and its height)
       return pre + canvas(id);
     });
+  }
+  name.settle = function (lines) {
+    if (!named.size) return lines;
+    const re = new RegExp("(^|[(,[.])(" + [...named.keys()].join("|") + ")(?=[./,)\\]]|$)", "g");
+    const out = lines.map((l) => l.replace(re, (all, pre, id) => pre + named.get(id)));
+    named.clear();
+    return out;
   };
+  return name;
 }
 // a call's kind: who and what, without the arguments
 function kindOf(line) { const m = /^([^(]*)\(/.exec(line); return m ? m[1] : line; }
@@ -100,7 +116,7 @@ function frames(file) {
       lines.push(name(r.value));
     }
     n++;
-    return { label, lines };
+    return { label, lines: name.settle(lines) };
   };
 }
 
@@ -109,18 +125,22 @@ function frames(file) {
 function inliner(names) {
   const held = new Map();
   if (!names.length) return (lines) => lines;
+  let grad = null;                               // (a gradient the canvas made: its stops are its own)
   return function (lines) {
     const out = [];
     for (const line of lines) {
-      const who = kindOf(line).split(".")[0], cv = who.replace(/\/2d$/, "");
+      const who = kindOf(line).replace(/^G\./, "").split(".")[0], cv = who.replace(/\/2d$/, "");
       if (names.includes(cv)) {
+        grad = /^G\./.test(line) ? cv : null;
         if (/\.=(width|height)\(/.test(line) || /\.clearRect\(/.test(line)) held.set(cv, []);
         else if (who.endsWith("/2d")) (held.get(cv) || held.set(cv, []).get(cv)).push(line);
         continue;
       }
+      if (grad && /^G\.addColorStop\(/.test(line)) { held.get(grad).push(line); continue; }
+      grad = null;
       const m = /^([^.]+\/2d)\.drawImage\(([^,)]+)[,)]/.exec(line);
       if (m && names.includes(m[2])) {
-        (held.get(m[2]) || []).forEach((l) => out.push(m[1] + l.slice(l.indexOf("/2d") + 3)));
+        (held.get(m[2]) || []).forEach((l) => out.push(l.replace(m[2] + "/2d", m[1])));
         continue;
       }
       out.push(line);

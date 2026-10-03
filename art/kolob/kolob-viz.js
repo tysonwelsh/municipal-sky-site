@@ -1814,6 +1814,7 @@ window.KolobViz = (function () {
 
   // ---- the frame ----------------------------------------------------------------
   var inkLayer = null, bandLayer = null, tapeLayer = null;
+  var fades = null;                                // each layer's fade before the clefs, made where the plate is measured (resize)
   var lastFrame = 0;
   function paintLayer(layer, fn) {
     var c = layer.getContext("2d");
@@ -1826,10 +1827,17 @@ window.KolobViz = (function () {
     try { fn(c); } finally { c.restore(); }                          // one bad frame must not leave the plate clipped
     // the ink dissolves before it reaches the clefs
     c.globalCompositeOperation = "destination-out";
-    var gr = c.createLinearGradient(G.fade0, 0, G.fade1, 0);
-    gr.addColorStop(0, "rgba(0,0,0,1)"); gr.addColorStop(1, "rgba(0,0,0,0)");
-    c.fillStyle = gr; c.fillRect(0, 0, G.fade1 + 1, H);
+    c.fillStyle = fades.get(layer); c.fillRect(0, 0, G.fade1 + 1, H);
     c.globalCompositeOperation = "source-over";
+  }
+  // (the fade: wiped out at the clefs' edge, fading to nothing six spaces
+  // on; one gradient a layer, made where the plate is laid out — a
+  // gradient's ends are read in the layer's own space when it fills, so one
+  // made once fills as one made every frame did)
+  function fadeOf(layer) {
+    var gr = layer.getContext("2d").createLinearGradient(G.fade0, 0, G.fade1, 0);
+    gr.addColorStop(0, "rgba(0,0,0,1)"); gr.addColorStop(1, "rgba(0,0,0,0)");
+    return gr;
   }
   var IDLE_FRAME_MS = 80;                          // with no meeting playing or held, the page repaints at about 12 fps, not the display's rate
   function frame(ts) {
@@ -1881,6 +1889,7 @@ window.KolobViz = (function () {
     sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     buildStaffLayer(sctx);
     inkLayer = layer(); bandLayer = layer(); tapeLayer = layer();
+    fades = new Map([[inkLayer, fadeOf(inkLayer)], [bandLayer, fadeOf(bandLayer)], [tapeLayer, fadeOf(tapeLayer)]]);
     proofLayer = layer(); proofC = proofLayer.getContext("2d");   // (the proof sheet each note is struck on, whole: impress)
     if (wheel) {
       var xr = wheel.getBoundingClientRect();

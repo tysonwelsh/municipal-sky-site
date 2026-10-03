@@ -945,9 +945,12 @@ one taken out and one put in. The names are read again first, since a canvas
 added on one side shifts every name after it: a canvas by its first size and
 its place among those first sized so (`C1374x400#1`, the second 1374 × 400
 canvas made), a path by its place among the paths, a gradient as `G` (its
-stops follow it). `--inline <canvas>` takes a canvas of B's that is drawn
-once and laid down whole (a cache) at its word: each `drawImage` of it is read
-as the calls drawn on it since it was last cleared, on the canvas it is laid
+stops follow it); a canvas's own lines from its width to its height are named
+once its height comes, in the same frame (the raw names count every canvas,
+path and gradient made, so a gradient made on one side shifts them). `--inline <canvas>` takes a canvas
+of B's that is drawn once and laid down whole (a cache) at its word: each
+`drawImage` of it is read as the calls drawn on it since it was last cleared
+(a gradient made on it, with its stops, among them), on the canvas it is laid
 on, and its own calls leave the compare — so a frame that laid down an
 out-of-date drawing shows as a frame whose calls differ. Seed 22, 300 s,
 about a minute a pair. PLAN-REFACTOR §4.2 is proved with it.
