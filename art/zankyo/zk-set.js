@@ -900,6 +900,148 @@
     scx.fillStyle = "#0a0a0a"; scx.fillRect(0, 64, CW, 8); scx.fillStyle = "#d0d0d0"; scx.fillRect(4, 66, 30, 4); scx.fillRect(62, 66, 30, 4);
     scx.restore();
   }
+  // 題辞 THE EPIGRAPH (owner, 2026-10-02): Ulysses 2.377–86 on the tube at
+  // first load. The text is read from the page's #zankyo-epi figure (the
+  // screen reader's copy stays there) and drawn by the set, not over it.
+  // Round 1 drew it INTO the 192 × 144 source, so it went through the phosphor
+  // like a reel — and at that raster it was too big and too soft to read
+  // (owner: "an over-correction … they need to be readable"). Now it is set at
+  // the tube's FULL resolution, onto the frame after the phosphor: sharp, a
+  // little bloom under it, moved by the hold's roll, then sliced and refracted
+  // by the crack and laid under the scanlines and the glass with everything
+  // else. The idle raster, sparks and retrace still run behind it. Pages, whole
+  // paragraphs to a page, only when the tube is too small for the passage;
+  // each fades up, holds for a reading time and fades, and the hold slips as
+  // the next comes up. epigraph(null) ends it (the first start of the
+  // station, clearBoot() in zankyo-ui.js) and the test card takes the tube
+  // back. The face is VT323 (the owner's pick of four, 2026-10-02: VT323,
+  // DotGothic16, Shippori Mincho, IBM Plex Mono — "it fits and it looks good").
+  // size: px per px of tube height; lh: line height in ems; min: the floor
+  // the fit steps down to.
+  var EPI_FACE = { family: "VT323", size: 0.046, lh: 1.0, min: 11.5 };
+  var EPI = null;            // { paras, cite, face, pages, key, k, at, ready, a }
+  var EPI_FADE = 0.7, EPI_GAP = 0.6;
+  function epiFont(f, px, it) { return (it ? "italic " : "") + (f.w || 400) + " " + px.toFixed(2) + 'px "' + f.family + '", monospace'; }
+  // Fit: the face's size for this tube, stepped down toward its floor until
+  // the whole passage and its citation stand on one screen; only a tube too
+  // small for that at the floor gets pages. The citation never takes a page
+  // of its own: it may hang into the bottom margin instead.
+  function epiLayout() {
+    var f = EPI.face, px = Math.max(f.min, TH * f.size), r;
+    for (;;) {
+      r = epiLay(px);
+      if (r.pages.length === 1 || px <= f.min) break;
+      px = Math.max(f.min, px * 0.95);
+    }
+    r.pages = r.pages.filter(function (p) { return p.blocks.length || p.cite; });   // the "does not fit" marker, at the floor
+    EPI.L = r.L; EPI.pages = r.pages; EPI.key = TW + "x" + TH;
+    if (EPI.k >= r.pages.length) { EPI.k = 0; EPI.at = -1; }
+  }
+  function epiLay(px) {
+    var f = EPI.face, lh = px * f.lh;
+    // margins inside the tube's rounded corners; tighter than the round-1
+    // 8.5 % / 9 % so a phone's tube (rc.120's graphite walls are thicker) still
+    // holds the whole passage on one screen at the face's floor
+    var mx = Math.round(TW * 0.065), my = Math.round(TH * 0.07), maxW = TW - 2 * mx, maxH = TH - 2 * my, blocks = [];
+    fcx.save();
+    fcx.font = epiFont(f, px);
+    EPI.paras.forEach(function (para) {
+      var words = para.split(/\s+/), lines = [], cur = "";
+      words.forEach(function (w) {
+        var tryL = cur ? cur + " " + w : w;
+        if (cur && fcx.measureText(tryL).width > maxW) { lines.push(cur); cur = w; } else cur = tryL;
+      });
+      if (cur) lines.push(cur);
+      blocks.push({ lines: lines, h: lines.length * lh });
+    });
+    fcx.restore();
+    var gap = lh * 0.4, pages = [], pg = null;
+    blocks.forEach(function (b) {
+      if (!pg || pg.h + gap + b.h > maxH) { pg = { blocks: [], h: 0, words: 0 }; pages.push(pg); }
+      else pg.h += gap;
+      pg.blocks.push(b); pg.h += b.h;
+      pg.words += b.lines.join(" ").split(/\s+/).length;
+    });
+    var last = pages[pages.length - 1];
+    last.cite = true; last.h += lh * 1.7;
+    pages.forEach(function (p) { p.hold = 2.4 + p.words * 0.3; });
+    // one screen means the citation fits too, give or take the bottom margin
+    if (pages.length === 1 && last.h > maxH + my * 0.8) pages.push({ blocks: [], h: 0, words: 0, hold: 0 });
+    return { L: { px: px, lh: lh, gap: gap, mx: mx }, pages: pages };
+  }
+  // the clock (from the source pass, once a frame): which page, and how lit
+  function epiTick(t) {
+    EPI.a = 0;
+    if (!EPI.ready || TW < 8) return;
+    if (!EPI.pages || EPI.key !== TW + "x" + TH) epiLayout();
+    if (EPI.at < 0) EPI.at = t;
+    var pg = EPI.pages[EPI.k], e = (t - EPI.at) / 1000, span = EPI_FADE * 2 + pg.hold + EPI_GAP;
+    if (EPI.pages.length === 1) { EPI.a = e < EPI_FADE ? e / EPI_FADE : 1; return; }   // one screen: it comes up and stays
+    if (e >= span) {
+      EPI.k = (EPI.k + 1) % EPI.pages.length; EPI.at = t; e = 0; pg = EPI.pages[EPI.k];
+      if (EPI.pages.length > 1) S.rollV += 1.4;              // the hold slips as the card changes
+    }
+    EPI.a = e < EPI_FADE ? e / EPI_FADE : e < EPI_FADE + pg.hold ? 1 : e < EPI_FADE * 2 + pg.hold ? 1 - (e - EPI_FADE - pg.hold) / EPI_FADE : 0;
+  }
+  function epiText(pg, y0, color, cite) {
+    var f = EPI.face, L = EPI.L, y = y0 + L.px * 0.82;
+    fcx.fillStyle = color; fcx.textBaseline = "alphabetic"; fcx.textAlign = "left";
+    fcx.font = epiFont(f, L.px);
+    pg.blocks.forEach(function (b, bi) {
+      if (bi) y += L.gap;
+      b.lines.forEach(function (ln) { fcx.fillText(ln, L.mx, y); y += L.lh; });
+    });
+    if (pg.cite) {
+      y += L.lh * 0.7; fcx.textAlign = "right"; fcx.fillStyle = cite;
+      var x = TW - L.mx, c = EPI.cite, cpx = L.px * 0.86;
+      // "James Joyce, " · the title in italic · " 2.377–86", set right to left
+      fcx.font = epiFont(f, cpx); fcx.fillText(c[2], x, y); x -= fcx.measureText(c[2]).width;
+      fcx.font = epiFont(f, cpx, true); fcx.fillText(c[1], x, y); x -= fcx.measureText(c[1]).width;
+      fcx.font = epiFont(f, cpx); fcx.fillText(c[0], x, y);
+    }
+  }
+  // onto the frame (composite), after the phosphor and before the crack: a
+  // bloom, then the sharp line, following the raster's roll and squash
+  function drawEpigraph(roll, rs, dyBase, x0, w, h) {
+    if (!EPI || !EPI.pages || !(EPI.a > 0)) return;
+    var pg = EPI.pages[EPI.k], a = EPI.a, top = Math.round((TH - pg.h) / 2);
+    var offs = [dyBase + roll * rs]; if (roll) offs.push(dyBase + (roll - TH) * rs);
+    offs.forEach(function (dy) {
+      fcx.save();
+      fcx.translate(x0, dy); fcx.scale(w / TW, h / TH);
+      if (hasFilter) {
+        fcx.globalCompositeOperation = "lighter"; fcx.filter = "blur(2.2px)";
+        epiText(pg, top, "rgba(90,230,130," + (0.42 * a).toFixed(3) + ")", "rgba(90,230,130," + (0.3 * a).toFixed(3) + ")");
+        fcx.filter = "none"; fcx.globalCompositeOperation = "source-over";
+      }
+      epiText(pg, top, "rgba(206,255,214," + (0.9 * a).toFixed(3) + ")", "rgba(150,226,166," + (0.82 * a).toFixed(3) + ")");
+      fcx.restore();
+    });
+  }
+  function epigraph(on) {
+    if (!on) {
+      if (EPI) { EPI = null; S.rollV += 2; idle.cardAt = -1; idle.nextCard = now() + 9000; }
+      return false;
+    }
+    var fig = document.getElementById("zankyo-epi");
+    if (!fig) return false;
+    var paras = [].map.call(fig.querySelectorAll(".zk-epi-text p"), function (p) { return p.textContent.replace(/\s+/g, " ").trim(); });
+    var cap = fig.querySelector(".zk-epi-cite"), ct = cap ? cap.querySelector("cite") : null, c = ["", "", ""];
+    if (cap && ct) {
+      var full = cap.textContent.replace(/\s+/g, " ").trim(), title = ct.textContent.trim(), i = full.indexOf(title);
+      c = [full.slice(0, i), title, full.slice(i + title.length)];
+    }
+    var face = EPI_FACE;
+    EPI = { paras: paras, cite: c, face: face, pages: null, key: "", k: 0, at: -1, ready: false, a: 0 };
+    var mark = EPI;
+    var go = function () { if (EPI === mark) EPI.ready = true; };
+    if (document.fonts && document.fonts.load) {
+      Promise.all([document.fonts.load(epiFont(face, 16)), document.fonts.load(epiFont(face, 16, true))]).then(go, go);
+      setTimeout(go, 2000);
+    } else go();
+    return true;
+  }
+
   // PASS 1 — SOURCE (192×144). The picture onto the source canvas — the reel,
   // the test card, or the idle raster — then, in the order a signal meets
   // them: luma; 影 the echoes (PASS 3's list, applied HERE because a multipath
@@ -926,10 +1068,13 @@
     } else {
       // idle: a faint raster, breathing, crawling; the test card surfaces now and then
       scx.fillStyle = "#000"; scx.fillRect(0, 0, SW, SH);
-      var card = idle.cardAt >= 0 ? (t - idle.cardAt) / 1000 : -1;
-      if (card >= 0 && card < 1.3) { var ca = card < 0.3 ? card / 0.3 : card > 0.9 ? (1.3 - card) / 0.4 : 1; drawTestCard(0.32 * ca, 0); }
-      else if (card >= 1.3) { idle.cardAt = -1; idle.nextCard = t + 14000 + Ridle.next() * 12000; }
-      if (idle.cardAt < 0 && t > idle.nextCard) { idle.cardAt = t; S.rollV = 2.5 + Ridle.next() * 3; }
+      if (EPI) epiTick(t);                                     // 題辞: the caption card has the tube until the first start (drawn in composite)
+      else {
+        var card = idle.cardAt >= 0 ? (t - idle.cardAt) / 1000 : -1;
+        if (card >= 0 && card < 1.3) { var ca = card < 0.3 ? card / 0.3 : card > 0.9 ? (1.3 - card) / 0.4 : 1; drawTestCard(0.32 * ca, 0); }
+        else if (card >= 1.3) { idle.cardAt = -1; idle.nextCard = t + 14000 + Ridle.next() * 12000; }
+        if (idle.cardAt < 0 && t > idle.nextCard) { idle.cardAt = t; S.rollV = 2.5 + Ridle.next() * 3; }
+      }
     }
     var sdata = scx.getImageData(0, 0, SW, SH).data, n = SW * SH, ch = S.ch, env = S.env || ENV1;
     S.meanL = ZP.lumaPass(sdata, Lsrc, n); S.meanOk = !!CARRIER_PH[ph];
@@ -1124,6 +1269,7 @@
     }
     fcx.globalAlpha = 1;
   }
+  function stationOn() { try { var st = Z.getState && Z.getState(); return !!(st && st.playing); } catch (e) { return false; } }
   function composite(t) {
     var ph = S.phase, strength = S.strength, D = TB.decay, ex = S.ch.exit;
     fcx.globalCompositeOperation = "source-over";
@@ -1178,6 +1324,7 @@
     fcx.drawImage(phos, x0, dyBase + roll * rs, w, h);
     if (roll) fcx.drawImage(phos, x0, dyBase + (roll - TH) * rs, w, h);
     if (soft) fcx.filter = "none";
+    if (ph === "idle") drawEpigraph(roll, rs, dyBase, x0, w, h);   // 題辞, sharp, on the raster
     if (roll) { fcx.fillStyle = "rgba(0,0,0,0.75)"; fcx.fillRect(0, dyBase + roll * rs - 6, TW, 7); }   // the blanking bar
     if (rot) fcx.restore();
     // (P4) a tired capacitor: a dim band across the glass at a fixed height,
@@ -1193,6 +1340,10 @@
     if (ph === "collapse" && hasLine) lineK = clamp01((pel - ex.lineAt) / ex.lineRise);
     if (ph === "burst" && hasLine) lineK = 1 - clamp01(pel / ex.lineFall);
     if (ph === "idle") {
+      // (owner, 2026-10-02) the idle line is the set switching itself off, and
+      // a stopped station's set — the epigraph's, before the first PLAY — must
+      // not do that: it waits, and comes due again a few seconds after PLAY
+      if (idle.lineAt < 0 && t > idle.nextLine && !stationOn()) idle.nextLine = t + 4000;
       if (idle.lineAt < 0 && t > idle.nextLine) { idle.lineAt = t; idle.lineMode = Ridle.next() < 0.5 ? 1 : 0; idle.lineHold = 0.6 + Ridle.next() * 1.6; }
       if (idle.lineAt >= 0) {
         var le = (t - idle.lineAt) / 1000, H = idle.lineHold;
@@ -1315,7 +1466,7 @@
     sourcePass(t); geometryPass(t); tubePass(t); composite(t); compose();
     var c = realNow() - t1; if (!perf.n) perf.first = t; perf.last = t; perf.n++; perf.ms += c; if (c > perf.worst) perf.worst = c;
   }
-  var loopOn = false;
+  var loopOn = false, epiDone = false;
   function loop() {
     if (vclock != null) { loopOn = false; return; }          // frozen: the bench steps the frames (_dev.step)
     var t = now();
@@ -1327,6 +1478,7 @@
   function kick() { if (!loopOn && running) { loopOn = true; requestAnimationFrame(loop); } }
   function start() {
     if (running) return; running = true;
+    if (!epiDone) epigraph(true);
     buildCrackSVG(); resize();
     if (window.ResizeObserver) { try { new ResizeObserver(function () { resize(); }).observe(tube); } catch (e) { window.addEventListener("resize", resize); } }
     else window.addEventListener("resize", resize);
@@ -1395,6 +1547,7 @@
   window.ZankyoSet = {
     signal: signal,
     cut: cut,                                                // (QF) the station stopped: lose the signal
+    epigraph: function (on) { if (!on) epiDone = true; return epigraph(on); },   // 題辞: null ends it for the session
     setBright: setBright,
     getBright: function () { return briV; },
     brightSteps: BRI.length,
@@ -1448,6 +1601,7 @@
         return { t: t, phase: S.phase, strength: S.strength };
       },
       thaw: function () { vclock = null; kick(); },
+      epi: function () { return EPI ? { k: EPI.k, ready: EPI.ready, px: EPI.L ? +EPI.L.px.toFixed(1) : null, pages: EPI.pages ? EPI.pages.map(function (p) { return { lines: p.blocks.reduce(function (n, b) { return n + b.lines.length; }, 0), words: p.words, hold: +p.hold.toFixed(1), cite: !!p.cite }; }) : null } : null; },
       // (P4) 管 the tube: no argument returns tonight's (a copy); "base" puts
       // rc.104's tube back, a number draws the tube that seed's night gets
       // ("set:tube" off that master seed), null returns to tonight's

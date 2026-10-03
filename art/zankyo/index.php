@@ -35,7 +35,7 @@ include '../../includes/header.php';
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&family=VT323&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="zankyo.css?v=<?php echo zkv('zankyo.css'); ?>" />
 
 <div class="main-wrapper">
@@ -48,11 +48,8 @@ include '../../includes/header.php';
          state. -->
     <h1 class="zk-sr-title">ZANKYŌ 残響</h1>
 
-    <!-- chassis furniture -->
-    <span class="zk-screw zk-screw-tl" style="--slot:23deg" aria-hidden="true"></span>
-    <span class="zk-screw zk-screw-tr" style="--slot:74deg" aria-hidden="true"></span>
-    <span class="zk-screw zk-screw-bl" style="--slot:-15deg" aria-hidden="true"></span>
-    <span class="zk-screw zk-screw-br" style="--slot:51deg" aria-hidden="true"></span>
+    <!-- chassis furniture. The four corner screws came off (owner, 2026-10-02):
+         on a phone they sat over the casings inside and broke the effect. -->
     <div class="zk-vent zk-vent-tr" aria-hidden="true"></div>
     <div class="zk-vent zk-vent-bl" aria-hidden="true"></div>
     <!-- 逸脱 (plan §5): one slat of the bottom-left vent is a different metal
@@ -180,6 +177,30 @@ include '../../includes/header.php';
             <div class="zk-tube-wrap">
               <div class="zk-tube" id="zankyo-tube">
                 <canvas id="zankyo-set" aria-label="the second set: a receive-only tube, dark until a signal is picked up"></canvas>
+                <!-- 題辞 THE EPIGRAPH (owner, 2026-10-02): on the second set at
+                     first load only. zk-set.js reads this figure and draws it
+                     INTO the tube's picture, so it gets the phosphor, the roll and
+                     the crack like a reel; the figure itself is not painted and
+                     stays as the screen reader's copy. The first start of the
+                     station (PLAY, 受信 or the hidden switch, all through
+                     clearBoot() in zankyo-ui.js) ends it for the session. Text as
+                     Gabler prints it, episode 2 (Nestor), lines 377-86, cited the
+                     way Joyce scholars cite: episode.line. -->
+                <figure class="zk-epi" id="zankyo-epi">
+                  <div class="zk-epi-body">
+                    <blockquote class="zk-epi-text">
+                      <p>&mdash;History, Stephen said, is a nightmare from which I am trying to awake.</p>
+                      <p>From the playfield the boys raised a shout. A whirring whistle: goal. What if that nightmare gave you a back kick?</p>
+                      <p>&mdash;The ways of the Creator are not our ways, Mr Deasy said. All human history moves towards one great goal, the manifestation of God.</p>
+                      <p>Stephen jerked his thumb towards the window, saying:</p>
+                      <p>&mdash;That is God.</p>
+                      <p>Hooray! Ay! Whrrwhee!</p>
+                      <p>&mdash;What? Mr Deasy asked.</p>
+                      <p>&mdash;A shout in the street, Stephen answered, shrugging his shoulders.</p>
+                    </blockquote>
+                    <figcaption class="zk-epi-cite">James Joyce, <cite>Ulysses</cite> 2.377&ndash;86</figcaption>
+                  </div>
+                </figure>
                 <div class="zankyo-scanlines" aria-hidden="true"></div>
                 <svg class="zk-crack" id="zankyo-crack" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true"></svg>
                 <div class="zk-glass" aria-hidden="true"></div>
@@ -377,6 +398,24 @@ include '../../includes/header.php';
         track("play", null);
       });
     }
+  })();
+</script>
+
+<!-- Immersive chrome on a phone (owner, 2026-10-02; the Junk Drawer's
+     pattern, jd-core.js): the site banner is off the top while the first
+     screen is in view and slides back once the visitor scrolls half a screen
+     down. The CSS is in zankyo.css's 700 px block; this only sets the class. -->
+<script>
+  (function () {
+    var mq = window.matchMedia("(max-width: 700px)");
+    function update() {
+      var show = !mq.matches || window.scrollY > window.innerHeight * 0.5;
+      document.documentElement.classList.toggle("zk-chrome", show);
+    }
+    window.addEventListener("scroll", update, { passive: true });
+    if (mq.addEventListener) mq.addEventListener("change", update);
+    else if (mq.addListener) mq.addListener(update);
+    update();
   })();
 </script>
 

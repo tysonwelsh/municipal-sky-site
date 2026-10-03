@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZANKYŌ — casing 1 · the set is the master</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&family=VT323&display=swap" rel="stylesheet" />
+<!-- THE LIVE STYLESHEET, linked, not copied: this page is the panel exactly as
+     rc.119 renders it (seed 3042, first load, the shakuhachi row open). The
+     DOM is a snapshot of the live page; the two canvases are frozen frames
+     (casing-base/set.png, casing-base/scope.png). Options 1-4 (casing-1..4)
+     are this page plus their own override layer, so every difference between
+     them is the option, not drift. -->
+<link rel="stylesheet" href="../zankyo.css" />
+<style>
+/* ---- mockup shell (not part of any option) ---- */
+html, body { margin: 0; background: #e9e6df; }
+body { font-family: "JetBrains Mono", monospace; -webkit-font-smoothing: antialiased; }
+.mock-head { max-width: 960px; margin: 0 auto; padding: 28px 16px 8px; color: #222; }
+.mock-head h1 { font: 700 15px/1.3 "JetBrains Mono", monospace; letter-spacing: 0.04em; margin: 0 0 6px; }
+.mock-head p { font: 400 12px/1.55 "JetBrains Mono", monospace; margin: 0 0 6px; color: #444; max-width: 70ch; }
+.mock-legend { max-width: 960px; margin: 0 auto 64px; padding: 0 16px; color: #222; font: 400 12px/1.5 "JetBrains Mono", monospace; }
+/* the frozen canvases sit where the live canvases sit */
+img.zk-mock-canvas { display: block; }
+.zk-tube img.zk-mock-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.zk-screen img.zk-mock-canvas { width: 100%; height: 100%; object-fit: cover; }
+</style>
+<style id="casing-1">
+/* ===========================================================================
+   OPTION 1 — EVERYTHING BECOMES THE SECOND SET.
+   The set's warm, slightly yellowed moulding is the master. Every casing and
+   control is re-cut from the same resin with the same tooling: one draft down
+   the walls, one parting line, one cream-lit arris, wells lipped the same way,
+   caps from the same cap tool, ejector-pin witnesses instead of screws.
+   Every lit thing obeys one lamp table (below), and nothing lights for two jobs.
+   =========================================================================== */
+:root {
+  /* ---- MATERIAL: the resin (from .zk-set2) ---- */
+  --pl-1:   #2b2826;   /* casing face catching the light (top) */
+  --pl-2:   #1a1817;   /* casing face, body */
+  --pl-3:   #100f0e;   /* casing foot */
+  --cab-1:  #24201c;   /* cabinet: the same resin, one shade down, coarser skin */
+  --cab-2:  #191613;
+  --cab-3:  #0e0d0c;
+  --cap-1:  #37312c;   /* cap tool: the top arris */
+  --cap-2:  #2f2925;   /* cap: upper face */
+  --cap-3:  #221e1a;   /* cap: lower face (the draft) */
+  --cap-4:  #171413;   /* cap: foot */
+  --caph-1: #3f3833; --caph-2: #36302b; --caph-3: #27221e; --caph-4: #1b1816;   /* cap under the hand */
+  --bed-1:  #0f0d0c;   /* floor of a recessed bed */
+  --bed-2:  #161311;
+  --win-1:  #0a0806;   /* window glass, unlit */
+  --win-2:  #120e0a;
+  --rub-1:  #0a0908;   /* thumbwheel rubber: shadow, body, crown */
+  --rub-2:  #24201d;
+  --rub-3:  #34302b;
+  --lit:    255, 244, 216;   /* the room on a cream arris — the only highlight colour */
+  --grime:  110, 66, 32;     /* yellowing + hand grime pooled at edges */
+  /* ---- INK: silk-screen print, never lit ---- */
+  --ink-0:  #d2c4ab;   /* primary legend (instrument kanji) */
+  --ink-1:  #ada192;   /* key legends, numerals */
+  --ink-2:  #877d70;   /* panel titles */
+  --ink-3:  #6d655c;   /* spec lines, labels */
+  --ink-4:  #514a44;   /* faint: channel numbers, model line */
+  --ink-red:#a5402c;   /* the one red ink: 停止 / 機動注意 (warning print) */
+
+  /* ---- LAMPS: one colour, one job ---- */
+  --lamp-screen:      #7ed696;  --lamp-screen-rgb: 126, 214, 150;   /* SCREEN — anything that shows words or pictures: the set, the scope, the VFD */
+  --lamp-screen-core: #bcedc5;
+  --lamp-read:        #ff8a16;  --lamp-read-rgb:   255, 138, 22;    /* READOUT — every value the machine reports: digits, ladder, mode, knob values, the ha meter */
+  --lamp-on:          #fff1d0;  --lamp-on-rgb:     255, 241, 208;   /* LIVE — something is running now: PLAY latched, tally, 受信 lens, degree strikes, a preview firing */
+  --lamp-warn:        #ff4128;  --lamp-warn-rgb:   255, 65, 40;     /* WARN — stop, climax (kyū), danger */
+  --lamp-jo:          #f0c43a;  --lamp-jo-rgb:     240, 196, 58;    /* the bargraph's jo only: straw, the cold end of the heat ramp */
+  --lamp-focus:       #6fd3e8;  --lamp-focus-rgb:  111, 211, 232;   /* FOCUS — keyboard focus rings and nothing else */
+}
+/* the live sheet's old names, pointed at their one job each, so anything not
+   re-cut below still lands in the right role */
+.zankyo-scene {
+  --red: var(--lamp-warn);    --red-rgb: var(--lamp-warn-rgb);
+  --amber: var(--lamp-read);  --amber-rgb: var(--lamp-read-rgb);
+  --lcd-rgb: var(--lamp-read-rgb);
+  --magenta: var(--lamp-read); --magenta-rgb: var(--lamp-read-rgb);
+  --green: var(--lamp-on);    --green-rgb: var(--lamp-on-rgb);
+  --cyan: var(--lamp-focus);  --cyan-rgb: var(--lamp-focus-rgb);
+  --ink: #d6cab4; --ink-dim: var(--ink-3); --ink-label: var(--ink-2);
+  --print: var(--ink-2); --print-dim: var(--ink-3);
+  --panel-hi: var(--pl-1); --panel: var(--pl-2); --panel-lo: var(--pl-3);
+  --border: #000;
+}
+
+/* ---------------------------------------------------------------------------
+   THE CABINET — the outer chassis, now a moulding too: the same resin one
+   shade down with a coarser spark-eroded skin, so the smoother casings read
+   as separate parts fitted into it. Sun-yellowing from above, grime pooled
+   low, a parting line all the way round. No rust: plastic does not rust.
+   --------------------------------------------------------------------------- */
+.zankyo-frame {
+  background:
+    radial-gradient(120% 34% at 50% -4%, rgba(255, 232, 180, 0.06), transparent 62%),
+    radial-gradient(34% 9% at 88% 100%, rgba(var(--grime), 0.26), transparent 72%),
+    radial-gradient(18% 14% at 0% 74%, rgba(var(--grime), 0.16), transparent 75%),
+    radial-gradient(14% 8% at 78% 0%, rgba(var(--grime), 0.12), transparent 75%),
+    radial-gradient(42% 5% at 40% 100%, rgba(0, 0, 0, 0.45), transparent 80%),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.45) 0 2px, rgba(0, 0, 0, 0.2) 2px 14px, transparent 14px,
+      transparent calc(100% - 14px), rgba(0, 0, 0, 0.2) calc(100% - 14px) calc(100% - 2px), rgba(0, 0, 0, 0.45) calc(100% - 2px)),
+    linear-gradient(180deg, var(--cab-1), var(--cab-2) 45%, var(--cab-3));
+  background-color: var(--cab-2);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 rgba(var(--lit), 0.13),
+    inset 0 -4px 10px rgba(0, 0, 0, 0.6),
+    0 1px 0 rgba(255, 255, 255, 0.04),
+    0 28px 90px rgba(0, 0, 0, 0.7);
+}
+/* the cabinet's parting line, 7 px in, with the scuffs still riding on it */
+.zankyo-frame::before {
+  inset: 7px; border-radius: 10px; opacity: 1;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 0 rgba(var(--lit), 0.05), inset 0 1px 0 rgba(var(--lit), 0.06);
+}
+/* coarser tool skin than the casings' */
+.zankyo-frame::after {
+  opacity: 0.075;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.55' numOctaves='3'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+/* vents: louvres moulded through the cabinet, each slot lit along its lower lip */
+.zk-vent {
+  height: 12px; border-radius: 3px;
+  background: repeating-linear-gradient(90deg, #060504 0 5px, rgba(var(--lit), 0.07) 5px 6px, transparent 6px 10px);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.85), 0 1px 0 rgba(var(--lit), 0.08);
+}
+/* 逸脱: one louvre's web is a newer, less yellowed tab, and it slides */
+.zk-far-sw { background: linear-gradient(180deg, #060504, #0e0c0a 62%, #040303); }
+.zk-far-nub { background: linear-gradient(180deg, #3a3631 0%, #2a2622 55%, #171412 100%); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(var(--lit), 0.1); }
+.zk-far-sw:hover .zk-far-nub { background: linear-gradient(180deg, #48433d 0%, #332e29 55%, #1d1a17 100%); }
+.zk-far-sw[aria-checked="true"] .zk-far-nub { background: linear-gradient(180deg, #4e483f 0%, #37312b 55%, #1d1a16 100%); }
+.zk-far-sw[aria-checked="true"] { box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.95), 0 0 5px rgba(var(--lamp-on-rgb), 0.28); }
+.zk-far-sw:focus-visible { outline: 1px solid rgba(var(--lamp-focus-rgb), 0.7); }
+
+/* ---------------------------------------------------------------------------
+   ONE CASING RECIPE — the set's, applied to the scope, the speaker, the
+   module, the log and the console: the same gradient, the same 9 px end-draft
+   with the parting line down both walls, the same lit top arris, the same
+   radius, the same tool skin. Only the grime moves (--gx/--gy), because no
+   two parts got handled the same way.
+   --------------------------------------------------------------------------- */
+.zk-monitor, .zk-spk, .zk-module, .zankyo-log-block, .zankyo-mixer {
+  isolation: isolate;
+  border: 1px solid #000; border-radius: 11px;
+  background:
+    radial-gradient(70% 26% at 62% 0%, rgba(255, 240, 200, 0.06), transparent 70%),
+    radial-gradient(var(--gw, 30%) var(--gh, 40%) at var(--gx, 100%) var(--gy, 100%), rgba(var(--grime), 0.2), transparent 70%),
+    linear-gradient(90deg,
+      rgba(0, 0, 0, 0.5) 0 2px, rgba(0, 0, 0, 0.24) 2px 9px, transparent 9px,
+      transparent calc(100% - 9px), rgba(0, 0, 0, 0.24) calc(100% - 9px) calc(100% - 2px), rgba(0, 0, 0, 0.5) calc(100% - 2px)),
+    linear-gradient(90deg,
+      transparent 4px, rgba(var(--lit), 0.06) 4px 5px, transparent 5px,
+      transparent calc(100% - 5px), rgba(var(--lit), 0.045) calc(100% - 5px) calc(100% - 4px), transparent calc(100% - 4px)),
+    linear-gradient(180deg, var(--pl-1), var(--pl-2) 55%, var(--pl-3));
+  background-color: var(--pl-2);
+  box-shadow: inset 0 1px 0 rgba(var(--lit), 0.1), inset 0 -5px 12px rgba(0, 0, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.55);
+}
+.zk-monitor { --gx: 4%; }
+.zk-spk     { --gx: 96%; }
+.zk-module  { --gx: 2%; --gw: 40%; --gh: 52%; }
+.zankyo-log-block { --gx: 98%; --gy: 0%; --gw: 20%; --gh: 50%; }
+.zankyo-mixer { --gx: 3%; --gw: 22%; --gh: 9%; }
+/* the tool skin, under the children (z −1 inside the isolated casing) */
+.zk-monitor::after, .zk-spk::after, .zk-module::before, .zankyo-log-block::before, .zankyo-mixer::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; border-radius: inherit;
+  opacity: 0.22; mix-blend-mode: overlay;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='110' height='110'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23g)' opacity='0.55'/></svg>");
+}
+.zankyo-mixer { position: relative; }
+
+/* every opening in a casing is lipped like the tube aperture: the plastic
+   above casts in, the plastic below catches the room */
+.zk-screen {
+  border-color: #020302;
+  box-shadow:
+    inset 0 0 0 2px rgba(0, 0, 0, 0.9), inset 0 0 30px rgba(0, 0, 0, 0.9), inset 0 2px 8px rgba(0, 0, 0, 0.8),
+    0 -1px 2px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(var(--lit), 0.07);
+}
+/* every recess is the set's .zk-well: rgba black over the casing, lit front wall */
+.zk-bar-housing, .zk-keybed, .zk-deg-row, .zankyo-layer-head, .zk-cavity {
+  border: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.26) 60%, rgba(0, 0, 0, 0.06));
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.82), inset 0 -1px 0 rgba(var(--lit), 0.09), 0 1px 0 rgba(var(--lit), 0.075);
+}
+.zk-keybed { background-color: transparent; border-radius: 4px; }
+
+/* ---------------------------------------------------------------------------
+   THE SCOPE — a screen, so the title on it is phosphor, like the set's text.
+   Its ghosts are the same phosphor offset, not a second colour; at kyū the
+   ghost goes WARN, because kyū is the climax.
+   --------------------------------------------------------------------------- */
+.zankyo-title { color: var(--lamp-screen-core); text-shadow: 0 0 14px rgba(var(--lamp-screen-rgb), 0.55), 0 0 38px rgba(var(--lamp-screen-rgb), 0.22); }
+.zankyo-title::before { color: rgba(var(--lamp-screen-rgb), 0.55); }
+.zankyo-title::after  { color: rgba(var(--lamp-screen-rgb), 0.35); }
+.zankyo-scene.is-kyu .zankyo-title { text-shadow: -1.5px 0 rgba(var(--lamp-warn-rgb), 0.7), 0 0 20px rgba(var(--lamp-screen-rgb), 0.6); }
+.zk-boot-line { color: rgba(var(--lamp-screen-rgb), 0.62); text-shadow: 0 0 8px rgba(var(--lamp-screen-rgb), 0.35); }
+
+/* 段階 — the bar is a meter (a READOUT), so its middle is the readout amber;
+   jo is the straw that appears nowhere else; kyū is WARN. One heat ramp. */
+.zk-bar-housing { border-radius: 4px; padding: 5px 6px; }
+.zk-bar-cells { position: relative; }
+.zk-bar-glass { border-radius: 4px; background: linear-gradient(105deg, rgba(var(--lit), 0.05), rgba(var(--lit), 0.012) 22%, transparent 34%); }
+.zk-bar-tick { background: rgba(var(--lit), 0.2); }
+.zk-seg-jo  { --c: var(--lamp-jo-rgb); }
+.zk-seg-ha  { --c: var(--lamp-read-rgb); }
+.zk-seg-kyu { --c: var(--lamp-warn-rgb); }
+.zk-seg { background: linear-gradient(180deg, rgba(var(--c), 0.1), rgba(var(--c), 0.045) 55%, rgba(0, 0, 0, 0.45)); }
+
+/* ---------------------------------------------------------------------------
+   TRANSPORT — the deck keys come off the set's cap tool; legends are print,
+   and only what is live lights. PLAY latched = LIVE. STOP's ■ is printed in
+   the one red ink and flares WARN under the finger.
+   --------------------------------------------------------------------------- */
+.zk-key {
+  border: 1px solid #0a0807; border-radius: 2px 2px 3px 3px;
+  background: linear-gradient(180deg, var(--cap-1) 0 1px, var(--cap-2) 1px 46%, var(--cap-3) 46%, var(--cap-4));
+  background-color: var(--cap-2);
+  box-shadow:
+    0 1px 0 rgba(var(--lit), 0.09), 0 3px 5px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(var(--lit), 0.13), inset -1px 0 2px rgba(0, 0, 0, 0.45),
+    inset 1px 0 1px rgba(var(--lit), 0.045), inset 0 -3px 4px rgba(0, 0, 0, 0.6);
+}
+.zk-key:hover { background: linear-gradient(180deg, var(--caph-1) 0 1px, var(--caph-2) 1px 46%, var(--caph-3) 46%, var(--caph-4)); }
+.zk-key::before { background: repeating-linear-gradient(180deg, rgba(var(--lit), 0.07) 0 1px, rgba(0, 0, 0, 0.3) 1px 3px); }
+.zk-key.is-down { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(0, 0, 0, 0.88), inset 0 -1px 0 rgba(var(--lit), 0.06); }
+.zk-key-play .zk-key-glyph { color: var(--ink-1); text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(var(--lit), 0.1); }
+.zk-key-play.is-down .zk-key-glyph { color: var(--lamp-on); text-shadow: 0 0 8px rgba(var(--lamp-on-rgb), 0.75), 0 0 16px rgba(var(--lamp-on-rgb), 0.3); }
+.zk-key-stop .zk-key-glyph { color: var(--ink-red); text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(var(--lit), 0.08); }
+.zk-key-stop:active .zk-key-glyph, .zk-key-stop.is-hit .zk-key-glyph { color: var(--lamp-warn); text-shadow: 0 0 8px rgba(var(--lamp-warn-rgb), 0.75), 0 0 16px rgba(var(--lamp-warn-rgb), 0.35); }
+/* the tally: the 受信 lens's twin — same lens, same bezel lip, LIVE when lit */
+.zk-tally {
+  width: 9px; height: 9px;
+  background: radial-gradient(circle at 42% 36%, #3a3129, #191512 70%, #100d0b);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.8), 0 0 0 2px rgba(0, 0, 0, 0.45), 0 1px 0 2px rgba(var(--lit), 0.07);
+}
+.zankyo-scene.is-on .zk-tally, .zk-push.is-on .zk-push-lens {
+  background: radial-gradient(circle at 42% 36%, #ffffff, var(--lamp-on) 55%, #b9a77e);
+  box-shadow: 0 0 7px rgba(var(--lamp-on-rgb), 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+/* the thumbwheel: the same rubber, warmed to the resin; numerals in key-legend ink */
+.zk-wheel-barrel {
+  background: linear-gradient(180deg, var(--rub-1) 0%, var(--rub-2) 24%, var(--rub-3) 50%, var(--rub-2) 74%, var(--rub-1) 100%);
+  box-shadow: 0 0 0 1px #000, inset 0 2px 4px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(var(--lit), 0.08);
+}
+.zk-wheel-sheen { background: radial-gradient(66% 150% at 50% 48%, rgba(var(--lit), 0.085), rgba(var(--lit), 0.02) 44%, transparent 72%); }
+.zk-wheel-plate { background: linear-gradient(180deg, #1b1816 0%, #26221f 28%, #2e2a26 50%, #23201d 76%, #171513 100%); box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.55), inset 0 -1px 0 rgba(var(--lit), 0.08); }
+.zk-wheel-plate i { color: var(--ink-1); text-shadow: 0 1px 1px rgba(0, 0, 0, 0.95); }
+.zk-wheel-ind::after { border-top-color: rgba(var(--lit), 0.42); }
+
+/* ---------------------------------------------------------------------------
+   THE SPEAKER — louvres in the resin, cloth behind; 音 is print, not a lamp
+   --------------------------------------------------------------------------- */
+.zk-spk-medal {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.22) 60%, rgba(0, 0, 0, 0.05));
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.82), inset 0 -1px 0 rgba(var(--lit), 0.09), 0 1px 0 rgba(var(--lit), 0.07);
+}
+.zk-spk-medal i { color: var(--ink-2); text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(var(--lit), 0.08); }
+.zk-spk-slots span {
+  background: repeating-linear-gradient(90deg, rgba(var(--lit), 0.025) 0 1px, transparent 1px 3px), linear-gradient(180deg, #000, #0a0807 55%, #16120f);
+  box-shadow: inset 0 2px 2px rgba(0, 0, 0, 0.95), 0 1px 0 rgba(var(--lit), 0.085), 0 -1px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* ---------------------------------------------------------------------------
+   THE MODE MODULE — the screws become the set's ejector-pin witnesses; the
+   mode window is the set's amber dot display, grid and all; the degree lamps
+   sit in a well like the ledge's stations and strike LIVE.
+   --------------------------------------------------------------------------- */
+.zk-mod-screw {
+  width: 10px; height: 10px; top: 3px; left: 4px;
+  background: radial-gradient(circle at 42% 38%, rgba(var(--lit), 0.045), rgba(0, 0, 0, 0.14) 70%, transparent 78%);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.3); filter: none;
+}
+.zk-mod-screw::before { display: none; }
+.zk-mod-screw-r { top: auto; left: auto; bottom: 3px; right: 4px; }
+.zk-mod-zone + .zk-mod-zone { border-top: 1px solid rgba(0, 0, 0, 0.62); box-shadow: 0 -1px 0 rgba(var(--lit), 0.06), inset 0 1px 0 rgba(var(--lit), 0.06); }
+.zk-mod-lamp {
+  position: relative; overflow: hidden; border: 0;
+  background: linear-gradient(180deg, var(--win-1), #100b05 60%, var(--win-1));
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.95), inset 0 0 14px rgba(var(--lamp-read-rgb), 0.05), 0 -1px 2px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(var(--lit), 0.07);
+}
+.zk-mod-lamp::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 2px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 2px),
+    linear-gradient(106deg, rgba(var(--lit), 0.05), transparent 30%);
+}
+.zankyo-scale-name, .zankyo-scale-name b { color: var(--lamp-read); text-shadow: 0 0 7px rgba(var(--lamp-read-rgb), 0.6), 0 0 2px rgba(var(--lamp-read-rgb), 0.9); }
+.zankyo-scale-mood { color: rgba(var(--lamp-read-rgb), 0.5); text-shadow: 0 0 4px rgba(var(--lamp-read-rgb), 0.25); }
+.zk-testpoints {   /* the gold pads become a moulded grip: ribs, light and shadow only */
+  height: 9px; opacity: 1;
+  background: repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.55) 0 2px, rgba(var(--lit), 0.07) 2px 3px, transparent 3px 6px);
+  box-shadow: none;
+}
+.zk-deg-row { gap: 3px; padding: 3px; border-radius: 4px; }
+.zk-deg {
+  border: 0; border-radius: 2px; color: rgba(var(--lamp-on-rgb), 0.13);
+  background: linear-gradient(180deg, var(--win-1), var(--win-2));
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.95), inset 0 -1px 0 rgba(var(--lit), 0.07);
+}
+.zk-deg.is-lit {
+  color: #fffaf0; background: linear-gradient(180deg, #2a2418, #1a160f);
+  text-shadow: 0 0 9px rgba(var(--lamp-on-rgb), 0.9), 0 0 3px rgba(var(--lamp-on-rgb), 1);
+}
+
+/* ---------------------------------------------------------------------------
+   THE VFD — a screen, so it is the set's phosphor. One colour on the glass;
+   the tags are told apart by their rule (solid / dashed / dotted), and the
+   two that matter most (受信, 逸脱) burn brighter.
+   --------------------------------------------------------------------------- */
+.zankyo-log-label, .zankyo-mixer-title { color: var(--ink-2); text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(var(--lit), 0.06); }
+.zk-vfd-tag { color: var(--ink-4); }
+.zankyo-log {
+  background:
+    radial-gradient(rgba(var(--lamp-screen-rgb), 0.05) 1px, transparent 1.5px) 0 0 / 6px 6px,
+    linear-gradient(180deg, #040a06, #030704);
+  border: 1px solid #020302;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.85), inset 0 0 70px rgba(var(--lamp-screen-rgb), 0.025), 0 -1px 2px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(var(--lit), 0.07);
+}
+.zankyo-log-block::after { background: linear-gradient(108deg, rgba(var(--lit), 0.045), transparent 26%); }
+.zankyo-log-empty, .zankyo-log-time { color: rgba(var(--lamp-screen-rgb), 0.5); }
+.zankyo-log-text { color: var(--lamp-screen-core); text-shadow: 0 0 6px rgba(var(--lamp-screen-rgb), 0.3); }
+.zankyo-log-row { border-bottom-color: rgba(var(--lamp-screen-rgb), 0.05); }
+.zankyo-log-tag, .zankyo-log-tag.shakuhachi, .zankyo-log-tag.koto, .zankyo-log-tag.shamisen, .zankyo-log-tag.taiko, .zankyo-log-tag.noise, .zankyo-log-tag.ambient, .zankyo-log-tag.furin, .zankyo-log-tag.vox, .zankyo-log-tag.mode, .zankyo-log-tag.form, .zankyo-log-tag.far, .zankyo-log-tag.sho, .zankyo-log-tag.hichiriki, .zankyo-log-tag.biwa, .zankyo-log-tag.pa, .zankyo-log-tag.rx, .zankyo-log-tag.broadcast { color: var(--lamp-screen); border: 1px solid rgba(var(--lamp-screen-rgb), 0.4); text-shadow: none; }
+.zankyo-log-tag.koto, .zankyo-log-tag.shamisen, .zankyo-log-tag.hichiriki, .zankyo-log-tag.biwa { border-style: dashed; }
+.zankyo-log-tag.furin, .zankyo-log-tag.vox, .zankyo-log-tag.ambient, .zankyo-log-tag.sho { border-style: dotted; }
+.zankyo-log-tag.taiko, .zankyo-log-tag.noise, .zankyo-log-tag.pa { border-color: rgba(var(--lamp-screen-rgb), 0.25); color: rgba(var(--lamp-screen-rgb), 0.75); }
+.zankyo-log-tag.mode, .zankyo-log-tag.form { color: rgba(var(--lamp-screen-rgb), 0.9); border: 1px dashed rgba(var(--lamp-screen-rgb), 0.7); }
+.zankyo-log-tag.rx, .zankyo-log-tag.broadcast, .zankyo-log-tag.far {
+  color: #04100a; background: var(--lamp-screen); border: 1px solid var(--lamp-screen);
+  box-shadow: 0 0 6px rgba(var(--lamp-screen-rgb), 0.45);
+}
+.zk-log-src { color: rgba(var(--lamp-screen-rgb), 0.75); border-color: rgba(var(--lamp-screen-rgb), 0.35); }
+.zk-log-src:hover, .zk-log-src:focus-visible { color: var(--lamp-screen); border-color: var(--lamp-focus); }
+
+/* ---------------------------------------------------------------------------
+   THE CONSOLE — every row is a ledge: one well, three stations, the way the
+   set's ledge carries its rocker, its push and its volume. The name plate is a
+   long cap that latches down while its cavity is open; the preview is the
+   受信 push's little brother; the mute is a slide in its own bed, its two
+   positions printed 入 / 切.
+   --------------------------------------------------------------------------- */
+.zankyo-mixer-title { border-bottom: 1px solid rgba(0, 0, 0, 0.62); box-shadow: 0 1px 0 rgba(var(--lit), 0.07); }
+.zankyo-mixer-title:focus-visible { outline: 2px solid var(--lamp-focus); outline-offset: -4px; }
+.zk-warn-small { color: var(--ink-red); text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); }
+.zankyo-layer { padding: 10px 14px; border-bottom: 1px solid rgba(0, 0, 0, 0.55); box-shadow: 0 1px 0 rgba(var(--lit), 0.045); }
+.zankyo-layer-head { gap: 6px; padding: 3px; border-radius: 4px; }
+/* cap-tool stations, 30 px high */
+.zankyo-layer-name, .zankyo-layer-sample, .zk-switch-thumb, .zk-name-latch {
+  background: linear-gradient(180deg, var(--cap-1) 0 1px, var(--cap-2) 1px 46%, var(--cap-3) 46%, var(--cap-4));
+}
+.zankyo-layer-name, .zankyo-layer-sample {
+  height: 30px; box-sizing: border-box; border: 0; border-radius: 2px 2px 3px 3px;
+  box-shadow:
+    0 1px 0 rgba(var(--lit), 0.09), 0 2px 4px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(var(--lit), 0.13), inset -1px 0 2px rgba(0, 0, 0, 0.45),
+    inset 1px 0 1px rgba(var(--lit), 0.045), inset 0 -3px 4px rgba(0, 0, 0, 0.6);
+  transition: transform 0.07s ease-out, box-shadow 0.07s ease-out;
+}
+.zankyo-layer-name { padding: 0 11px; color: var(--ink-1); text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(var(--lit), 0.08); }
+.zankyo-layer-name:hover, .zankyo-layer-sample:hover { background: linear-gradient(180deg, var(--caph-1) 0 1px, var(--caph-2) 1px 46%, var(--caph-3) 46%, var(--caph-4)); }
+.zankyo-layer.is-open .zankyo-layer-name, .zankyo-layer-name:active,
+.zankyo-layer-sample:active, .zankyo-layer-sample.is-hit {
+  transform: translateY(2px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 3px 5px rgba(0, 0, 0, 0.88), inset 0 -1px 0 rgba(var(--lit), 0.06);
+}
+.zankyo-layer-kana { color: var(--ink-0); font-weight: 700; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(var(--lit), 0.08); }
+.zk-ch { color: var(--ink-4); }
+.zk-name-latch { box-shadow: inset 0 1px 0 rgba(var(--lit), 0.12), inset 0 -1px 1px rgba(0, 0, 0, 0.7), 0 1px 1px rgba(0, 0, 0, 0.6); }
+.zk-name-latch::after { background: #0a0807; box-shadow: 1px 0 0 rgba(var(--lit), 0.06); }
+.zankyo-mixer-title .zk-name-latch { width: 12px; height: 12px; }
+/* preview */
+.zankyo-layer-sample { width: 34px; border-radius: 2px 2px 3px 3px; }
+.zankyo-layer-sample .tri { border-left-color: var(--ink-1); filter: drop-shadow(0 -1px 0 rgba(0, 0, 0, 0.9)); }
+.zankyo-layer-sample:active .tri, .zankyo-layer-sample.is-hit .tri { border-left-color: var(--lamp-on); filter: drop-shadow(0 0 4px rgba(var(--lamp-on-rgb), 0.9)); }
+.zankyo-layer-sample:focus-visible, .zankyo-layer-name:focus-visible { outline: 2px solid var(--lamp-focus); outline-offset: 3px; }
+/* mute: a slide in its own bed */
+.zk-switch { padding: 0; }
+.zk-switch:focus-visible { outline: 2px solid var(--lamp-focus); outline-offset: 3px; border-radius: 4px; }
+.zk-switch-well {
+  width: 52px; height: 30px; border-radius: 2px 2px 3px 3px; border: 0;
+  background: linear-gradient(180deg, var(--bed-1), var(--bed-2));
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.8), inset 0 -1px 0 rgba(var(--lit), 0.06);
+  filter: none !important;
+}
+.zk-switch-lamp { background: none; display: flex; align-items: center; justify-content: center; }
+.zk-switch-lamp::after { display: none; }
+.zk-switch-lamp::before { font: normal 700 10px/1 "Shippori Mincho", serif; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.9), 0 1px 0 rgba(var(--lit), 0.07); }
+.zk-lamp-on::before  { content: "入"; color: var(--ink-0); }
+.zk-lamp-off::before { content: "切"; color: var(--ink-3); }
+.zk-switch-thumb {
+  top: 1px; left: 1px; width: 24px; height: 28px; border-radius: 2px 2px 3px 3px; border: 0;
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(var(--lit), 0.13), inset 0 -3px 4px rgba(0, 0, 0, 0.6), inset 1px 0 1px rgba(var(--lit), 0.045);
+  transform: translateX(26px); filter: none !important;
+}
+.zk-switch-thumb::before {   /* finger ribs, from the deck keys */
+  inset: 7px 6px; border-radius: 1px; -webkit-mask: none; mask: none;
+  background: repeating-linear-gradient(180deg, rgba(var(--lit), 0.07) 0 1px, rgba(0, 0, 0, 0.3) 1px 3px);
+}
+.zk-switch-thumb::after { display: none; }
+.zk-switch.muted .zk-switch-thumb { transform: translateX(0); }
+
+/* the cavity is a deeper well under the row's ledge */
+.zk-cavity { border-radius: 4px; margin-top: 10px; }
+.zk-cavity-knobs + .zankyo-params { border-top: 1px solid rgba(0, 0, 0, 0.55); box-shadow: inset 0 1px 0 rgba(var(--lit), 0.05); }
+/* knobs: moulded in the resin, ribbed skirt, index line in key-legend ink */
+.zk-knob::before { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><g stroke='%23877d70' stroke-width='2' stroke-linecap='round'><line x1='40' y1='3' x2='40' y2='8' transform='rotate(-135 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-108 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-81 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-54 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(-27 40 40)'/><line x1='40' y1='3' x2='40' y2='8'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(27 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(54 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(81 40 40)'/><line x1='40' y1='4' x2='40' y2='8' transform='rotate(108 40 40)'/><line x1='40' y1='3' x2='40' y2='8' transform='rotate(135 40 40)'/></g></svg>"); }
+.zk-knob-cap {
+  background:
+    radial-gradient(circle at 32% 26%, rgba(var(--lit), 0.16), rgba(var(--lit), 0) 42%),
+    conic-gradient(from 210deg, #3b3530, #1c1916 22%, #302a26 47%, #141210 74%, #3b3530),
+    var(--cap-3);
+  border-color: #0a0807;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.65), 0 1px 1px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(var(--lit), 0.2), inset 0 -2px 3px rgba(0, 0, 0, 0.7);
+}
+.zk-knob-cap::before { background: repeating-conic-gradient(rgba(var(--lit), 0.06) 0deg 4deg, rgba(0, 0, 0, 0.3) 4deg 8deg); }
+.zk-knob-cap::after { background: radial-gradient(circle at 35% 28%, #36302b, #1a1715 72%); box-shadow: inset 0 1px 1px rgba(var(--lit), 0.13), 0 1px 2px rgba(0, 0, 0, 0.65); }
+.zk-knob-ind { background: linear-gradient(#e2d5bd, #a3977f); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.6); }
+.zk-knob.is-drag .zk-knob-ind, .zk-knob:focus-visible .zk-knob-ind,
+.zk-knob-rate.is-drag .zk-knob-ind, .zk-knob-rate:focus-visible .zk-knob-ind { background: linear-gradient(#fff6e2, #d6c8ac); box-shadow: 0 1px 1px rgba(0, 0, 0, 0.6); }
+.zk-knob:focus-visible { outline-color: var(--lamp-focus); }
+.zk-wear-3 .zk-knob-ind { background: linear-gradient(#cdbfa6, #8a7f6c); }
+.zankyo-vol-label { color: var(--ink-3); }
+/* the values: the set's amber dot display, RATE included (one readout colour) */
+.zankyo-val-readout, .zk-unit-rate .zankyo-val-readout {
+  position: relative; overflow: hidden; border: 0;
+  color: var(--lamp-read); text-shadow: 0 0 6px rgba(var(--lamp-read-rgb), 0.65), 0 0 2px rgba(var(--lamp-read-rgb), 0.9);
+  background: linear-gradient(180deg, var(--win-1), #100b05 60%, var(--win-1));
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.95), 0 -1px 1px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(var(--lit), 0.07);
+}
+.zankyo-val-readout::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 2px), repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 2px);
+}
+.zankyo-param-label { color: var(--ink-3); }
+.zankyo-param-label b { color: var(--lamp-read); text-shadow: 0 0 5px rgba(var(--lamp-read-rgb), 0.45); }
+/* trims: a slot moulded through, and a cap from the cap tool */
+.zankyo-range {
+  background: linear-gradient(180deg, #050404, #121010);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.95), 0 1px 0 rgba(var(--lit), 0.07);
+}
+.zankyo-range:focus-visible { outline-color: var(--lamp-focus); }
+.zankyo-range::-webkit-slider-thumb {
+  width: 13px; height: 20px; border: 1px solid #0a0807; border-radius: 2px 2px 3px 3px;
+  background:
+    linear-gradient(90deg, transparent 0 42%, #cdbfa6 42% 58%, transparent 58%),
+    linear-gradient(180deg, var(--cap-1) 0 1px, var(--cap-2) 1px 46%, var(--cap-3) 46%, var(--cap-4));
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(var(--lit), 0.15);
+}
+.zankyo-range::-moz-range-thumb {
+  width: 13px; height: 20px; border: 1px solid #0a0807; border-radius: 2px 2px 3px 3px;
+  background:
+    linear-gradient(90deg, transparent 0 42%, #cdbfa6 42% 58%, transparent 58%),
+    linear-gradient(180deg, var(--cap-1) 0 1px, var(--cap-2) 1px 46%, var(--cap-3) 46%, var(--cap-4));
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(var(--lit), 0.15);
+}
+
+/* ---------------------------------------------------------------------------
+   THE SERIAL PLATE — moulded into the cabinet, not riveted on: a debossed
+   field with the lettering cut into it; the rivets become pin witnesses.
+   --------------------------------------------------------------------------- */
+.zk-plate {
+  transform: none; border: 0; border-radius: 4px; color: var(--ink-3);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.42), rgba(0, 0, 0, 0.2) 60%, rgba(0, 0, 0, 0.06));
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(var(--lit), 0.08);
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.75), inset 0 -1px 0 rgba(var(--lit), 0.08), 0 1px 0 rgba(var(--lit), 0.06);
+}
+.zk-plate::before, .zk-plate::after {
+  width: 9px; height: 9px; margin-top: -4.5px;
+  background: radial-gradient(circle at 42% 38%, rgba(var(--lit), 0.05), rgba(0, 0, 0, 0.18) 70%, transparent 78%);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.3);
+}
+.zk-build { color: var(--ink-4); opacity: 1; }
+.zk-print, .zk-mod-head { text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8); }
+
+@media (max-width: 700px) {
+  body:has(.zankyo-scene) { background: #0e0d0c; }
+  .mock-head, .mock-legend { background: #e9e6df; margin: 0; padding-top: 16px; padding-bottom: 16px; }
+  .c1-specs { grid-template-areas: none !important; grid-template-columns: 1fr !important; }
+  .c1-specs figure { grid-area: auto !important; }
+  .c1-specs .zk-monitor { order: 0; }
+  .zankyo-frame { border-radius: 0; box-shadow: inset 0 -4px 10px rgba(0, 0, 0, 0.6); }
+  .zankyo-frame::before { inset: 5px; border-radius: 0; }
+  .zankyo-layer { padding: 8px 10px; }
+  .zankyo-layer-head { gap: 5px; }
+  .zk-switch-well { width: 50px; }
+  .zk-switch-thumb { transform: translateX(24px); }
+}
+
+/* ---- the legend under the panel (mockup only) ---- */
+.c1-legend h2 { font: 700 12px/1.3 "JetBrains Mono", monospace; letter-spacing: 0.06em; margin: 26px 0 10px; text-transform: uppercase; }
+.c1-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.c1-sw { display: flex; flex-direction: column; gap: 4px; font-size: 10.5px; line-height: 1.35; }
+.c1-sw i { display: block; height: 38px; border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.35); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+.c1-sw b { font-weight: 700; }
+.c1-sw span { color: #555; }
+.c1-lamps { display: grid; gap: 8px; }
+.c1-lamp { display: grid; grid-template-columns: 54px 1fr; gap: 12px; align-items: center; font-size: 11.5px; }
+.c1-lamp i { height: 30px; border-radius: 4px; background: #0e0c0a; display: grid; place-items: center; font: normal 700 13px/1 "Orbitron", sans-serif; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.9); }
+.c1-lamp b { font-weight: 700; }
+.c1-lamp span { color: #555; }
+.c1-spec { padding: 0 !important; max-width: none !important; }
+.c1-specs {
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "bar log" "keys log" "mod log" "row row"; gap: 14px; padding: 18px; border-radius: 14px;
+  background: linear-gradient(180deg, var(--cab-1), var(--cab-2) 45%, var(--cab-3));
+}
+.c1-specs figure { margin: 0; display: flex; flex-direction: column; gap: 9px; justify-content: space-between; }
+.c1-specs figcaption { font: 400 10px/1.45 "JetBrains Mono", monospace; color: var(--ink-1); letter-spacing: 0.02em; }
+.c1-specs .zankyo-log { height: auto; padding: 5px 0; }
+.c1-specs .zk-monitor { padding: 10px; }
+.c1-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.c1-focus { outline: 2px solid var(--lamp-focus); outline-offset: 3px; }
+.c1-notes { margin: 0; padding-left: 18px; }
+.c1-notes li { margin: 0 0 7px; max-width: 86ch; }
+</style>
+
+</head>
+<body>
+<header class="mock-head">
+  <h1>ZANKYŌ · casing 1 — everything becomes the second set</h1>
+  <p>The second set's warm moulded plastic is the master. Every other casing, key, knob and switch is re-cut from the same resin with the same tool: the same draft and parting line, the same cream-lit edges, the same wells and caps. The cabinet becomes a moulding too. Every light now has one job, from a six-colour table: green for screens, amber for readouts, warm white for whatever is live, red for stop and climax, straw for the jo band, ice blue for keyboard focus.</p>
+</header>
+<div class="main-wrapper">
+<div class="zankyo-scene">
+  <div class="content-frame zankyo-frame">
+
+    <!-- The page's heading. It used to be the marquee's big title; now the tube
+         shows a decorative copy that disappears on the first PLAY, so the real
+         h1 lives here off-screen and the document keeps a heading in every
+         state. -->
+    <h1 class="zk-sr-title">ZANKYŌ 残響</h1>
+
+    <!-- chassis furniture. The four corner screws came off (owner, 2026-10-02):
+         on a phone they sat over the casings inside and broke the effect. -->
+    <div class="zk-vent zk-vent-tr" aria-hidden="true"></div>
+    <div class="zk-vent zk-vent-bl" aria-hidden="true"></div>
+    <!-- 逸脱 (plan §5): one slat of the bottom-left vent is a different metal
+         and it slides. Unlabeled, nothing printed near it, no cursor tell until
+         you are on it. ON → the station restarts on a night with d ≥ 0.8 and
+         rewrites ?seed= so it can be sent to somebody. It is reachable from the
+         keyboard and named 逸脱 to a screen reader: hiding a control from
+         assistive technology is a different thing from hiding it on a panel. -->
+    <button type="button" class="zk-far-sw" id="zankyo-far-sw" role="switch" aria-checked="false" aria-label="逸脱"><span class="zk-far-nub" aria-hidden="true"></span></button>
+
+    <!-- THE BANK (S0, the second set): the scope + bargraph stack on the left
+         (3fr), and to its right the older receive-only tube the yard bolted on
+         later — 映像管 MSHI CRT-9, 受信専用 — on its own steel strap (2fr). Under
+         700 px the bank stacks and the set goes full width under the bargraph.
+         Look decided by the owner: mockups/monitor-1-second-set.html. -->
+    <div class="zk-bank">
+      <div class="zk-bank-main">
+        <!-- CRT monitor -->
+        <div class="zk-monitor">
+          <div class="zk-screen zankyo-viz-wrap">
+            <img class="zk-mock-canvas zankyo-viz" src="casing-base/scope.png" alt="">
+            <!-- the title now lives ON THE TUBE until the station is played:
+                 it sits under the scanlines and the glass, so the same
+                 treatment reads as phosphor rather than as a printed sign.
+                 The first PLAY removes it for the session. -->
+            <div class="zk-boot" id="zankyo-boot" aria-hidden="true">
+              <div class="zankyo-title" data-glitch="ZANKYŌ">ZANKYŌ</div>
+              <p class="zk-boot-line">// awaiting signal, press play</p>
+            </div>
+            <div class="zankyo-scanlines" aria-hidden="true"></div>
+            <div class="zk-glass" aria-hidden="true"></div>
+          </div>
+          <!-- 段階 DEVELOPMENT — segmented LED bargraph, in the SAME casing as
+               the tube (owner, 2026-09-18): the scope and the bar read as two
+               separate screens let into one moulding, parted only by a gutter
+               of the casing's own plastic. Fill = jo-ha-kyū arc level; zone
+               splits sit where the engine's phase cuts land on the level curve
+               (pos 0.45 → level 0.25, pos 0.82 → 0.80). -->
+          <div class="zk-bargraph" id="zankyo-bargraph">
+            <div class="zk-bar-housing">
+              <div class="zk-bar-cells" id="zankyo-bar-cells" aria-hidden="true"><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-jo"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-ha"></span><span class="zk-seg zk-seg-kyu"></span><span class="zk-seg zk-seg-kyu"></span><span class="zk-seg zk-seg-kyu"></span><span class="zk-seg zk-seg-kyu"></span><span class="zk-seg zk-seg-kyu"></span><span class="zk-seg zk-seg-kyu"></span><span class="zk-seg zk-seg-kyu"></span><span class="zk-seg zk-seg-kyu"></span><span class="zk-seg zk-seg-kyu"></span><span class="zk-seg zk-seg-kyu"></span><span class="zk-seg zk-seg-kyu"></span></div>
+              <!-- the jo/ha/kyū splits, moved INSIDE the housing when the scale
+                   row came off: the marks survive and cost no height of their own -->
+              <span class="zk-bar-tick" style="left:25%" aria-hidden="true"></span>
+              <span class="zk-bar-tick" style="left:80%" aria-hidden="true"></span>
+              <span class="zk-bar-glass" aria-hidden="true"></span>
+            </div>
+            <!-- no foot: just the bar (owner, 2026-09-14) -->
+          </div>
+
+          <!-- the transport: PLAY · STOP · master volume, moved off its own
+               bolted plate under the second set and INTO this casing, below the
+               bar (owner, 2026-09-24) — no plate, no screws, the monitor's
+               moulding carries it. The ids are the same; zankyo-ui.js binds to
+               them wherever they sit. -->
+          <div class="zk-rxpanel" id="zankyo-rxpanel">
+            <!-- TRANSPORT (owner's pick, 2026-09-18: mockups/transport-1-options.html
+                 option B3): mechanical deck keys in their own recessed bed. PLAY
+                 LATCHES DOWN and stays down while the station runs — the machine's
+                 state is a physical position, so it still reads with the lamp off —
+                 and STOP releases it. Green on PLAY, red on STOP. -->
+            <div class="zk-transport-cluster">
+              <div class="zk-keybed">
+                <button type="button" class="zk-key zk-key-play" id="zankyo-play" aria-label="Play" aria-pressed="false">
+                  <span class="zk-key-glyph" aria-hidden="true">▶︎</span>
+                </button>
+                <button type="button" class="zk-key zk-key-stop" id="zankyo-stop" aria-label="Stop">
+                  <span class="zk-key-glyph" aria-hidden="true">■︎</span>
+                </button>
+              </div>
+              <span class="zk-tally" id="zankyo-tally" aria-hidden="true"></span>
+            </div>
+            <span class="zk-rxpanel-gap" aria-hidden="true"></span>
+            <!-- MASTER VOLUME (owner's pick, 2026-09-20: mockups/volume-2-options.html
+                 option W6). A moulded rubber thumbwheel turned on a vertical axle.
+                 The scale is printed on the wheel — 0-100 in tens, each numeral on
+                 its own flat milled into the middle of the tread band, with the
+                 tread carrying on above and below it — and a fixed 指標 pointer
+                 above reads whichever flat has come round to it.
+
+                 The treads and flats are placed by zankyo-ui.js, by ANGLE rather
+                 than at even spacing, so they crowd toward the edges the way a real
+                 cylinder's do. That projection is the whole of the effect; an
+                 evenly-spaced pattern reads as a strip sliding sideways. -->
+            <div class="zk-master">
+              <div class="zk-wheel" id="zankyo-master-wheel">
+                <span class="zk-wheel-ind" aria-hidden="true"></span>
+                <span class="zk-wheel-barrel" aria-hidden="true">
+                  <span class="zk-wheel-sheen"></span>
+                <span class="zk-wheel-tread" style="opacity: 0.8; left: 55.2117px;"></span><span class="zk-wheel-tread" style="opacity: 0.874; left: 63.4009px;"></span><span class="zk-wheel-tread" style="opacity: 0.948; left: 71.6784px;"></span><span class="zk-wheel-tread" style="opacity: 1; left: 79.9811px;"></span><span class="zk-wheel-tread" style="opacity: 1; left: 88.246px;"></span><span class="zk-wheel-tread" style="opacity: 0.849; left: 96.41px;"></span><span class="zk-wheel-tread" style="opacity: 0.923; left: 104.411px;"></span><span class="zk-wheel-tread" style="opacity: 0.997; left: 112.188px;"></span><span class="zk-wheel-tread" style="opacity: 1; left: 119.683px;"></span><span class="zk-wheel-tread" style="opacity: 0.82; left: 126.837px;"></span><span class="zk-wheel-tread" style="opacity: 0.686; left: 133.596px;"></span><span class="zk-wheel-tread" style="opacity: 0.492; left: 139.91px;"></span><span class="zk-wheel-tread" style="opacity: 0.234; left: 145.73px;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0;"></span><span class="zk-wheel-tread" style="opacity: 0; left: 0px;"></span><span class="zk-wheel-tread" style="opacity: 0.225; left: 5.39241px;"></span><span class="zk-wheel-tread" style="opacity: 0.489; left: 11.3146px;"></span><span class="zk-wheel-tread" style="opacity: 0.77; left: 17.7214px;"></span><span class="zk-wheel-tread" style="opacity: 1; left: 24.5642px;"></span><span class="zk-wheel-tread" style="opacity: 1; left: 31.7908px;"></span><span class="zk-wheel-tread" style="opacity: 0.849; left: 39.3463px;"></span><span class="zk-wheel-tread" style="opacity: 0.923; left: 47.1731px;"></span><span class="zk-wheel-seam" style="opacity: 0;"></span><span class="zk-wheel-plate" style="opacity: 0;"><i style="transform: rotate(-0.85deg) translate(-0.45px, 0.35px); opacity: 0.8;">0</i></span><span class="zk-wheel-plate" style="opacity: 0;"><i style="transform: rotate(0.23deg) translate(0.12px, -0.1px); opacity: 0.91;">10</i></span><span class="zk-wheel-plate" style="opacity: 0;"><i style="transform: rotate(-0.39deg) translate(-0.2px, 0.16px); opacity: 0.85;">20</i></span><span class="zk-wheel-plate" style="opacity: 0;"><i style="transform: rotate(0.7deg) translate(0.37px, -0.29px); opacity: 0.96;">30</i></span><span class="zk-wheel-plate" style="opacity: 0;"><i style="transform: rotate(0.08deg) translate(0.04px, -0.03px); opacity: 0.9;">40</i></span><span class="zk-wheel-plate" style="opacity: 1; left: 24.5642px; transform: translate(-50%, -50%) scaleX(0.848);"><i style="transform: rotate(-0.54deg) translate(-0.29px, 0.22px); opacity: 0.83;">50</i></span><span class="zk-wheel-plate" style="opacity: 1; left: 75px; transform: translate(-50%, -50%) scaleX(1);"><i style="transform: rotate(0.54deg) translate(0.29px, -0.22px); opacity: 0.95;">60</i></span><span class="zk-wheel-plate" style="opacity: 1; left: 125.436px; transform: translate(-50%, -50%) scaleX(0.848);"><i style="transform: rotate(-0.08deg) translate(-0.04px, 0.03px); opacity: 0.88;">70</i></span><span class="zk-wheel-plate" style="opacity: 0;"><i style="transform: rotate(-0.7deg) translate(-0.37px, 0.29px); opacity: 0.82;">80</i></span><span class="zk-wheel-plate" style="opacity: 0;"><i style="transform: rotate(0.39deg) translate(0.2px, -0.16px); opacity: 0.93;">90</i></span><span class="zk-wheel-plate" style="opacity: 0;"><i style="transform: rotate(-0.23deg) translate(-0.12px, 0.1px); opacity: 0.87;">100</i></span></span>
+                <input type="range" class="zk-wheel-input" id="zankyo-master-vol" min="0" max="100" step="1" value="60" aria-label="Master volume">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 拡声器 THE SPEAKER (owner's pick, 2026-09-24:
+             mockups/speaker-1-options.php option C): louvres moulded into
+             the plastic, dark cloth behind them, a recessed 音 medallion. Its
+             own casing, in the scope's plastic, filling the column under it to
+             the foot of the second set. Decorative — it plays nothing — and
+             gone under 700 px, where the bank stacks and there is no gap. -->
+        <div class="zk-spk" aria-hidden="true">
+          <span class="zk-spk-medal"><i>音</i></span>
+          <span class="zk-spk-slots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+        </div>
+
+      </div>
+
+      <!-- 隣 THE SECOND SET — 映像管 MSHI CRT-9, 受信専用: the older receive-only
+           tube the yard bolted on later, cracked glass and a strip of yellowed
+           tape, now in a casing re-cut as ONE injection moulding with a 操作段
+           control ledge (owner's pick: mockups/set-R2-ledge.html, re-worked
+           2026-09-17 so the ledge is part of the tool and not tacked on).
+           SETTLED: the set takes column 1 — at 960 that is 516 px of column,
+           13 px of wall each side, so the tube is 488 × 366. -->
+      <div class="zk-bank-side">
+      <div class="zk-set2" id="zankyo-set2">
+          <!-- the aperture. Its 4:3 comes from percentage padding, not
+               aspect-ratio: WebKit squashes a ratio on a shrinkable flex item
+               (PLAN-MONITOR-2 §9.1) and shipped a 488 × 274 tube that looked
+               perfect in Chrome. -->
+          <div class="zk-set2-tubewrap">
+            <div class="zk-tube-wrap">
+              <div class="zk-tube" id="zankyo-tube">
+                <img class="zk-mock-canvas " src="casing-base/set.png" alt="">
+                <!-- 題辞 THE EPIGRAPH (owner, 2026-10-02): on the second set at
+                     first load only. zk-set.js reads this figure and draws it
+                     INTO the tube's picture, so it gets the phosphor, the roll and
+                     the crack like a reel; the figure itself is not painted and
+                     stays as the screen reader's copy. The first start of the
+                     station (PLAY, 受信 or the hidden switch, all through
+                     clearBoot() in zankyo-ui.js) ends it for the session. Text as
+                     Gabler prints it, episode 2 (Nestor), lines 377-86, cited the
+                     way Joyce scholars cite: episode.line. -->
+                <figure class="zk-epi" id="zankyo-epi">
+                  <div class="zk-epi-body">
+                    <blockquote class="zk-epi-text">
+                      <p>—History, Stephen said, is a nightmare from which I am trying to awake.</p>
+                      <p>From the playfield the boys raised a shout. A whirring whistle: goal. What if that nightmare gave you a back kick?</p>
+                      <p>—The ways of the Creator are not our ways, Mr Deasy said. All human history moves towards one great goal, the manifestation of God.</p>
+                      <p>Stephen jerked his thumb towards the window, saying:</p>
+                      <p>—That is God.</p>
+                      <p>Hooray! Ay! Whrrwhee!</p>
+                      <p>—What? Mr Deasy asked.</p>
+                      <p>—A shout in the street, Stephen answered, shrugging his shoulders.</p>
+                    </blockquote>
+                    <figcaption class="zk-epi-cite">James Joyce, <cite>Ulysses</cite> 2.377–86</figcaption>
+                  </div>
+                </figure>
+                <div class="zankyo-scanlines" aria-hidden="true"></div>
+                <svg class="zk-crack" id="zankyo-crack" viewBox="0 0 400 300" preserveAspectRatio="none" aria-hidden="true"><defs><radialGradient id="zk-ck-frost"><stop offset="0" stop-color="rgba(226,230,232,0.55)"></stop><stop offset="0.6" stop-color="rgba(226,230,232,0.18)"></stop><stop offset="1" stop-color="rgba(226,230,232,0)"></stop></radialGradient><filter id="zk-ck-soft" x="-10%" y="-10%" width="120%" height="120%"><feGaussianBlur stdDeviation="0.7"></feGaussianBlur></filter></defs><path d="M212.0 58.0 L209.1 60.7 L206.8 63.7 L205.8 67.6" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.90" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M212.0 58.0 L209.1 60.7 L206.8 63.7 L205.8 67.6" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.06" vector-effect="non-scaling-stroke"></path><path d="M212.0 58.0 L209.1 60.7 L206.8 63.7 L205.8 67.6" fill="none" stroke="rgba(236,240,242,0.11)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M205.8 67.6 L204.2 71.1 L202.0 74.3 L199.9 77.5" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.67" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M205.8 67.6 L204.2 71.1 L202.0 74.3 L199.9 77.5" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.93" vector-effect="non-scaling-stroke"></path><path d="M205.8 67.6 L204.2 71.1 L202.0 74.3 L199.9 77.5" fill="none" stroke="rgba(236,240,242,0.20)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M199.9 77.5 L199.3 81.5 L196.0 84.0 L193.8 87.5" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.54" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M199.9 77.5 L199.3 81.5 L196.0 84.0 L193.8 87.5" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.87" vector-effect="non-scaling-stroke"></path><path d="M199.9 77.5 L199.3 81.5 L196.0 84.0 L193.8 87.5" fill="none" stroke="rgba(236,240,242,0.08)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M193.8 87.5 L190.9 90.4 L188.2 93.5 L185.4 96.5" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.45" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M193.8 87.5 L190.9 90.4 L188.2 93.5 L185.4 96.5" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.82" vector-effect="non-scaling-stroke"></path><path d="M193.8 87.5 L190.9 90.4 L188.2 93.5 L185.4 96.5" fill="none" stroke="rgba(236,240,242,0.07)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M185.4 96.5 L182.2 99.2 L180.8 103.3 L179.0 107.1" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.79" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M185.4 96.5 L182.2 99.2 L180.8 103.3 L179.0 107.1" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.00" vector-effect="non-scaling-stroke"></path><path d="M185.4 96.5 L182.2 99.2 L180.8 103.3 L179.0 107.1" fill="none" stroke="rgba(236,240,242,0.19)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M179.0 107.1 L176.0 110.0 L175.5 113.9 L174.5 117.7" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.74" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M179.0 107.1 L176.0 110.0 L175.5 113.9 L174.5 117.7" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.97" vector-effect="non-scaling-stroke"></path><path d="M179.0 107.1 L176.0 110.0 L175.5 113.9 L174.5 117.7" fill="none" stroke="rgba(236,240,242,0.11)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M174.5 117.7 L173.0 121.3 L170.6 124.5 L168.7 127.9" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.48" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M174.5 117.7 L173.0 121.3 L170.6 124.5 L168.7 127.9" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.83" vector-effect="non-scaling-stroke"></path><path d="M174.5 117.7 L173.0 121.3 L170.6 124.5 L168.7 127.9" fill="none" stroke="rgba(236,240,242,0.22)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M168.7 127.9 L167.8 131.7 L165.7 135.0 L163.4 138.3" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.44" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M168.7 127.9 L167.8 131.7 L165.7 135.0 L163.4 138.3" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.81" vector-effect="non-scaling-stroke"></path><path d="M168.7 127.9 L167.8 131.7 L165.7 135.0 L163.4 138.3" fill="none" stroke="rgba(236,240,242,0.10)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M163.4 138.3 L163.3 142.4 L162.0 146.0 L159.5 149.3" fill="none" stroke="rgba(0,0,0,0.46)" stroke-width="1.34" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M163.4 138.3 L163.3 142.4 L162.0 146.0 L159.5 149.3" fill="none" stroke="rgba(0,0,0,0.55)" stroke-width="0.76" vector-effect="non-scaling-stroke"></path><path d="M163.4 138.3 L163.3 142.4 L162.0 146.0 L159.5 149.3" fill="none" stroke="rgba(236,240,242,0.08)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M159.5 149.3 L157.8 153.1 L155.8 156.8 L152.7 159.7" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.47" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M159.5 149.3 L157.8 153.1 L155.8 156.8 L152.7 159.7" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.82" vector-effect="non-scaling-stroke"></path><path d="M159.5 149.3 L157.8 153.1 L155.8 156.8 L152.7 159.7" fill="none" stroke="rgba(236,240,242,0.08)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M152.7 159.7 L149.8 162.6 L147.2 165.9 L144.5 169.0" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.78" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M152.7 159.7 L149.8 162.6 L147.2 165.9 L144.5 169.0" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.99" vector-effect="non-scaling-stroke"></path><path d="M152.7 159.7 L149.8 162.6 L147.2 165.9 L144.5 169.0" fill="none" stroke="rgba(236,240,242,0.21)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M144.5 169.0 L141.4 171.9 L140.0 176.0 L138.8 179.7" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.62" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M144.5 169.0 L141.4 171.9 L140.0 176.0 L138.8 179.7" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.91" vector-effect="non-scaling-stroke"></path><path d="M144.5 169.0 L141.4 171.9 L140.0 176.0 L138.8 179.7" fill="none" stroke="rgba(236,240,242,0.34)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M138.8 179.7 L137.6 183.3 L136.0 186.9 L135.0 190.6" fill="none" stroke="rgba(0,0,0,0.49)" stroke-width="1.40" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M138.8 179.7 L137.6 183.3 L136.0 186.9 L135.0 190.6" fill="none" stroke="rgba(0,0,0,0.58)" stroke-width="0.79" vector-effect="non-scaling-stroke"></path><path d="M138.8 179.7 L137.6 183.3 L136.0 186.9 L135.0 190.6" fill="none" stroke="rgba(236,240,242,0.06)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M135.0 190.6 L134.7 194.7 L132.2 197.8 L130.5 201.3" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.57" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M135.0 190.6 L134.7 194.7 L132.2 197.8 L130.5 201.3" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.88" vector-effect="non-scaling-stroke"></path><path d="M135.0 190.6 L134.7 194.7 L132.2 197.8 L130.5 201.3" fill="none" stroke="rgba(236,240,242,0.14)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M130.5 201.3 L129.2 204.9 L127.8 208.5 L126.0 212.0" fill="none" stroke="rgba(0,0,0,0.46)" stroke-width="1.33" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M130.5 201.3 L129.2 204.9 L127.8 208.5 L126.0 212.0" fill="none" stroke="rgba(0,0,0,0.55)" stroke-width="0.75" vector-effect="non-scaling-stroke"></path><path d="M130.5 201.3 L129.2 204.9 L127.8 208.5 L126.0 212.0" fill="none" stroke="rgba(236,240,242,0.12)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M126.0 212.0 L122.4 214.2 L121.3 218.2 L119.7 221.8" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.69" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M126.0 212.0 L122.4 214.2 L121.3 218.2 L119.7 221.8" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.94" vector-effect="non-scaling-stroke"></path><path d="M126.0 212.0 L122.4 214.2 L121.3 218.2 L119.7 221.8" fill="none" stroke="rgba(236,240,242,0.31)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M119.7 221.8 L116.8 224.5 L115.4 228.3 L113.7 231.8" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.86" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M119.7 221.8 L116.8 224.5 L115.4 228.3 L113.7 231.8" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.03" vector-effect="non-scaling-stroke"></path><path d="M119.7 221.8 L116.8 224.5 L115.4 228.3 L113.7 231.8" fill="none" stroke="rgba(236,240,242,0.32)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M113.7 231.8 L111.6 235.1 L108.5 237.7 L106.0 240.6" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.76" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M113.7 231.8 L111.6 235.1 L108.5 237.7 L106.0 240.6" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.98" vector-effect="non-scaling-stroke"></path><path d="M113.7 231.8 L111.6 235.1 L108.5 237.7 L106.0 240.6" fill="none" stroke="rgba(236,240,242,0.14)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M106.0 240.6 L104.0 244.0 L102.2 247.4 L100.2 250.7" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.63" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M106.0 240.6 L104.0 244.0 L102.2 247.4 L100.2 250.7" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.91" vector-effect="non-scaling-stroke"></path><path d="M106.0 240.6 L104.0 244.0 L102.2 247.4 L100.2 250.7" fill="none" stroke="rgba(236,240,242,0.11)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M100.2 250.7 L99.3 254.4 L98.3 258.1 L97.1 261.7" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.50" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M100.2 250.7 L99.3 254.4 L98.3 258.1 L97.1 261.7" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.84" vector-effect="non-scaling-stroke"></path><path d="M100.2 250.7 L99.3 254.4 L98.3 258.1 L97.1 261.7" fill="none" stroke="rgba(236,240,242,0.10)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M97.1 261.7 L96.1 265.4 L95.4 269.2 L94.9 273.0" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.49" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M97.1 261.7 L96.1 265.4 L95.4 269.2 L94.9 273.0" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.84" vector-effect="non-scaling-stroke"></path><path d="M97.1 261.7 L96.1 265.4 L95.4 269.2 L94.9 273.0" fill="none" stroke="rgba(236,240,242,0.17)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M94.9 273.0 L92.0 276.0 L90.9 279.7 L90.5 283.5" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.74" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M94.9 273.0 L92.0 276.0 L90.9 279.7 L90.5 283.5" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.97" vector-effect="non-scaling-stroke"></path><path d="M94.9 273.0 L92.0 276.0 L90.9 279.7 L90.5 283.5" fill="none" stroke="rgba(236,240,242,0.18)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M90.5 283.5 L89.1 287.1 L87.4 290.6 L86.3 294.3" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.48" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M90.5 283.5 L89.1 287.1 L87.4 290.6 L86.3 294.3" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.83" vector-effect="non-scaling-stroke"></path><path d="M90.5 283.5 L89.1 287.1 L87.4 290.6 L86.3 294.3" fill="none" stroke="rgba(236,240,242,0.15)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M86.3 294.3 L86.8 298.3 L86.0 302.0" fill="none" stroke="rgba(0,0,0,0.49)" stroke-width="1.42" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M86.3 294.3 L86.8 298.3 L86.0 302.0" fill="none" stroke="rgba(0,0,0,0.59)" stroke-width="0.80" vector-effect="non-scaling-stroke"></path><path d="M86.3 294.3 L86.8 298.3 L86.0 302.0" fill="none" stroke="rgba(236,240,242,0.26)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M212.0 58.0 L216.0 59.1 L219.7 61.2 L223.7 62.3" fill="none" stroke="rgba(0,0,0,0.47)" stroke-width="1.37" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M212.0 58.0 L216.0 59.1 L219.7 61.2 L223.7 62.3" fill="none" stroke="rgba(0,0,0,0.57)" stroke-width="0.77" vector-effect="non-scaling-stroke"></path><path d="M212.0 58.0 L216.0 59.1 L219.7 61.2 L223.7 62.3" fill="none" stroke="rgba(236,240,242,0.21)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M223.7 62.3 L228.0 62.6 L232.1 63.2 L236.2 64.2" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.72" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M223.7 62.3 L228.0 62.6 L232.1 63.2 L236.2 64.2" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.96" vector-effect="non-scaling-stroke"></path><path d="M223.7 62.3 L228.0 62.6 L232.1 63.2 L236.2 64.2" fill="none" stroke="rgba(236,240,242,0.24)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M236.2 64.2 L240.0 66.0 L243.7 63.9 L247.8 63.4" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.72" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M236.2 64.2 L240.0 66.0 L243.7 63.9 L247.8 63.4" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.96" vector-effect="non-scaling-stroke"></path><path d="M236.2 64.2 L240.0 66.0 L243.7 63.9 L247.8 63.4" fill="none" stroke="rgba(236,240,242,0.18)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M247.8 63.4 L252.1 64.1 L256.0 63.2 L260.1 62.8" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.66" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M247.8 63.4 L252.1 64.1 L256.0 63.2 L260.1 62.8" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.93" vector-effect="non-scaling-stroke"></path><path d="M247.8 63.4 L252.1 64.1 L256.0 63.2 L260.1 62.8" fill="none" stroke="rgba(236,240,242,0.14)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M260.1 62.8 L264.2 62.3 L268.1 61.5 L272.0 60.0" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.90" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M260.1 62.8 L264.2 62.3 L268.1 61.5 L272.0 60.0" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.06" vector-effect="non-scaling-stroke"></path><path d="M260.1 62.8 L264.2 62.3 L268.1 61.5 L272.0 60.0" fill="none" stroke="rgba(236,240,242,0.09)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M272.0 60.0 L276.1 61.0 L280.1 62.3 L284.2 63.2" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.88" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M272.0 60.0 L276.1 61.0 L280.1 62.3 L284.2 63.2" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.05" vector-effect="non-scaling-stroke"></path><path d="M272.0 60.0 L276.1 61.0 L280.1 62.3 L284.2 63.2" fill="none" stroke="rgba(236,240,242,0.09)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M284.2 63.2 L288.5 63.4 L292.1 66.0 L295.8 68.1" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.77" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M284.2 63.2 L288.5 63.4 L292.1 66.0 L295.8 68.1" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.99" vector-effect="non-scaling-stroke"></path><path d="M284.2 63.2 L288.5 63.4 L292.1 66.0 L295.8 68.1" fill="none" stroke="rgba(236,240,242,0.33)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M295.8 68.1 L300.0 68.7 L304.0 70.0 L308.2 70.2" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.73" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M295.8 68.1 L300.0 68.7 L304.0 70.0 L308.2 70.2" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.97" vector-effect="non-scaling-stroke"></path><path d="M295.8 68.1 L300.0 68.7 L304.0 70.0 L308.2 70.2" fill="none" stroke="rgba(236,240,242,0.18)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M308.2 70.2 L312.1 68.9 L315.9 67.3 L319.9 66.6" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.54" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M308.2 70.2 L312.1 68.9 L315.9 67.3 L319.9 66.6" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.86" vector-effect="non-scaling-stroke"></path><path d="M308.2 70.2 L312.1 68.9 L315.9 67.3 L319.9 66.6" fill="none" stroke="rgba(236,240,242,0.10)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M319.9 66.6 L324.0 66.0 L327.8 64.3 L331.9 64.2" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.78" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M319.9 66.6 L324.0 66.0 L327.8 64.3 L331.9 64.2" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.99" vector-effect="non-scaling-stroke"></path><path d="M319.9 66.6 L324.0 66.0 L327.8 64.3 L331.9 64.2" fill="none" stroke="rgba(236,240,242,0.26)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M331.9 64.2 L336.0 64.0 L339.6 65.6 L343.4 66.8" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.50" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M331.9 64.2 L336.0 64.0 L339.6 65.6 L343.4 66.8" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.84" vector-effect="non-scaling-stroke"></path><path d="M331.9 64.2 L336.0 64.0 L339.6 65.6 L343.4 66.8" fill="none" stroke="rgba(236,240,242,0.07)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M343.4 66.8 L346.9 68.7 L350.5 70.6 L354.5 70.9" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.80" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M343.4 66.8 L346.9 68.7 L350.5 70.6 L354.5 70.9" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.00" vector-effect="non-scaling-stroke"></path><path d="M343.4 66.8 L346.9 68.7 L350.5 70.6 L354.5 70.9" fill="none" stroke="rgba(236,240,242,0.24)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M354.5 70.9 L358.5 71.4 L362.3 72.6 L366.0 74.0" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.80" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M354.5 70.9 L358.5 71.4 L362.3 72.6 L366.0 74.0" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.00" vector-effect="non-scaling-stroke"></path><path d="M354.5 70.9 L358.5 71.4 L362.3 72.6 L366.0 74.0" fill="none" stroke="rgba(236,240,242,0.21)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M366.0 74.0 L369.7 71.6 L373.9 71.8 L378.0 72.0" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.51" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M366.0 74.0 L369.7 71.6 L373.9 71.8 L378.0 72.0" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.85" vector-effect="non-scaling-stroke"></path><path d="M366.0 74.0 L369.7 71.6 L373.9 71.8 L378.0 72.0" fill="none" stroke="rgba(236,240,242,0.23)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M378.0 72.0 L382.0 71.2 L386.1 71.3 L390.2 71.4" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.70" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M378.0 72.0 L382.0 71.2 L386.1 71.3 L390.2 71.4" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.95" vector-effect="non-scaling-stroke"></path><path d="M378.0 72.0 L382.0 71.2 L386.1 71.3 L390.2 71.4" fill="none" stroke="rgba(236,240,242,0.11)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M390.2 71.4 L394.1 70.1 L398.0 68.5 L402.0 68.0" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.49" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M390.2 71.4 L394.1 70.1 L398.0 68.5 L402.0 68.0" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.84" vector-effect="non-scaling-stroke"></path><path d="M390.2 71.4 L394.1 70.1 L398.0 68.5 L402.0 68.0" fill="none" stroke="rgba(236,240,242,0.28)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M162.0 146.0 L158.2 144.1 L154.2 143.2 L150.0 143.8" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.90" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M162.0 146.0 L158.2 144.1 L154.2 143.2 L150.0 143.8" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.06" vector-effect="non-scaling-stroke"></path><path d="M162.0 146.0 L158.2 144.1 L154.2 143.2 L150.0 143.8" fill="none" stroke="rgba(236,240,242,0.23)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M150.0 143.8 L146.0 143.0 L141.9 142.6 L138.0 141.7" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.67" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M150.0 143.8 L146.0 143.0 L141.9 142.6 L138.0 141.7" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.93" vector-effect="non-scaling-stroke"></path><path d="M150.0 143.8 L146.0 143.0 L141.9 142.6 L138.0 141.7" fill="none" stroke="rgba(236,240,242,0.13)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M138.0 141.7 L133.8 141.7 L130.0 140.0 L126.2 140.7" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.73" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M138.0 141.7 L133.8 141.7 L130.0 140.0 L126.2 140.7" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.97" vector-effect="non-scaling-stroke"></path><path d="M138.0 141.7 L133.8 141.7 L130.0 140.0 L126.2 140.7" fill="none" stroke="rgba(236,240,242,0.21)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M126.2 140.7 L122.5 141.9 L118.6 142.5 L114.6 142.3" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.53" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M126.2 140.7 L122.5 141.9 L118.6 142.5 L114.6 142.3" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.86" vector-effect="non-scaling-stroke"></path><path d="M126.2 140.7 L122.5 141.9 L118.6 142.5 L114.6 142.3" fill="none" stroke="rgba(236,240,242,0.27)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M114.6 142.3 L110.9 143.4 L107.2 144.8 L103.7 146.9" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.82" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M114.6 142.3 L110.9 143.4 L107.2 144.8 L103.7 146.9" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.01" vector-effect="non-scaling-stroke"></path><path d="M114.6 142.3 L110.9 143.4 L107.2 144.8 L103.7 146.9" fill="none" stroke="rgba(236,240,242,0.34)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M103.7 146.9 L99.8 147.2 L96.0 148.0 L91.6 148.8" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.93" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M103.7 146.9 L99.8 147.2 L96.0 148.0 L91.6 148.8" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.08" vector-effect="non-scaling-stroke"></path><path d="M103.7 146.9 L99.8 147.2 L96.0 148.0 L91.6 148.8" fill="none" stroke="rgba(236,240,242,0.18)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M91.6 148.8 L87.8 147.3 L84.1 145.1 L80.0 144.7" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.64" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M91.6 148.8 L87.8 147.3 L84.1 145.1 L80.0 144.7" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.92" vector-effect="non-scaling-stroke"></path><path d="M91.6 148.8 L87.8 147.3 L84.1 145.1 L80.0 144.7" fill="none" stroke="rgba(236,240,242,0.20)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M80.0 144.7 L76.0 143.5 L72.3 141.4 L68.2 140.7" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.60" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M80.0 144.7 L76.0 143.5 L72.3 141.4 L68.2 140.7" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.90" vector-effect="non-scaling-stroke"></path><path d="M80.0 144.7 L76.0 143.5 L72.3 141.4 L68.2 140.7" fill="none" stroke="rgba(236,240,242,0.07)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M68.2 140.7 L64.0 141.0 L60.0 140.0 L56.1 140.9" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.52" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M68.2 140.7 L64.0 141.0 L60.0 140.0 L56.1 140.9" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.85" vector-effect="non-scaling-stroke"></path><path d="M68.2 140.7 L64.0 141.0 L60.0 140.0 L56.1 140.9" fill="none" stroke="rgba(236,240,242,0.12)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M56.1 140.9 L52.9 143.6 L49.3 145.4 L45.2 145.5" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.63" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M56.1 140.9 L52.9 143.6 L49.3 145.4 L45.2 145.5" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.91" vector-effect="non-scaling-stroke"></path><path d="M56.1 140.9 L52.9 143.6 L49.3 145.4 L45.2 145.5" fill="none" stroke="rgba(236,240,242,0.26)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M45.2 145.5 L41.1 145.8 L37.7 148.0 L33.6 148.4" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.89" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M45.2 145.5 L41.1 145.8 L37.7 148.0 L33.6 148.4" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.05" vector-effect="non-scaling-stroke"></path><path d="M45.2 145.5 L41.1 145.8 L37.7 148.0 L33.6 148.4" fill="none" stroke="rgba(236,240,242,0.12)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M33.6 148.4 L30.0 150.0 L26.2 148.4 L22.0 148.5" fill="none" stroke="rgba(0,0,0,0.46)" stroke-width="1.34" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M33.6 148.4 L30.0 150.0 L26.2 148.4 L22.0 148.5" fill="none" stroke="rgba(0,0,0,0.55)" stroke-width="0.76" vector-effect="non-scaling-stroke"></path><path d="M33.6 148.4 L30.0 150.0 L26.2 148.4 L22.0 148.5" fill="none" stroke="rgba(236,240,242,0.06)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M22.0 148.5 L18.0 147.5 L14.0 146.9 L9.8 147.1" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.81" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M22.0 148.5 L18.0 147.5 L14.0 146.9 L9.8 147.1" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.01" vector-effect="non-scaling-stroke"></path><path d="M22.0 148.5 L18.0 147.5 L14.0 146.9 L9.8 147.1" fill="none" stroke="rgba(236,240,242,0.10)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M9.8 147.1 L5.7 146.9 L1.9 145.4 L-2.0 144.0" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.91" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M9.8 147.1 L5.7 146.9 L1.9 145.4 L-2.0 144.0" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.06" vector-effect="non-scaling-stroke"></path><path d="M9.8 147.1 L5.7 146.9 L1.9 145.4 L-2.0 144.0" fill="none" stroke="rgba(236,240,242,0.31)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M212.0 58.0 L212.6 53.9 L212.2 49.7 L213.7 45.8" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.54" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M212.0 58.0 L212.6 53.9 L212.2 49.7 L213.7 45.8" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.86" vector-effect="non-scaling-stroke"></path><path d="M212.0 58.0 L212.6 53.9 L212.2 49.7 L213.7 45.8" fill="none" stroke="rgba(236,240,242,0.27)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M213.7 45.8 L215.4 42.0 L215.8 37.9 L217.4 34.0" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.93" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M213.7 45.8 L215.4 42.0 L215.8 37.9 L217.4 34.0" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.07" vector-effect="non-scaling-stroke"></path><path d="M213.7 45.8 L215.4 42.0 L215.8 37.9 L217.4 34.0" fill="none" stroke="rgba(236,240,242,0.14)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M217.4 34.0 L218.0 30.0 L218.5 25.6 L216.2 22.0" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.67" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M217.4 34.0 L218.0 30.0 L218.5 25.6 L216.2 22.0" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.93" vector-effect="non-scaling-stroke"></path><path d="M217.4 34.0 L218.0 30.0 L218.5 25.6 L216.2 22.0" fill="none" stroke="rgba(236,240,242,0.24)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M216.2 22.0 L215.6 17.8 L214.1 14.0 L212.2 10.2" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.56" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M216.2 22.0 L215.6 17.8 L214.1 14.0 L212.2 10.2" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.88" vector-effect="non-scaling-stroke"></path><path d="M216.2 22.0 L215.6 17.8 L214.1 14.0 L212.2 10.2" fill="none" stroke="rgba(236,240,242,0.15)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M212.2 10.2 L210.8 6.3 L210.6 2.1 L210.0 -2.0" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.48" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M212.2 10.2 L210.8 6.3 L210.6 2.1 L210.0 -2.0" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.83" vector-effect="non-scaling-stroke"></path><path d="M212.2 10.2 L210.8 6.3 L210.6 2.1 L210.0 -2.0" fill="none" stroke="rgba(236,240,242,0.15)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M272.0 60.0 L272.3 64.3 L275.2 67.8 L276.0 71.9" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.90" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M272.0 60.0 L272.3 64.3 L275.2 67.8 L276.0 71.9" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="1.06" vector-effect="non-scaling-stroke"></path><path d="M272.0 60.0 L272.3 64.3 L275.2 67.8 L276.0 71.9" fill="none" stroke="rgba(236,240,242,0.32)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M276.0 71.9 L277.5 75.8 L278.0 80.0 L277.5 84.4" fill="none" stroke="rgba(0,0,0,0.33)" stroke-width="1.01" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M276.0 71.9 L277.5 75.8 L278.0 80.0 L277.5 84.4" fill="none" stroke="rgba(0,0,0,0.40)" stroke-width="0.58" vector-effect="non-scaling-stroke"></path><path d="M276.0 71.9 L277.5 75.8 L278.0 80.0 L277.5 84.4" fill="none" stroke="rgba(236,240,242,0.07)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M277.5 84.4 L275.0 88.0 L272.8 91.7 L272.0 96.0" fill="none" stroke="rgba(0,0,0,0.14)" stroke-width="0.51" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M277.5 84.4 L275.0 88.0 L272.8 91.7 L272.0 96.0" fill="none" stroke="rgba(0,0,0,0.17)" stroke-width="0.31" vector-effect="non-scaling-stroke"></path><path d="M277.5 84.4 L275.0 88.0 L272.8 91.7 L272.0 96.0" fill="none" stroke="rgba(236,240,242,0.03)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M330.0 230.0 L326.8 227.4 L324.2 224.4 L322.7 220.5" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.55" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M330.0 230.0 L326.8 227.4 L324.2 224.4 L322.7 220.5" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.87" vector-effect="non-scaling-stroke"></path><path d="M330.0 230.0 L326.8 227.4 L324.2 224.4 L322.7 220.5" fill="none" stroke="rgba(236,240,242,0.17)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M322.7 220.5 L320.5 217.1 L318.0 214.0 L317.5 210.1" fill="none" stroke="rgba(0,0,0,0.36)" stroke-width="1.06" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M322.7 220.5 L320.5 217.1 L318.0 214.0 L317.5 210.1" fill="none" stroke="rgba(0,0,0,0.43)" stroke-width="0.61" vector-effect="non-scaling-stroke"></path><path d="M322.7 220.5 L320.5 217.1 L318.0 214.0 L317.5 210.1" fill="none" stroke="rgba(236,240,242,0.06)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M317.5 210.1 L315.9 206.6 L314.0 203.3 L312.0 200.0" fill="none" stroke="rgba(0,0,0,0.14)" stroke-width="0.50" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M317.5 210.1 L315.9 206.6 L314.0 203.3 L312.0 200.0" fill="none" stroke="rgba(0,0,0,0.17)" stroke-width="0.30" vector-effect="non-scaling-stroke"></path><path d="M317.5 210.1 L315.9 206.6 L314.0 203.3 L312.0 200.0" fill="none" stroke="rgba(236,240,242,0.01)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M330.0 230.0 L333.8 232.1 L337.0 234.9 L339.0 239.1" fill="none" stroke="rgba(0,0,0,0.50)" stroke-width="1.65" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M330.0 230.0 L333.8 232.1 L337.0 234.9 L339.0 239.1" fill="none" stroke="rgba(0,0,0,0.60)" stroke-width="0.93" vector-effect="non-scaling-stroke"></path><path d="M330.0 230.0 L333.8 232.1 L337.0 234.9 L339.0 239.1" fill="none" stroke="rgba(236,240,242,0.28)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M339.0 239.1 L341.9 242.2 L346.0 244.0 L346.5 248.4" fill="none" stroke="rgba(0,0,0,0.34)" stroke-width="1.03" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M339.0 239.1 L341.9 242.2 L346.0 244.0 L346.5 248.4" fill="none" stroke="rgba(0,0,0,0.41)" stroke-width="0.59" vector-effect="non-scaling-stroke"></path><path d="M339.0 239.1 L341.9 242.2 L346.0 244.0 L346.5 248.4" fill="none" stroke="rgba(236,240,242,0.04)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><path d="M346.5 248.4 L348.0 252.4 L350.7 255.9 L352.0 260.0" fill="none" stroke="rgba(0,0,0,0.14)" stroke-width="0.50" vector-effect="non-scaling-stroke" transform="translate(0.55 0.6)" filter="url(#zk-ck-soft)"></path><path d="M346.5 248.4 L348.0 252.4 L350.7 255.9 L352.0 260.0" fill="none" stroke="rgba(0,0,0,0.17)" stroke-width="0.30" vector-effect="non-scaling-stroke"></path><path d="M346.5 248.4 L348.0 252.4 L350.7 255.9 L352.0 260.0" fill="none" stroke="rgba(236,240,242,0.01)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.45)"></path><circle cx="212" cy="58" r="4.5" fill="url(#zk-ck-frost)" opacity="0.85"></circle><path d="M200.7 61.8 L204.7 58.5 L204.8 63.3 L200.6 60.8 Z" fill="rgba(226,230,232,0.097)" stroke="rgba(0,0,0,0.425)" stroke-width="0.5" vector-effect="non-scaling-stroke"></path><path d="M221.2 60.9 L217.5 61.5 L219.8 58.1 L220.7 61.7 Z" fill="rgba(226,230,232,0.126)" stroke="rgba(0,0,0,0.425)" stroke-width="0.5" vector-effect="non-scaling-stroke"></path><path d="M211.7 63.3 L211.1 60.7 L213.8 61.1 Z" fill="rgba(226,230,232,0.125)" stroke="rgba(0,0,0,0.425)" stroke-width="0.5" vector-effect="non-scaling-stroke"></path><path d="M213.6 68.1 L212.3 64.3 L216.5 64.4 L213.9 68.1 Z" fill="rgba(226,230,232,0.150)" stroke="rgba(0,0,0,0.425)" stroke-width="0.5" vector-effect="non-scaling-stroke"></path><path d="M212.1 51.4 L213.2 54.6 L210.1 54.2 L212.4 51.5 Z" fill="rgba(226,230,232,0.107)" stroke="rgba(0,0,0,0.425)" stroke-width="0.5" vector-effect="non-scaling-stroke"></path><path d="M207.4 61.8 L208.9 58.8 L210.8 62.1 Z" fill="rgba(226,230,232,0.073)" stroke="rgba(0,0,0,0.425)" stroke-width="0.5" vector-effect="non-scaling-stroke"></path><path d="M202.4 62.3 L205.7 58.6 L207.0 63.5 Z" fill="rgba(226,230,232,0.146)" stroke="rgba(0,0,0,0.425)" stroke-width="0.5" vector-effect="non-scaling-stroke"></path><path d="M213.8 57.2 L219.5 55.7" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M213.8 57.2 L219.5 55.7" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path><path d="M214.6 59.5 L218.5 61.8 L222.2 64.4 L225.3 67.7" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M214.6 59.5 L218.5 61.8 L222.2 64.4" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path><path d="M212.5 62.0 L212.4 66.3 L212.2 70.5" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M212.5 62.0 L212.4 66.3 L212.2 70.5" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path><path d="M210.5 59.4 L207.1 61.6 L203.5 63.4 L200.8 66.6" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M210.5 59.4 L207.1 61.6 L203.5 63.4" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path><path d="M209.0 57.5 L204.3 56.4 L199.8 54.6" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M209.0 57.5 L204.3 56.4 L199.8 54.6" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path><path d="M210.2 54.4 L207.6 51.7 L207.0 48.3 L206.9 44.8" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M210.2 54.4 L207.6 51.7 L207.0 48.3" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path><path d="M212.9 56.2 L214.7 51.6 L218.2 48.1" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M212.9 56.2 L214.7 51.6 L218.2 48.1" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path><circle cx="330" cy="230" r="3" fill="url(#zk-ck-frost)" opacity="0.85"></circle><path d="M333.6 236.7 L330.2 232.7 L335.0 232.4 L334.2 236.4 Z" fill="rgba(226,230,232,0.113)" stroke="rgba(0,0,0,0.425)" stroke-width="0.5" vector-effect="non-scaling-stroke"></path><path d="M330.7 235.2 L329.2 232.9 L332.4 233.0 Z" fill="rgba(226,230,232,0.127)" stroke="rgba(0,0,0,0.425)" stroke-width="0.5" vector-effect="non-scaling-stroke"></path><path d="M323.4 230.7 L327.1 228.2 L326.8 233.0 Z" fill="rgba(226,230,232,0.130)" stroke="rgba(0,0,0,0.425)" stroke-width="0.5" vector-effect="non-scaling-stroke"></path><path d="M337.0 229.5 L334.7 230.2 L335.6 228.3 Z" fill="rgba(226,230,232,0.073)" stroke="rgba(0,0,0,0.425)" stroke-width="0.5" vector-effect="non-scaling-stroke"></path><path d="M331.8 229.2 L335.2 228.0 L338.7 227.3" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M331.8 229.2 L335.2 228.0 L338.7 227.3" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path><path d="M331.9 232.3 L335.0 235.6 L336.4 240.0 L338.8 243.7" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M331.9 232.3 L335.0 235.6 L336.4 240.0" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path><path d="M327.6 233.2 L324.0 236.7" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M327.6 233.2 L324.0 236.7" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path><path d="M328.1 229.3 L324.1 227.8 L321.0 224.7 L316.9 223.5" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M328.1 229.3 L324.1 227.8 L321.0 224.7" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path><path d="M330.3 227.0 L332.1 223.9 L332.2 220.4 L332.5 217.0" fill="none" stroke="rgba(0,0,0,0.425)" stroke-width="0.6" vector-effect="non-scaling-stroke"></path><path d="M330.3 227.0 L332.1 223.9 L332.2 220.4" fill="none" stroke="rgba(236,240,242,0.297)" stroke-width="0.5" vector-effect="non-scaling-stroke" transform="translate(-0.5 -0.4)"></path></svg>
+                <div class="zk-glass" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 操作段 THE CONTROL LEDGE. Three stations on one moulded bar:
+               the unlabelled stepper, the 受信 push, and a station the tool cut
+               and nothing has been fitted to yet. (rc.77: 輝度 came off the
+               panel — the owner wanted the number under his left thumb and the
+               button back. setBright()/getBright() stay in zk-set.js at their
+               default step, waiting for a control.) -->
+          <div class="zk-ledge">
+            <span class="zk-pin zk-pin-l" aria-hidden="true"></span>
+            <span class="zk-pin zk-pin-r" aria-hidden="true"></span>
+
+            <div class="zk-ledge-brand" aria-hidden="true">
+              <span>映像管 · MSHI CRT-9 · <i>受信専用</i></span>
+              <em>操作段 · LEDGE 01</em>
+            </div>
+
+            <div class="zk-well">
+
+              <!-- THE LEFT STATION: two arrows and a two-digit readout, and
+                   nothing else. No label on the panel, no legend, no tooltip and
+                   no line in the VFD — the owner asked that it not be explained
+                   ("part of the appeal of this app is just kind of mysterious
+                   and you just have to figure out yourself whether it's actually
+                   controlling"). The screen reader is told what the control
+                   factually IS, which is a different thing from explaining it
+                   on the faceplate. The digits are amber (rc.77). -->
+              <div class="zk-rocker" id="zankyo-rock-loc" role="group" aria-label="選局番号 · channel number, 00 to 10">
+                <span class="zk-cap zk-cap-l" aria-hidden="true"><i>▾</i></span>
+                <span class="zk-rock-win zk-rock-win-num">
+                  <span class="zk-num" aria-hidden="true"><i class="zk-num-ghost">88</i><b class="zk-num-v" id="zankyo-loc-read">00</b></span>
+                </span>
+                <span class="zk-cap zk-cap-r" aria-hidden="true"><i>▴</i></span>
+                <button type="button" class="zk-face zk-hit zk-hit-l" data-d="-1" aria-label="番号を下げる · channel number down"></button>
+                <button type="button" class="zk-face zk-hit zk-hit-r" data-d="1" aria-label="番号を上げる · channel number up"></button>
+                <span class="zk-sr" id="zankyo-loc-sr" role="status">00</span>
+              </div>
+
+              <!-- THE MIDDLE STATION: 受信, the momentary push, back on the
+                   panel (rc.77). One press seats a real broadcast AT ONCE —
+                   no cooldown, no lottery gate, no probability — through the
+                   production path, narrowed by the number to its left. The
+                   plate carries the set's own word and NOTHING ELSE: no
+                   legend, no tooltip, no line of help. The lamp is the whole
+                   readout — lit while a reception is on the air. The
+                   aria-label states what the control factually does, which is
+                   what a screen reader needs and not what the plastic says. -->
+              <button type="button" class="zk-face zk-push" id="zankyo-push" aria-label="受信 · receive a broadcast now">
+                <span class="zk-push-cap" aria-hidden="true">
+                  <span class="zk-push-k">受信</span>
+                  <span class="zk-push-lens"></span>
+                </span>
+              </button>
+
+              <!-- THE THIRD STATION: 音量, the set's own volume (owner's pick,
+                   2026-09-25: mockups/tv-volume-1-options.php option C). The
+                   left station's see-saw, − and +, with an eight-step amber
+                   ladder in its window. It turns the reels' own sound only —
+                   not the static, not the music. Wordless on the plastic; the
+                   aria-label says what it factually does. -->
+              <div class="zk-rocker zk-vol" id="zankyo-rock-vol" role="group" aria-label="音量 · the broadcast's volume">
+                <span class="zk-cap zk-cap-l" aria-hidden="true"><i>−</i></span>
+                <span class="zk-rock-win zk-vol-win" aria-hidden="true"><span class="zk-vol-ladder" id="zankyo-vol-ladder"><i class="on" style="height: 4px;"></i><i class="on" style="height: 4px;"></i><i class="on" style="height: 4px;"></i><i class="on" style="height: 4px;"></i><i class="on" style="height: 6px;"></i><i class="on" style="height: 6px;"></i><i class="on" style="height: 6px;"></i><i class="on" style="height: 6px;"></i><i class="on" style="height: 8px;"></i><i class="on" style="height: 8px;"></i><i class="on" style="height: 8px;"></i><i class="on" style="height: 8px;"></i><i class="on" style="height: 10px;"></i><i class="on" style="height: 10px;"></i><i class="on" style="height: 10px;"></i><i class="on" style="height: 10px;"></i><i class="on" style="height: 12px;"></i><i class="on" style="height: 12px;"></i><i class="on" style="height: 12px;"></i><i class="on" style="height: 12px;"></i><i class="on" style="height: 14px;"></i><i style="height: 14px;"></i><i style="height: 14px;"></i><i style="height: 14px;"></i><i style="height: 16px;"></i><i style="height: 16px;"></i><i style="height: 16px;"></i><i style="height: 16px;"></i></span></span>
+                <span class="zk-cap zk-cap-r" aria-hidden="true"><i>+</i></span>
+                <button type="button" class="zk-face zk-hit zk-hit-l" data-d="-1" aria-label="音量を下げる · broadcast volume down"></button>
+                <button type="button" class="zk-face zk-hit zk-hit-r" data-d="1" aria-label="音量を上げる · broadcast volume up"></button>
+                <span class="zk-sr" id="zankyo-vol-sr" role="status">75 %</span>
+              </div>
+
+            </div>
+          </div>
+      </div>
+      </div>
+    </div>
+
+    <!-- control rail: one row above the console — the narrow pitch-management
+         module on the left (mode, tonic, mood, the scale-degree lamps that
+         strike with every melodic note) and the VFD activity log on the right,
+         moved up from under the console (owner, 2026-09-24: "a narrower
+         container … move the activity log up … less explaining"). The gold
+         test-point strip was dead decoration and is gone. -->
+    <div class="zk-console-top">
+      <div class="zk-module">
+        <span class="zk-mod-screw" style="--slot:31deg" aria-hidden="true"></span>
+        <span class="zk-mod-screw zk-mod-screw-r" style="--slot:-47deg" aria-hidden="true"></span>
+        <div class="zk-mod-zone zk-mod-mode">
+          <div class="zk-mod-lamp">
+            <span class="zankyo-scale-name" id="zankyo-mode-name"><b>Hirajoshi</b> · <span class="zk-tonic">D</span></span>
+            <span class="zankyo-scale-mood" id="zankyo-mode-mood">haunted · derelict · neon-rust</span>
+            <!-- the night's seed (owner, 2026-09-24): the number that plays this
+                 night again, as ?seed= in the address -->
+            <span class="zankyo-scale-mood zk-seed" id="zankyo-seed">seed 3042</span>
+          </div>
+        </div>
+        <div class="zk-mod-zone zk-mod-scale">
+          <!-- the testpoints are back where the label was (owner, 2026-09-24):
+               no printed words on this panel, just the readout and the lamps -->
+          <span class="zk-testpoints" aria-hidden="true"></span>
+          <div class="zk-deg-row" id="zankyo-degrees"><span class="zk-deg" data-deg="0">一</span><span class="zk-deg" data-deg="1">二</span><span class="zk-deg" data-deg="2">三</span><span class="zk-deg" data-deg="3">四</span><span class="zk-deg" data-deg="4">五</span></div>
+        </div>
+      </div>
+
+      <!-- VFD activity display -->
+      <div class="zankyo-log-block">
+        <div class="zankyo-log-label"><span>活動 · ACTIVITY</span><span class="zk-vfd-tag">VFD-08</span></div>
+        <div id="zankyo-log" class="zankyo-log">
+          <div class="zankyo-log-empty">Press PLAY. Events appear here as they fire.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- console -->
+    <!-- the title strip is the console's own latch: press it and the whole
+         console folds to the strip, the way a row's name plate folds its cavity
+         (owner, 2026-09-14). Remembered per browser. -->
+    <div class="zankyo-mixer" id="zankyo-mixer">
+      <div class="zankyo-mixer-title" id="zankyo-mixer-toggle" role="button" tabindex="0" aria-expanded="true" aria-controls="zankyo-layers" aria-label="Console: fold or unfold">
+        <span>卓 · CONSOLE</span>
+        <span class="zk-warn-small" aria-hidden="true">機動注意</span>
+        <span class="zk-name-latch zk-mixer-latch" aria-hidden="true"></span>
+      </div>
+      <div id="zankyo-layers"><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Sub-drone controls"><span class="zankyo-layer-kana">重低音</span><span class="zk-name-label">Sub-drone</span><i class="zk-ch">CH·01</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="subDrone" title="sample this instrument" aria-label="Sample Sub-drone"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="subDrone" role="switch" aria-checked="true" aria-label="Sub-drone on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-0" role="slider" tabindex="0" aria-label="Sub-drone volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="subDrone">50</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">cutoff <b data-param-val="subDrone:cutoff">220 Hz</b></span><input type="range" class="zankyo-range" min="80" max="500" step="5" value="220" data-param="subDrone:cutoff"></label><label class="zankyo-param"><span class="zankyo-param-label">drive <b data-param-val="subDrone:drive">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="subDrone:drive"></label><label class="zankyo-param"><span class="zankyo-param-label">sub <b data-param-val="subDrone:sub">0.60</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.6" data-param="subDrone:sub"></label><label class="zankyo-param"><span class="zankyo-param-label">movement <b data-param-val="subDrone:movement">0.18</b></span><input type="range" class="zankyo-range" min="0" max="0.5" step="0.02" value="0.18" data-param="subDrone:movement"></label></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Shō controls"><span class="zankyo-layer-kana">笙</span><span class="zk-name-label">Shō</span><i class="zk-ch">CH·02</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="sho" title="sample this instrument" aria-label="Sample Shō"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="sho" role="switch" aria-checked="true" aria-label="Shō on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-1" role="slider" tabindex="0" aria-label="Shō volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="sho">50</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">cutoff <b data-param-val="sho:cutoff">1400 Hz</b></span><input type="range" class="zankyo-range" min="400" max="3000" step="20" value="1400" data-param="sho:cutoff"></label><label class="zankyo-param"><span class="zankyo-param-label">voices <b data-param-val="sho:voices">5</b></span><input type="range" class="zankyo-range" min="3" max="7" step="1" value="5" data-param="sho:voices"></label><label class="zankyo-param"><span class="zankyo-param-label">shimmer <b data-param-val="sho:shimmer">0.40</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.4" data-param="sho:shimmer"></label><label class="zankyo-param"><span class="zankyo-param-label">drift <b data-param-val="sho:drift">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="sho:drift"></label></div></div></div><div class="zankyo-layer is-open"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="true" aria-label="Shakuhachi controls"><span class="zankyo-layer-kana">尺八</span><span class="zk-name-label">Shakuhachi</span><i class="zk-ch">CH·03</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="shakuhachi" title="sample this instrument" aria-label="Sample Shakuhachi"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="shakuhachi" role="switch" aria-checked="true" aria-label="Shakuhachi on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-2" role="slider" tabindex="0" aria-label="Shakuhachi volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="shakuhachi">50</span></span></span><span class="zk-unit zk-unit-rate"><div class="zk-knob zk-knob-rate zk-wear-3" role="slider" tabindex="0" aria-label="Shakuhachi rate" aria-valuemin="0.25" aria-valuemax="3" aria-orientation="vertical" aria-valuenow="1" aria-valuetext="1.00×"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(-61.3636deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">RATE</span><span class="zankyo-val-readout" data-rate-val="shakuhachi">1.00×</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">breath <b data-param-val="shakuhachi:breath">0.55</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.55" data-param="shakuhachi:breath"></label><label class="zankyo-param"><span class="zankyo-param-label">muraiki <b data-param-val="shakuhachi:muraiki">0.40</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.4" data-param="shakuhachi:muraiki"></label><label class="zankyo-param"><span class="zankyo-param-label">pace <b data-param-val="shakuhachi:pace">1.00 ×</b></span><input type="range" class="zankyo-range" min="0.5" max="2" step="0.05" value="1" data-param="shakuhachi:pace"></label><label class="zankyo-param"><span class="zankyo-param-label">glide <b data-param-val="shakuhachi:glide">0.60</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.6" data-param="shakuhachi:glide"></label><label class="zankyo-param"><span class="zankyo-param-label">ornament <b data-param-val="shakuhachi:ornament">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="shakuhachi:ornament"></label></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Hichiriki controls"><span class="zankyo-layer-kana">篳篥</span><span class="zk-name-label">Hichiriki</span><i class="zk-ch">CH·04</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="hichiriki" title="sample this instrument" aria-label="Sample Hichiriki"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="hichiriki" role="switch" aria-checked="true" aria-label="Hichiriki on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-0" role="slider" tabindex="0" aria-label="Hichiriki volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="hichiriki">50</span></span></span><span class="zk-unit zk-unit-rate"><div class="zk-knob zk-knob-rate zk-wear-1" role="slider" tabindex="0" aria-label="Hichiriki rate" aria-valuemin="0.25" aria-valuemax="3" aria-orientation="vertical" aria-valuenow="1" aria-valuetext="1.00×"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(-61.3636deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">RATE</span><span class="zankyo-val-readout" data-rate-val="hichiriki">1.00×</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">reed <b data-param-val="hichiriki:reed">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="hichiriki:reed"></label><label class="zankyo-param"><span class="zankyo-param-label">enbai <b data-param-val="hichiriki:enbai">0.60</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.6" data-param="hichiriki:enbai"></label><label class="zankyo-param"><span class="zankyo-param-label">breath <b data-param-val="hichiriki:breath">0.35</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.35" data-param="hichiriki:breath"></label><label class="zankyo-param"><span class="zankyo-param-label">pace <b data-param-val="hichiriki:pace">1.00 ×</b></span><input type="range" class="zankyo-range" min="0.5" max="2" step="0.05" value="1" data-param="hichiriki:pace"></label></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Koto controls"><span class="zankyo-layer-kana">箏</span><span class="zk-name-label">Koto</span><i class="zk-ch">CH·05</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="koto" title="sample this instrument" aria-label="Sample Koto"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="koto" role="switch" aria-checked="true" aria-label="Koto on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-2" role="slider" tabindex="0" aria-label="Koto volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="koto">50</span></span></span><span class="zk-unit zk-unit-rate"><div class="zk-knob zk-knob-rate zk-wear-3" role="slider" tabindex="0" aria-label="Koto rate" aria-valuemin="0.25" aria-valuemax="3" aria-orientation="vertical" aria-valuenow="1" aria-valuetext="1.00×"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(-61.3636deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">RATE</span><span class="zankyo-val-readout" data-rate-val="koto">1.00×</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">brightness <b data-param-val="koto:brightness">7.0</b></span><input type="range" class="zankyo-range" min="2" max="16" step="0.5" value="7" data-param="koto:brightness"></label><label class="zankyo-param"><span class="zankyo-param-label">pace <b data-param-val="koto:pace">1.00 ×</b></span><input type="range" class="zankyo-range" min="0.5" max="2" step="0.05" value="1" data-param="koto:pace"></label><label class="zankyo-param"><span class="zankyo-param-label">gliss <b data-param-val="koto:gliss">0.40</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.4" data-param="koto:gliss"></label><label class="zankyo-param"><span class="zankyo-param-label">sustain <b data-param-val="koto:sustain">1.00</b></span><input type="range" class="zankyo-range" min="0.3" max="2" step="0.05" value="1" data-param="koto:sustain"></label><label class="zankyo-param"><span class="zankyo-param-label">pluck <b data-param-val="koto:pluck">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="koto:pluck"></label></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Shamisen controls"><span class="zankyo-layer-kana">三味線</span><span class="zk-name-label">Shamisen</span><i class="zk-ch">CH·06</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="shamisen" title="sample this instrument" aria-label="Sample Shamisen"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="shamisen" role="switch" aria-checked="true" aria-label="Shamisen on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-0" role="slider" tabindex="0" aria-label="Shamisen volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="shamisen">50</span></span></span><span class="zk-unit zk-unit-rate"><div class="zk-knob zk-knob-rate zk-wear-1" role="slider" tabindex="0" aria-label="Shamisen rate" aria-valuemin="0.25" aria-valuemax="3" aria-orientation="vertical" aria-valuenow="1" aria-valuetext="1.00×"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(-61.3636deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">RATE</span><span class="zankyo-val-readout" data-rate-val="shamisen">1.00×</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">sawari <b data-param-val="shamisen:sawari">0.60</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.6" data-param="shamisen:sawari"></label><label class="zankyo-param"><span class="zankyo-param-label">drive <b data-param-val="shamisen:drive">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="shamisen:drive"></label><label class="zankyo-param"><span class="zankyo-param-label">pace <b data-param-val="shamisen:pace">1.00 ×</b></span><input type="range" class="zankyo-range" min="0.5" max="2" step="0.05" value="1" data-param="shamisen:pace"></label><label class="zankyo-param"><span class="zankyo-param-label">attack <b data-param-val="shamisen:attack">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="shamisen:attack"></label></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Biwa controls"><span class="zankyo-layer-kana">琵琶</span><span class="zk-name-label">Biwa</span><i class="zk-ch">CH·07</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="biwa" title="sample this instrument" aria-label="Sample Biwa"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="biwa" role="switch" aria-checked="true" aria-label="Biwa on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-2" role="slider" tabindex="0" aria-label="Biwa volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="biwa">50</span></span></span><span class="zk-unit zk-unit-rate"><div class="zk-knob zk-knob-rate zk-wear-3" role="slider" tabindex="0" aria-label="Biwa rate" aria-valuemin="0.25" aria-valuemax="3" aria-orientation="vertical" aria-valuenow="1" aria-valuetext="1.00×"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(-61.3636deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">RATE</span><span class="zankyo-val-readout" data-rate-val="biwa">1.00×</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">sawari <b data-param-val="biwa:sawari">0.80</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.8" data-param="biwa:sawari"></label><label class="zankyo-param"><span class="zankyo-param-label">tremolo <b data-param-val="biwa:tremolo">0.60</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.6" data-param="biwa:tremolo"></label><label class="zankyo-param"><span class="zankyo-param-label">pace <b data-param-val="biwa:pace">1.00 ×</b></span><input type="range" class="zankyo-range" min="0.5" max="2" step="0.05" value="1" data-param="biwa:pace"></label></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Taiko controls"><span class="zankyo-layer-kana">太鼓</span><span class="zk-name-label">Taiko</span><i class="zk-ch">CH·08</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="taiko" title="sample this instrument" aria-label="Sample Taiko"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="taiko" role="switch" aria-checked="true" aria-label="Taiko on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-0" role="slider" tabindex="0" aria-label="Taiko volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="taiko">50</span></span></span><span class="zk-unit zk-unit-rate"><div class="zk-knob zk-knob-rate zk-wear-1" role="slider" tabindex="0" aria-label="Taiko rate" aria-valuemin="0.25" aria-valuemax="3" aria-orientation="vertical" aria-valuenow="1" aria-valuetext="1.00×"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(-61.3636deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">RATE</span><span class="zankyo-val-readout" data-rate-val="taiko">1.00×</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">punch <b data-param-val="taiko:punch">0.60</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.6" data-param="taiko:punch"></label><label class="zankyo-param"><span class="zankyo-param-label">drive <b data-param-val="taiko:drive">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="taiko:drive"></label><label class="zankyo-param"><span class="zankyo-param-label">lowTune <b data-param-val="taiko:lowTune">1.00 ×</b></span><input type="range" class="zankyo-range" min="0.5" max="2" step="0.05" value="1" data-param="taiko:lowTune"></label><label class="zankyo-param"><span class="zankyo-param-label">kakegoe <b data-param-val="taiko:kakegoe">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="taiko:kakegoe"></label></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Noise controls"><span class="zankyo-layer-kana">雑音</span><span class="zk-name-label">Noise</span><i class="zk-ch">CH·09</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="noise" title="sample this instrument" aria-label="Sample Noise"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="noise" role="switch" aria-checked="true" aria-label="Noise on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-2" role="slider" tabindex="0" aria-label="Noise volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="noise">50</span></span></span><span class="zk-unit zk-unit-rate"><div class="zk-knob zk-knob-rate zk-wear-3" role="slider" tabindex="0" aria-label="Noise rate" aria-valuemin="0.25" aria-valuemax="3" aria-orientation="vertical" aria-valuenow="1" aria-valuetext="1.00×"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(-61.3636deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">RATE</span><span class="zankyo-val-readout" data-rate-val="noise">1.00×</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">density <b data-param-val="noise:density">0.40</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.4" data-param="noise:density"></label><label class="zankyo-param"><span class="zankyo-param-label">color <b data-param-val="noise:color">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="noise:color"></label><label class="zankyo-param"><span class="zankyo-param-label">crush <b data-param-val="noise:crush">0.40</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.4" data-param="noise:crush"></label></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Ambient controls"><span class="zankyo-layer-kana">環境</span><span class="zk-name-label">Ambient</span><i class="zk-ch">CH·10</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="ambient" title="sample this instrument" aria-label="Sample Ambient"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="ambient" role="switch" aria-checked="true" aria-label="Ambient on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-0" role="slider" tabindex="0" aria-label="Ambient volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="ambient">50</span></span></span><span class="zk-unit zk-unit-rate"><div class="zk-knob zk-knob-rate zk-wear-1" role="slider" tabindex="0" aria-label="Ambient rate" aria-valuemin="0.25" aria-valuemax="3" aria-orientation="vertical" aria-valuenow="1" aria-valuetext="1.00×"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(-61.3636deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">RATE</span><span class="zankyo-val-readout" data-rate-val="ambient">1.00×</span></span></span></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Fūrin controls"><span class="zankyo-layer-kana">風鈴</span><span class="zk-name-label">Fūrin</span><i class="zk-ch">CH·11</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="furin" title="sample this instrument" aria-label="Sample Fūrin"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="furin" role="switch" aria-checked="true" aria-label="Fūrin on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-2" role="slider" tabindex="0" aria-label="Fūrin volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="furin">50</span></span></span><span class="zk-unit zk-unit-rate"><div class="zk-knob zk-knob-rate zk-wear-3" role="slider" tabindex="0" aria-label="Fūrin rate" aria-valuemin="0.25" aria-valuemax="3" aria-orientation="vertical" aria-valuenow="1" aria-valuetext="1.00×"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(-61.3636deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">RATE</span><span class="zankyo-val-readout" data-rate-val="furin">1.00×</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">wind <b data-param-val="furin:wind">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="furin:wind"></label><label class="zankyo-param"><span class="zankyo-param-label">tubes <b data-param-val="furin:tubes">5</b></span><input type="range" class="zankyo-range" min="3" max="7" step="1" value="5" data-param="furin:tubes"></label><label class="zankyo-param"><span class="zankyo-param-label">shimmer <b data-param-val="furin:shimmer">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="furin:shimmer"></label><label class="zankyo-param"><span class="zankyo-param-label">decay <b data-param-val="furin:decay">1.00 ×</b></span><input type="range" class="zankyo-range" min="0.3" max="2" step="0.05" value="1" data-param="furin:decay"></label></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="PA controls"><span class="zankyo-layer-kana">放送</span><span class="zk-name-label">PA</span><i class="zk-ch">CH·12</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="pa" title="sample this instrument" aria-label="Sample PA"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="pa" role="switch" aria-checked="true" aria-label="PA on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-0" role="slider" tabindex="0" aria-label="PA volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="pa">50</span></span></span><span class="zk-unit zk-unit-rate"><div class="zk-knob zk-knob-rate zk-wear-1" role="slider" tabindex="0" aria-label="PA rate" aria-valuemin="0.25" aria-valuemax="3" aria-orientation="vertical" aria-valuenow="1" aria-valuetext="1.00×"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(-61.3636deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">RATE</span><span class="zankyo-val-readout" data-rate-val="pa">1.00×</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">presence <b data-param-val="pa:presence">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="pa:presence"></label><label class="zankyo-param"><span class="zankyo-param-label">static <b data-param-val="pa:static">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="pa:static"></label></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Intercom controls"><span class="zankyo-layer-kana">内線</span><span class="zk-name-label">Intercom</span><i class="zk-ch">CH·13</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="vox" title="sample this instrument" aria-label="Sample Intercom"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="vox" role="switch" aria-checked="true" aria-label="Intercom on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-2" role="slider" tabindex="0" aria-label="Intercom volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="vox">50</span></span></span><span class="zk-unit zk-unit-rate"><div class="zk-knob zk-knob-rate zk-wear-3" role="slider" tabindex="0" aria-label="Intercom rate" aria-valuemin="0.25" aria-valuemax="3" aria-orientation="vertical" aria-valuenow="1" aria-valuetext="1.00×"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(-61.3636deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">RATE</span><span class="zankyo-val-readout" data-rate-val="vox">1.00×</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">band <b data-param-val="vox:band">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="vox:band"></label><label class="zankyo-param"><span class="zankyo-param-label">stutter <b data-param-val="vox:stutter">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="vox:stutter"></label><label class="zankyo-param"><span class="zankyo-param-label">survive <b data-param-val="vox:survive">0.65</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.65" data-param="vox:survive"></label><label class="zankyo-param"><span class="zankyo-param-label">pace <b data-param-val="vox:pace">1.00 ×</b></span><input type="range" class="zankyo-range" min="0.5" max="2" step="0.05" value="1" data-param="vox:pace"></label></div></div></div><div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name" aria-expanded="false" aria-label="Broadcast controls"><span class="zankyo-layer-kana">受信</span><span class="zk-name-label">Broadcast</span><i class="zk-ch">CH·14</i><span class="zk-name-latch" aria-hidden="true"></span></button><button type="button" class="zankyo-layer-sample" data-sample="broadcast" title="sample this instrument" aria-label="Sample Broadcast"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute" data-layer="broadcast" role="switch" aria-checked="true" aria-label="Broadcast on/off"><span class="zk-switch-well" aria-hidden="true"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div><div class="zk-cavity"><div class="zk-cavity-knobs"><span class="zk-unit zk-unit-vol"><div class="zk-knob zk-knob-vol zk-wear-0" role="slider" tabindex="0" aria-label="Broadcast volume" aria-valuemin="0" aria-valuemax="100" aria-orientation="vertical" aria-valuenow="50" aria-valuetext="50 %"><span class="zk-knob-cap"></span><span class="zk-knob-rot" style="transform: rotate(0deg);"><span class="zk-knob-ind"></span></span></div><span class="zk-unit-meta"><span class="zankyo-vol-label">VOL</span><span class="zankyo-val-readout" data-vol-val="broadcast">50</span></span></span></div><div class="zankyo-params"><label class="zankyo-param"><span class="zankyo-param-label">band <b data-param-val="broadcast:band">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="broadcast:band"></label><label class="zankyo-param"><span class="zankyo-param-label">flutter <b data-param-val="broadcast:flutter">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="broadcast:flutter"></label><label class="zankyo-param"><span class="zankyo-param-label">grit <b data-param-val="broadcast:grit">0.50</b></span><input type="range" class="zankyo-range" min="0" max="1" step="0.05" value="0.5" data-param="broadcast:grit"></label></div></div></div></div>
+    </div>
+
+    <!-- model / serial plate -->
+    <div class="zk-plate-row">
+      <span class="zk-plate">残響-3042 · MUNICIPAL SKY HEAVY INDUSTRIES · 製造番号 3042-0117</span>
+    </div>
+    <!-- Build stamp: version · content fingerprint · deploy time (Jukebox v2 pattern) -->
+    <p class="zk-build" aria-label="build version">
+      2.1.0-rc.119<span class="zk-build-sep">·</span>676467<span class="zk-build-sep">·</span>2026-10-02 22:59 UTC    </p>
+
+  </div>
+ </div>
+</div>
+<section class="mock-legend c1-legend">
+  <h2>Materials — one resin, one tool</h2>
+  <div class="c1-swatches">
+    <div class="c1-sw"><i style="background:#2b2826"></i><b>--pl-1 #2b2826</b><span>casing face, lit</span></div>
+    <div class="c1-sw"><i style="background:#1a1817"></i><b>--pl-2 #1a1817</b><span>casing body</span></div>
+    <div class="c1-sw"><i style="background:#100f0e"></i><b>--pl-3 #100f0e</b><span>casing foot</span></div>
+    <div class="c1-sw"><i style="background:linear-gradient(180deg,#221f1c,#171513 45%,#0e0d0c)"></i><b>--cab-1/2/3</b><span>cabinet: same resin, one shade down, coarser skin</span></div>
+    <div class="c1-sw"><i style="background:linear-gradient(180deg,#37312c 0 1px,#2f2925 1px 46%,#221e1a 46%,#171413)"></i><b>--cap-1…4</b><span>the cap tool: keys, plates, previews, sliders</span></div>
+    <div class="c1-sw"><i style="background:linear-gradient(180deg,#0f0d0c,#161311)"></i><b>--bed-1/2</b><span>recessed bed floor</span></div>
+    <div class="c1-sw"><i style="background:linear-gradient(180deg,#0a0806,#120e0a)"></i><b>--win-1/2</b><span>window glass, unlit</span></div>
+    <div class="c1-sw"><i style="background:linear-gradient(180deg,#0a0908,#24201d 24%,#34302b 50%,#24201d 74%,#0a0908)"></i><b>--rub-1/2/3</b><span>thumbwheel rubber</span></div>
+    <div class="c1-sw"><i style="background:#1a1817;box-shadow:inset 0 1px 0 rgba(255,244,216,.35),inset 0 -1px 0 rgba(255,244,216,.15)"></i><b>--lit 255 244 216</b><span>the only highlight: cream arrises and lips</span></div>
+    <div class="c1-sw"><i style="background:radial-gradient(60% 80% at 30% 100%,rgba(110,66,32,.7),#1a1817)"></i><b>--grime 110 66 32</b><span>yellowing, hand grime</span></div>
+    <div class="c1-sw"><i style="background:linear-gradient(90deg,#d2c4ab 0 20%,#ada192 20% 40%,#877d70 40% 60%,#6d655c 60% 80%,#514a44 80%)"></i><b>--ink-0…4</b><span>silk-screen print, never lit</span></div>
+    <div class="c1-sw"><i style="background:#a5402c"></i><b>--ink-red #a5402c</b><span>the one red ink: ■ STOP, 機動注意</span></div>
+  </div>
+
+  <h2>Lamps — one colour, one job</h2>
+  <div class="c1-lamps">
+    <div class="c1-lamp"><i style="color:#bcedc5;text-shadow:0 0 8px rgba(126,214,150,.7)">文</i><div><b>SCREEN · #7ed696</b> (core #bcedc5) — anything that shows words or pictures. <span>The set's tube, the scope (and the ZANKYŌ title on it), the VFD log and all its tags.</span></div></div>
+    <div class="c1-lamp"><i style="color:#ff8a16;text-shadow:0 0 7px rgba(255,138,22,.7)">88</i><div><b>READOUT · #ff8a16</b> — every value the machine reports. <span>The set's channel digits and 音量 ladder, the mode name, knob VOL and RATE, the trim values, the bargraph's ha band. (The old #ffb000 is gone.)</span></div></div>
+    <div class="c1-lamp"><i style="color:#fff1d0;text-shadow:0 0 8px rgba(255,241,208,.8)">▶</i><div><b>LIVE · #fff1d0</b> — something is running right now. <span>PLAY latched, the tally, the 受信 lens, a scale degree striking, a preview firing, the 逸脱 glow.</span></div></div>
+    <div class="c1-lamp"><i style="color:#ff4128;text-shadow:0 0 8px rgba(255,65,40,.7)">■</i><div><b>WARN · #ff4128</b> — stop, climax, danger. <span>STOP under the finger, the kyū band, the kyū ghost on the title. Its unlit ink (#a5402c) prints ■ and 機動注意.</span></div></div>
+    <div class="c1-lamp"><i style="color:#f0c43a;text-shadow:0 0 7px rgba(240,196,58,.7)">序</i><div><b>JO · #f0c43a</b> — the bargraph's jo band only. <span>Straw → amber → red: one heat ramp across 段階; it appears nowhere else.</span></div></div>
+    <div class="c1-lamp"><i style="color:#6fd3e8;box-shadow:inset 0 0 0 2px #6fd3e8">⇥</i><div><b>FOCUS · #6fd3e8</b> — keyboard focus rings, and nothing else. <span>The only cool colour on the machine, so you can always find it.</span></div></div>
+  </div>
+
+  <h2>Lit states (the static panel above is idle)</h2>
+  <div class="zankyo-scene c1-spec is-on">
+    <div class="c1-specs">
+      <figure style="grid-area:bar">
+        <div class="zk-monitor">
+          <div class="zk-bargraph"><div class="zk-bar-housing"><div class="zk-bar-cells" id="c1-cells"></div><span class="zk-bar-tick" style="left:25%"></span><span class="zk-bar-tick" style="left:80%"></span><span class="zk-bar-glass"></span></div></div>
+        </div>
+        <figcaption>段階 deep in kyū: jo straw, ha READOUT, kyū WARN, head blooming.</figcaption>
+      </figure>
+      <figure style="grid-area:keys">
+        <div class="zk-monitor">
+          <div class="c1-row">
+            <div class="zk-transport-cluster"><div class="zk-keybed"><button type="button" class="zk-key zk-key-play is-down" tabindex="-1"><span class="zk-key-glyph">▶︎</span></button><button type="button" class="zk-key zk-key-stop is-hit" tabindex="-1"><span class="zk-key-glyph">■︎</span></button></div><span class="zk-tally"></span></div>
+            <div class="zk-well" style="grid-template-columns:1fr;width:118px"><button type="button" class="zk-face zk-push is-on" tabindex="-1"><span class="zk-push-cap"><span class="zk-push-k">受信</span><span class="zk-push-lens"></span></span></button></div>
+          </div>
+        </div>
+        <figcaption>PLAY latched + tally + 受信 lens: LIVE. STOP under the finger: WARN.</figcaption>
+      </figure>
+      <figure style="grid-area:log;justify-content:flex-start">
+        <div class="zankyo-log-block" style="padding:9px 10px 10px;flex:none">
+          <div class="zankyo-log">
+            <div class="zankyo-log-row"><span class="zankyo-log-time">03:12</span><span class="zankyo-log-tag rx">受信 RX</span><span class="zankyo-log-text">reel 0417 · harbour, 1961</span></div>
+            <div class="zankyo-log-row"><span class="zankyo-log-time">03:09</span><span class="zankyo-log-tag form">序破急 FORM</span><span class="zankyo-log-text">jo &gt; ha</span></div>
+            <div class="zankyo-log-row"><span class="zankyo-log-time">03:05</span><span class="zankyo-log-tag shakuhachi">尺八 SHAKU</span><span class="zankyo-log-text">phrase · 7 notes</span></div>
+            <div class="zankyo-log-row"><span class="zankyo-log-time">02:58</span><span class="zankyo-log-tag koto">箏 KOTO</span><span class="zankyo-log-text">sukui-zume</span></div>
+            <div class="zankyo-log-row"><span class="zankyo-log-time">02:51</span><span class="zankyo-log-tag furin">風鈴 FŪRIN</span><span class="zankyo-log-text">two strikes</span></div>
+          </div>
+        </div>
+        <figcaption>The VFD in one phosphor; tags differ by rule (solid / dashed / dotted); 受信 and 逸脱 burn solid.</figcaption>
+      </figure>
+      <figure style="grid-area:mod">
+        <div class="zk-module" style="flex:none">
+          <div class="zk-mod-zone zk-mod-mode"><div class="zk-mod-lamp"><span class="zankyo-scale-name"><b>Hirajoshi</b> · <span class="zk-tonic">D</span></span><span class="zankyo-scale-mood">haunted · derelict · neon-rust</span></div></div>
+          <div class="zk-mod-zone zk-mod-scale"><span class="zk-testpoints"></span><div class="zk-deg-row"><span class="zk-deg">一</span><span class="zk-deg is-lit">二</span><span class="zk-deg">三</span><span class="zk-deg is-lit">四</span><span class="zk-deg">五</span></div></div>
+        </div>
+        <figcaption>Mode window is a READOUT; two degrees striking are LIVE.</figcaption>
+      </figure>
+      <figure style="grid-area:row">
+        <div class="zankyo-mixer">
+          <div class="zankyo-layer"><div class="zankyo-layer-head"><button type="button" class="zankyo-layer-name c1-focus" tabindex="-1"><span class="zankyo-layer-kana">琵琶</span><span class="zk-name-label">Biwa</span><i class="zk-ch">CH·07</i><span class="zk-name-latch"></span></button><button type="button" class="zankyo-layer-sample is-hit" tabindex="-1"><span class="tri"></span></button><button type="button" class="zk-switch zankyo-layer-mute muted" tabindex="-1"><span class="zk-switch-well"><i class="zk-switch-lamp zk-lamp-on"></i><i class="zk-switch-lamp zk-lamp-off"></i><span class="zk-switch-thumb"></span></span></button></div></div>
+        </div>
+        <figcaption>A console row: name plate with FOCUS ring, preview firing (LIVE ▶), channel muted (slide across to 切).</figcaption>
+      </figure>
+    </div>
+  </div>
+  <script>
+  (function () { var c = document.getElementById("c1-cells"), h = "";
+    for (var i = 0; i < 56; i++) { var z = i < 14 ? "jo" : i < 45 ? "ha" : "kyu"; var on = i <= 50;
+      h += '<span class="zk-seg zk-seg-' + z + (on ? " on" : "") + (i === 50 ? " is-head" : "") + (i === 53 ? " is-peak" : "") + '"></span>'; }
+    c.innerHTML = h; })();
+  </script>
+
+  <h2>Notes</h2>
+  <ul class="c1-notes">
+    <li><b>One casing recipe.</b> The scope, speaker, mode module, log and console now use the set's exact gradient, 9 px end-draft with the parting line down both walls, cream top arris, 11 px radius and tool skin. Only the grime moves from part to part. Every opening is lipped like the tube; every recess is the set's <code>.zk-well</code>.</li>
+    <li><b>One cap tool.</b> PLAY/STOP, the name plates, preview buttons, mute slides and slider thumbs all use the set's two-tone cap gradient and shadow stack. Each console row is a small ledge (a well holding three stations), the way the set carries its rocker, 受信 and volume. An open row's name plate latches down like PLAY.</li>
+    <li><b>The cabinet</b> is a moulding now: the same resin, one shade darker, with a coarser skin, its own parting line, louvres moulded through it, and grime and sun-yellowing in place of rust. The serial plate is debossed into it, and the screws everywhere became ejector-pin witnesses.</li>
+    <li><b>Colour had to give.</b> Magenta is gone. Instrument kanji are cream print instead of red neon, the preview is a plastic push instead of a magenta dome, and the mute is a slide printed 入 / 切 instead of green/red paper. The console is much quieter. Rows now differ only by their legends, which suits the "one maker" goal but loses the old neon energy.</li>
+    <li><b>Changed on the set itself:</b> the 受信 lens lights LIVE (warm white) instead of amber, because amber now means a reported value. Everything else on the set is untouched.</li>
+    <li><b>Not reachable from CSS:</b> the scope canvas (<code>zankyo-viz.js</code>) still hard-codes cyan/red/magenta strokes. To finish the port it should draw in SCREEN green, with WARN for the kyū energy. The log tags rely on border style, so the colour-blind reading is unchanged or better.</li>
+  </ul>
+</section>
+</body>
+</html>
