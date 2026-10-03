@@ -137,8 +137,11 @@
 // the engine left armed after the last STOP (a setTimeout, setInterval,
 // requestAnimationFrame or requestIdleCallback still waiting would be a leak;
 // there is none today); the sources scheduled past the run's end (the mock's
-// onended for a node whose stop() lies beyond it — a drone partial or a
-// voice written ahead, not a leak); and a console.warn other than the refused
+// onended for a node whose stop() lies beyond it: since PLAN-REFACTOR §4.6
+// the STOP stops what was still sounding behind the doors it shuts, so none
+// but a guest's teardown sentinel, left to its own time — before it, the
+// drone's partials and the voices written ahead, seed 7 at 300 s 101); and
+// a console.warn other than the refused
 // fetch's (the harness has no network, so a room keeps the impulse response
 // it poured: that warning is expected), each printed on its own line. With
 // throw=, the injected throws: when each fired, who reported it, and how
@@ -148,7 +151,9 @@
 // console.errors are not the run's errors either. With a script, the presses' timers (THE PRESSES' TIMERS, below) and,
 // on the hymnal's line, the hymns written while the transport stood stopped
 // and the orders never written. With cost, the cost section after the graph
-// line (THE COST).
+// line (THE COST). After the clock line, the stops: each STOP (the run's
+// last too), the sources sounding at its press and those still sounding once
+// its doors were shut (THE STOPS' SOURCES).
 // A module that fails to load prints "LOAD <file>: <error>" (run.js reads
 // that line) and no dump is written.
 // ============================================================================
@@ -313,6 +318,24 @@ function addTimer(fn, ms, args, repeat, kind) {
 const presses = [];             // { label, t, i }, in the order pressed
 let pressing = null;            // the press now running
 const pressTimers = new Map();  // timer id → { press, ms, name, state: armed | cleared | fired, at, by, later, did }
+// THE STOPS' SOURCES. Each STOP is followed too: the sources sounding at
+// its press (started, not ended, not due to stop by then), and how many of
+// those still sound once its doors are shut — when the STOP's own timer
+// fires (the fade done) or a PLAY comes first (it shuts them at once). Since
+// PLAN-REFACTOR §4.6 the core stops what is behind the doors it shuts, all
+// but a guest's teardown sentinel (kolob-core.js, THE DOORS' SOURCES), so
+// the second figure is 0, or a sentinel; before it, every one ran on.
+const sounding = new Set();     // sources started and not yet ended (the mock's)
+const stopsSeen = [];           // { label, t, snap, at, by, still, kinds }
+function soundingNow() { return [...sounding].filter((n) => n._stopAt == null || n._stopAt > vnow); }
+function stopsShut(by) {
+  stopsSeen.forEach((st) => {
+    if (st.at != null) return;
+    const still = st.snap.filter((n) => sounding.has(n) && (n._stopAt == null || n._stopAt > vnow));
+    st.at = vnow; st.by = by; st.still = still.length; st.kinds = {};
+    still.forEach((n) => count(st.kinds, n._kind));
+  });
+}
 function clearTimer(id) {
   timers.delete(id);
   const pt = pressTimers.get(id);
@@ -342,6 +365,7 @@ async function advance(untilS) {
     finally {
       if (pt) {
         pt.state = "fired"; pt.at = vnow; pt.later = presses.slice(pt.press.i + 1).map((p) => p.label);
+        if (pt.press.act === "stop") stopsShut(pt.press.label + "'s timer");
         pt.did = { disconnects: graph.disconnects - was.d, automation: graph.automation - was.a, built: graph.total - was.n };
       }
     }
@@ -425,14 +449,16 @@ function costMin(T) { const m = Math.floor(vnow / 60); while (T.min.length <= m)
 function costRun(w, fn, self, args) { const was = costNow; costNow = w; try { return fn.apply(self, args); } finally { costNow = was; } }
 function costAs(w, fn) { return function () { return costRun(w, fn, this, arguments); }; }
 // the builder: the first function on the stack outside the harness — the
-// engine's own call of create… (or new …Node)
+// engine's own call of create… (or new …Node); the core's madeInDoors, which
+// writes a source into the meeting's doors on its way (kolob-core.js, THE
+// DOORS' SOURCES), is looked through to the room that called it
 const HARNESS_FILE = __filename;
 function costSite() {
   const o = {}, lim = Error.stackTraceLimit, prep = Error.prepareStackTrace;
-  Error.stackTraceLimit = 8; Error.prepareStackTrace = (e, frames) => frames;
+  Error.stackTraceLimit = 9; Error.prepareStackTrace = (e, frames) => frames;
   try {
     Error.captureStackTrace(o, costSite);
-    for (const f of o.stack) { const file = f.getFileName(); if (file && file !== HARNESS_FILE) return (f.getFunctionName() || "(anonymous)") + " (" + path.basename(file) + ":" + f.getLineNumber() + ")"; }
+    for (const f of o.stack) { const file = f.getFileName(); if (file && file !== HARNESS_FILE && f.getFunctionName() !== "madeInDoors") return (f.getFunctionName() || "(anonymous)") + " (" + path.basename(file) + ":" + f.getLineNumber() + ")"; }
     return "(the harness)";
   } finally { Error.prepareStackTrace = prep; Error.stackTraceLimit = lim; }
 }
@@ -539,7 +565,7 @@ function mkNode(ctx, kind) {
     const armEnded = (at) => {
       if (n._endTimer != null) clearTimer(n._endTimer);
       const ended = function () {
-        n._endTimer = null;
+        n._endTimer = null; n._gone = true; sounding.delete(n);
         const ev = { type: "ended", target: n };
         if (typeof n.onended === "function") n.onended(ev);
         (n._ended || []).forEach((f) => f(ev));
@@ -549,13 +575,21 @@ function mkNode(ctx, kind) {
     n.start = function (when, offset, dur) {
       if (n._started != null) throw new Error("InvalidStateError: " + kind + ".start() called twice");
       n._started = when != null ? +when : ctx.currentTime;
+      sounding.add(n);
       if (dur != null) armEnded(n._started + dur / (n.playbackRate ? n.playbackRate.value || 1 : 1));
       else if (kind === "BufferSource" && !n.loop && n.buffer && n.buffer.duration) armEnded(n._started + (n.buffer.duration - (offset || 0)) / (n.playbackRate.value || 1));
     };
+    // (a later stop() moves the end, as a browser's does, until the source
+    // has stopped: once its stop time is reached a stop() changes nothing,
+    // and its onended is not fired again; and a source stopped before its
+    // start never sounds and ends at its stop time — both as Chrome and
+    // WebKit keep a source. Nothing called for either before a STOP stopped
+    // the sources behind the doors it shuts, PLAN-REFACTOR §4.6)
     n.stop = function (when) {
       if (n._started == null) throw new Error("InvalidStateError: " + kind + ".stop() before start()");
+      if (n._gone || (n._stopAt != null && n._stopAt <= ctx.currentTime)) return;
       n._stopAt = when != null ? +when : ctx.currentTime;
-      armEnded(Math.max(n._stopAt, n._started));
+      armEnded(n._stopAt);
     };
     n.setPeriodicWave = function (w) { n._wave = w; n.type = "custom"; };
   }
@@ -924,11 +958,15 @@ function press(act, label, fn) {
   const wasPlaying = !!(K.isPlaying && K.isPlaying());
   if (act === "play" && !wasPlaying && stopped.since != null) { stopped.written += composedNow() - stopped.since; stopped.since = null; }
   if (act === "stop" && wasPlaying) stopped.since = composedNow();
-  const p = { label, t: vnow, i: presses.length };
+  const p = { label, t: vnow, i: presses.length, act };
   presses.push(p);
   const was = pressing;
   pressing = p;
-  try { return COST ? costPress(act, fn) : fn(); } finally { pressing = was; }
+  try { return COST ? costPress(act, fn) : fn(); } finally {
+    pressing = was;
+    if (act === "stop") stopsSeen.push({ label, t: vnow, snap: soundingNow(), at: null });
+    if (act === "play") stopsShut(label);
+  }
 }
 K.setNoteListener(function (n) {
   const t = musicNow();
@@ -1065,6 +1103,9 @@ if (typeof K.getSeed === "function" && K.getSeed() !== SEED && typeof K.reseed =
   L("clock: " + (health ? health.cues + " cues · " + health.late + " late · max late " + health.maxLate + " s" : "(no clockHealth on this build)") +
     " · " + nLeft + " timer(s) still armed after STOP" + (nLeft ? " (" + Object.keys(left).map((k) => k + " " + left[k]).join(", ") + ")" : "") +
     " · " + ends.length + " source(s) scheduled past the run's end" + (ends.length ? " (due " + ends.reduce((a, x) => Math.min(a, x), Infinity).toFixed(1) + "–" + ends.reduce((a, x) => Math.max(a, x), 0).toFixed(1) + " s)" : ""));
+  // each STOP: the sources sounding at its press, and those still sounding once its doors were shut (THE STOPS' SOURCES)
+  if (stopsSeen.length) L("stops: " + stopsSeen.map((st) => st.label + ": " + st.snap.length + " source(s) sounding → " + (st.at == null ? "its doors never shut" :
+    st.still + " once its doors were shut (" + st.at.toFixed(3) + " s, by " + st.by + ")" + (st.still ? " " + JSON.stringify(st.kinds) : ""))).join(" · "));
   if (INJ.length) {
     const cues = Object.keys(laneCues).reduce((a, k) => a + laneCues[k], 0);
     L("cues by lane: " + cues + " " + JSON.stringify(sortedCounts(laneCues)) + " · the clock counted " + (health ? health.cues : "?"));

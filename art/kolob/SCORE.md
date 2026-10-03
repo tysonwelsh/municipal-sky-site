@@ -771,7 +771,9 @@ unity-gain seats `handbells` −0.35, `cornet` −0.12, `fiddle` −0.2, `floor`
 −0.25, `speaker` −0.35, `reed` −0.15. `S.seatedSend(layer)` seats a guest who
 stands in the chapel as a layer of its own, or into the layer's gain where one
 exists (the practice into `choir`), through the meeting's doors (`doors.seats`;
-STOP closes them). The layers with sliders are `LAYERS` in `kolob-core.js`:
+STOP closes them once its fade is done, and stops every source the meeting
+made that still sounds behind them but a guest's teardown sentinel: THE DOORS'
+SOURCES). The layers with sliders are `LAYERS` in `kolob-core.js`:
 `organ drone choir clarinet harmonium strings bells voice telegraph tuba
 ambient` (`tuba` is the raspberry's alone).
 

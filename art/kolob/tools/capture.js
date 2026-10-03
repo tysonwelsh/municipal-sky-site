@@ -14,13 +14,20 @@
 //                                    played the meeting the harness describes
 //
 //   node tools/capture.js [--seed 1847 | --seeds 1847,5] [--from 0] [--to 240] [--meeting]
-//        [--section hymn] [--ives] [--px-per-s 8] [--port 8113] [--chrome-port 9423]
-//        [--profile <dir>] [--out <dir>]
+//        [--section hymn] [--ives] [--query exp=+name] [--stop-at <secs>] [--root <dir>]
+//        [--px-per-s 8] [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 //   node tools/capture.js --wav <file.wav> [--events <file.jsonl>] [--out <dir>]    (re-analyse)
 //
 // Times are meeting seconds (from the moment the meeting is called); with
 // --section, from the moment the meeting was jumped there. Recording is in
-// real time: a four-minute window takes four minutes.
+// real time: a four-minute window takes four minutes. --query adds the page's
+// own switches to its address (exp=+name, an experiment's A/B); --stop-at
+// presses STOP at that meeting second and records on to --to (the fade, and
+// what comes after it); --root serves another build's tree (a `git archive`
+// of a commit: the before of an A/B), and the harness's check reads that
+// build. The report gives, beside the loudness and the peaks, the spectrum by
+// octave band, and <base>-numbers.json holds the same figures for a script
+// that holds two captures side by side.
 "use strict";
 const fs = require("fs");
 const path = require("path");
@@ -36,6 +43,9 @@ const HELP = `capture.js — record a seeded meeting (muted), with spectrogram, 
   --meeting              record until meeting 1 ends (overrides --to; cap --max, default 1500 s)
   --section <type>       jump there first; times then count from the jump
   --ives                 arm the Ives switch
+  --query exp=+name      more of the page's switches, added to its address (& between them)
+  --stop-at <secs>       press STOP at that meeting second, and record on to --to
+  --root <dir>           the tree to serve (default this repo): another build's, from git archive
   --px-per-s 8           spectrogram width per second (default 8; 600–2400 px)
   --no-harness-check     skip the comparison with the harness's plan for the seed
   --wav <file> [--events <file.jsonl>]   re-analyse an existing capture instead
@@ -261,13 +271,14 @@ function writeRecords(file, lines, shift, header) {
 }
 
 // Does the browser play the meeting the harness describes? Compare the section plan.
-async function harnessCheck(seed, secs, browserRun) {
-  // this worktree's engine — the one php -S serves — through the harness, witnessed like every render
-  const engine = R.resolveEngine(null);
+async function harnessCheck(seed, secs, browserRun, ab) {
+  // the engine php -S serves (this worktree's, or --root's) through the harness, witnessed like every
+  // render, with the page's switches and its STOP (abOptions)
+  const engine = R.resolveEngine(ab.engine);
   const tmp = path.join(R.OUT_ROOT, "_tmp");
   fs.mkdirSync(tmp, { recursive: true });
   const f = path.join(tmp, "capture-check-" + seed + "-" + process.pid + ".jsonl");
-  const res = await R.runOne(engine, seed, Math.ceil(secs), [], f);
+  const res = await R.runOne(engine, seed, Math.ceil(secs), ab.flags, f);
   if (!res.ok || res.loadError || res.verifyError) return { error: res.loadError || res.verifyError || "the harness wrote no dump (see " + res.log + ")" };
   const h = Dm.readDump(f);
   const hs = h.events.filter((e) => e.kind === "section" && e.t <= secs), bs = browserRun.events.filter((e) => e.kind === "section" && e.t <= secs);
@@ -295,6 +306,31 @@ async function harnessCheck(seed, secs, browserRun) {
   bn.forEach((y, k) => { if (!used.has(k) && (!firstExtra || y.t < firstExtra.t)) firstExtra = y; });
   const part = [firstMiss, firstExtra].filter(Boolean).sort((p, q) => p.t - q.t)[0] || null;
   return { rows, same, hm, bm, ok: same && rows.every((r) => r[4] === "✓"), notes: { harness: hn.length, browser: bn.length, matched, part } };
+}
+
+// the A/B's options (--root, --query, --stop-at): the tree served and the
+// engine in it, the page's switches added to its address, the STOP the page
+// presses, and the harness's flags for the same meeting (the page's exp=, and
+// its STOP at the harness's time: the meeting is called 0.1 s after PLAY)
+function abOptions(a) {
+  const root = a.root ? path.resolve(String(a.root)) : null;
+  const query = a.query ? "&" + String(a.query).replace(/^[?&]+/, "") : "";
+  const stopAt = a["stop-at"] != null ? +a["stop-at"] : null;
+  if (stopAt != null && !(stopAt >= 0)) throw new Error("--stop-at must be a meeting second");
+  const exp = (/[?&]exp=([^&]*)/.exec(query) || [])[1];
+  const flags = (exp ? ["exp=" + decodeURIComponent(exp)] : []).concat(stopAt != null ? ["stop=" + (stopAt + 0.1)] : []);
+  return { root, engine: root ? path.join(root, "art/kolob") : null, query, stopAt, flags };
+}
+// --stop-at: the page presses its own STOP when its audio clock reaches the
+// second (polled every 4 ms), and keeps the moment it did
+async function stopAtPress(b, ab, T0) {
+  if (ab.stopAt == null) return;
+  await b.evalJS("(function w() { var K = window.KolobAudio; if (K.getAudioTime() >= " + (T0 + ab.stopAt) + ") { var s = document.getElementById('kolob-stop'); if (s) s.click(); window.__tap.stoppedAt = K.getAudioTime(); } else setTimeout(w, 4); })(), 1");
+}
+// …and the report's word on both: the tree served, and when STOP was pressed
+async function abSaid(b, ab, T0) {
+  const at = ab.stopAt == null ? null : await b.evalJS("window.__tap.stoppedAt || 0");
+  return (ab.root ? " (served from " + ab.root + ")" : "") + (at == null ? "" : " · STOP pressed at " + (at ? mmss(at - T0, 3) : "— (never: the clock did not reach it)"));
 }
 
 function mmss(t, dp) {
@@ -356,10 +392,32 @@ function assemble(blocks, fA, fB, sr, Lc, Rc) {
 }
 
 // ---------------------------------------------------------------------------
+// the spectrum by octave band: the window's mean power in each octave (centres
+// 31.5 Hz … 16 kHz), in dB of full scale, from Hann-windowed frames of 8192
+// samples of the two channels' mean, laid end to end
+const OCTAVES = [31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+function octaveBands(chans, sr) {
+  const N = 8192, re = new Float64Array(N), im = new Float64Array(N), w = new Float64Array(N);
+  let wsum = 0;
+  for (let i = 0; i < N; i++) { w[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (N - 1)); wsum += w[i] * w[i]; }
+  const pow = new Float64Array(OCTAVES.length), Lc = chans[0], Rc = chans[1] || chans[0];
+  let frames = 0;
+  for (let s = 0; s + N <= Lc.length; s += N) {
+    for (let i = 0; i < N; i++) { re[i] = 0.5 * (Lc[s + i] + Rc[s + i]) * w[i]; im[i] = 0; }
+    A.fftInPlace(re, im);
+    for (let k = 1; k < N / 2; k++) {
+      const band = Math.round(Math.log2(k * sr / N / 1000)) + 5;      // 1 kHz is the sixth
+      if (band >= 0 && band < OCTAVES.length) pow[band] += 2 * (re[k] * re[k] + im[k] * im[k]) / (wsum * N);
+    }
+    frames++;
+  }
+  return OCTAVES.map((hz, i) => ({ hz, db: frames && pow[i] > 0 ? 10 * Math.log10(pow[i] / frames) : null }));
+}
 async function analyse(o) {
   // o: { chans, sr, t0, t1, recs (normalised run or null), out, base, title, b, extra }
   const loud = A.loudness(o.chans, o.sr);
   const pk = A.peaks(o.chans);
+  const bands = octaveBands(o.chans, o.sr);
   const png = o.base + "-spectrogram.png";
   const pic = await drawPicture(o.b, { chans: o.chans, sr: o.sr, t0: o.t0, t1: o.t1, loud, recs: o.recs || { notes: [], events: [] }, title: o.title, pxPerS: o.pxPerS, gaps: o.gaps, file: path.join(o.out, png) });
   const perMin = [];
@@ -368,7 +426,10 @@ async function analyse(o) {
     const notes = o.recs ? o.recs.notes.filter((n) => n.t >= o.t0 + m * 60 && n.t < o.t0 + (m + 1) * 60).length : null;
     perMin.push([mmss(o.t0 + m * 60) + "–" + mmss(Math.min(o.t1, o.t0 + (m + 1) * 60)), seg.length ? U.fmt(U.median(seg), 1) : "—", seg.length ? U.fmt(Math.max(...seg), 1) : "—", seg.length ? U.fmt(Math.min(...seg), 1) : "—", notes == null ? "—" : String(notes)]);
   }
-  return { loud, pk, png, pic, perMin };
+  // the figures as numbers, for a script that holds two captures side by side
+  fs.writeFileSync(path.join(o.out, o.base + "-numbers.json"), JSON.stringify({ integrated: loud.integrated, lra: loud.lra, momentaryMax: loud.momentaryMax,
+    shortTermMax: loud.shortTermMax, samplePeakDb: pk.samplePeakDb, truePeakDb: pk.truePeakDb, bands }, null, 1) + "\n");
+  return { loud, pk, png, pic, perMin, bands };
 }
 
 function reportFor(r) {
@@ -397,6 +458,12 @@ function reportFor(r) {
   L.push("");
   L.push("*Top: spectrogram (log frequency, " + r.an.pic.floor + "…" + r.an.pic.top + " dB). Middle: loudness, short-term (3 s) in green over momentary (0.4 s) in grey, the integrated level dashed. Bottom: every note the engine reported, one row per layer. Solid lines are section starts; dashed gold lines are guests" + (r.gaps && r.gaps.length ? "; dashed red lines under a red triangle are the tap's discontinuities (listed above) — holes in the recording, not sounds of the engine" : "") + ".*");
   L.push("");
+  if (r.an.bands) {
+    L.push("### The spectrum by octave band (mean power, dB of full scale)");
+    L.push("");
+    L.push(U.table(["band (Hz)", "dB"], r.an.bands.map((x) => [String(x.hz), x.db == null ? "—" : U.fmt(x.db, 1)]), ["r", "r"]));
+    L.push("");
+  }
   L.push("### Loudness by minute (short-term, LUFS)");
   L.push("");
   L.push(U.table(["minute", "median", "max", "min", "notes"], r.an.perMin));
@@ -462,7 +529,8 @@ async function main() {
   let toReq = a.meeting ? maxS : (+a.to || 240);
   if (toReq <= from) throw new Error("--to must be after --from");
   const out = a.out ? U.outDir(a) : U.outDir({}, "capture-" + seeds.join("-"));
-  const server = await C.ensureServer({ port: +a.port || C.DEFAULT_HTTP_PORT });
+  const ab = abOptions(a);
+  const server = await C.ensureServer({ port: +a.port || C.DEFAULT_HTTP_PORT, root: ab.root });
   const b = await C.launch({ port: +a["chrome-port"] || C.DEFAULT_CHROME_PORT, profile: a.profile });
   C.cleanupOnExit([b, server.proc]);
   const logs = C.collectConsole(b);
@@ -473,7 +541,7 @@ async function main() {
   const sections = [];
   for (const seed of seeds) {
     const errs0 = logs.length;
-    const url = server.base + "/art/kolob/?seed=" + seed;
+    const url = server.base + "/art/kolob/?seed=" + seed + ab.query;
     await b.send("Page.navigate", { url });
     await C.waitFor(b, "document.readyState === 'complete' && !!window.KolobAudio && !!document.getElementById('kolob-play')", 30000);
     await C.sleep(500);
@@ -504,6 +572,7 @@ async function main() {
     }
     let to = toReq;
     await b.evalJS("window.__tap.win = [" + (T0 + from) + "," + (T0 + to + 0.5) + "], 1");
+    await stopAtPress(b, ab, T0);
     const wall0 = Date.now(), audio0 = lastNow;
     let lastPrint = 0;
     for (;;) {
@@ -519,6 +588,7 @@ async function main() {
       if ((Date.now() - wall0) / 1000 > (to - from) * 3 + 120) throw new Error("the audio clock is not keeping time (" + (lastNow - audio0).toFixed(1) + " s in " + ((Date.now() - wall0) / 1000).toFixed(0) + " s)");
     }
     const clockRatio = (lastNow - audio0) / ((Date.now() - wall0) / 1000);
+    const abWord = await abSaid(b, ab, T0);          // (read now: the picture is drawn in this tab, after the page)
     await b.evalJS("document.getElementById('kolob-stop') && document.getElementById('kolob-stop').click(), 1");
     if (tapErr) throw new Error("the tap failed: " + tapErr);
     if (!blocks.length) throw new Error("the tap recorded nothing (is the page routing its output somewhere new?)");
@@ -537,12 +607,12 @@ async function main() {
     const run = Dm.readDump(path.join(out, base + "-events.jsonl"));
     const title = "KOLOB · seed " + seed + (jumped ? " · from the " + jumped : "") + " · " + mmss(from) + "–" + mmss(to);
     const an = await analyse({ chans: [Lc, Rc], sr, t0: from, t1: to, recs: run, out, base, title, b, pxPerS: +a["px-per-s"] || 8, gaps });
-    const check = a["no-harness-check"] || jumped ? null : await harnessCheck(seed, to, run);
+    const check = a["no-harness-check"] || jumped ? null : await harnessCheck(seed, to, run, ab);
     const timeline = run.events.filter((e) => e.t >= from - 0.01 && e.t <= to && (e.kind === "section" || e.kind === "guest" || e.kind === "meeting" || e.kind === "cadence" || e.kind === "joint" || e.kind === "joint-still" || e.kind === "stillness" || e.kind === "fuging" || e.kind === "lining" || e.kind === "field" || e.kind === "telegraph"))
       .filter((e, i, arr) => !(e.kind === "cadence" && arr[i - 1] && arr[i - 1].kind === "cadence" && e.t - arr[i - 1].t < 1))
       .slice(0, 80).map((e) => [mmss(e.t), (e.label ? e.label + (e.detail ? " — " + e.detail : "")   // (an old dump's log line)
         : [e.raw.type, e.section, e.guest, e.stage, e.cadence, e.field, e.word, e.raw.toward, e.raw.why].filter((x) => x != null && x !== "").join(" · "))]);
-    const meta = "- " + url.replace(server.base, "") + (a.ives ? " · Ives switch armed" : "") + " · " + sr + " Hz · " + (n / sr).toFixed(1) + " s recorded in muted headless Chrome (" + b.args.filter((x) => /mute/.test(x)).join(" ") + ")\n" +
+    const meta = "- " + url.replace(server.base, "") + abWord + (a.ives ? " · Ives switch armed" : "") + " · " + sr + " Hz · " + (n / sr).toFixed(1) + " s recorded in muted headless Chrome (" + b.args.filter((x) => /mute/.test(x)).join(" ") + ")\n" +
       "- files: `" + base + ".wav`, `" + base + "-spectrogram.png`, `" + base + "-events.jsonl` (the page's notes and events, meeting time)\n" +
       "- tap: " + (covered >= n ? "every sample of the window" : "all but " + (n - covered) + " samples of the window (" + (100 * covered / n).toFixed(3) + " %)") + " · " + (gaps.length ? gaps.length + " discontinuit" + (gaps.length > 1 ? "ies" : "y") + " ✗ (listed below, marked red on the picture)" : "no dropouts ✓") + (asm.jitter ? " · " + asm.jitter + " block start" + (asm.jitter > 1 ? "s" : "") + " read within ±" + asm.jitTol + " samples of contiguous and taken as contiguous" : "") + " · audio clock ran at " + clockRatio.toFixed(3) + "× real time" + (wav.clipped ? " · " + wav.clipped + " samples clipped in the 16-bit file" : "") +
       " · console: " + (logs.length - errs0 ? (logs.length - errs0) + " error(s): " + logs.slice(errs0, errs0 + 3).map((e) => e.text).join(" · ") : "clean");

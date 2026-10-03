@@ -177,8 +177,17 @@ same arguments on the same build give a byte-identical dump (CI checks it).
 armed after the last STOP (a `setTimeout`, `setInterval`,
 `requestAnimationFrame` or `requestIdleCallback` still waiting would be a
 leak; there is none today) and the sources scheduled past the run's end — the
-mock's `onended` for a node whose `stop()` lies beyond it, the drone partials
-and the voices written ahead (seed 7 at 300 s: 101, due 305–325 s), not a leak.
+mock's `onended` for a node whose `stop()` lies beyond it. Since PLAN-REFACTOR
+§4.6 a STOP stops what was still sounding behind the doors it shuts, so the
+count is 0, or a guest's teardown sentinel left to its own time (before it the
+drone partials and the voices written ahead ran on: seed 7 at 300 s, 101, due
+305–325 s). The `stops:` line after it follows every STOP, the run's last
+too: the sources sounding at its press, and how many of those still sound
+once its doors are shut — when its own 800 ms timer fires, or a PLAY comes
+first (`stop=300 play=300.5` on seed 22: 79 sounding → 0; HEAD before §4.6:
+79 → 79). The mock keeps a source as a browser does: a later `stop()` moves
+its end until it has stopped, and none after; one stopped before its start
+never sounds and ends at its stop time.
 `console.warn` counts the warnings other than the refused fetch's (the harness
 has no network, so a room keeps the impulse response it poured — expected) and
 prints each on its own line. None of the three moves the verdict.
@@ -1014,6 +1023,7 @@ the foot of the body).
 
 ```sh
 node tools/capture.js [--seed 1847 | --seeds 1847,5,9] [--from 0] [--to 240] [--meeting] [--section hymn] [--ives] [--px-per-s 8]
+                      [--query exp=+name] [--stop-at <secs>] [--root <dir>]
                       [--no-harness-check] [--port 8113] [--chrome-port 9423] [--profile <dir>] [--out <dir>]
 node tools/capture.js --wav <file.wav> [--events <file.jsonl>] [--out <dir>]     # re-analyse a capture
 ```
@@ -1024,6 +1034,18 @@ called). `--meeting` records until meeting 1 ends (cap `--max`, default
 1500 s), read through the dump reader: the last joint's `∴ joint — meeting
 ends · 8s` (the joint's length and 6 s of the bell's tail), a typed
 `meeting-end {dur}`, or else the next meeting's start.
+
+**For an A/B** (PLAN-REFACTOR §4.6): `--query` adds the page's own switches to
+its address (`--query exp=+pooledVoices`: an experiment on, against the same
+seed without it); `--stop-at <secs>` has the page press its own STOP when its
+audio clock reaches that meeting second (polled every 4 ms; the report gives
+the moment it was pressed) and records on to `--to`, so the window holds the
+music, the fade and what follows it; `--root <dir>` serves another build's tree
+(a `git archive` of a commit's `art/kolob art/prosperos-jukebox-v2 includes css
+fonts`: the before), on its own `--port`, and the harness's check reads that
+build. Each capture also writes `…-numbers.json` (the loudness, the peaks and
+the octave bands as numbers) for a script that holds two captures side by
+side.
 
 **The tap** is injected before any page script. Every node that connects to an
 output also feeds a ScriptProcessor; the output may be the destination, or the
@@ -1059,8 +1081,11 @@ own notes and events, **in the dump format**, shifted to meeting time, so the
 dump tools can read a browser run too); `…-tap.json`; and `report.md`: the tap
 line and the discontinuity table; integrated loudness (BS.1770-4 / EBU R128,
 gated), LRA, the maximum momentary and short-term loudness, sample peak and a
-true-peak estimate (4× oversampled); loudness and note count by minute; *What
-happened when*; and **the browser's meeting against the harness's**.
+true-peak estimate (4× oversampled); the spectrum by octave band (the window's
+mean power in each octave, 31.5 Hz to 16 kHz, in dB of full scale); loudness
+and note count by minute; *What happened when*; and **the browser's meeting
+against the harness's** (with the page's `exp=` and its `--stop-at` handed to
+the harness too).
 
 **The browser against the harness.** Unless `--no-harness-check` (or
 `--section`, which jumps), the same seed is rendered through the harness,

@@ -140,9 +140,11 @@ window.KolobAudio = (function () {
   // is written by THE DRONE STEPS BACK, below)
   var droneDuck = null;
   // voicesBus sits between every layer path and the master. STOP silences it
-  // and LEAVES it silent — long drone cycles keep their oscillators running
-  // for up to 90s after a stop, and the siblings' pattern of restoring the
-  // master gain after the fade let them come back from the dead. Not here.
+  // and LEAVES it silent until PLAY: the siblings' pattern of restoring the
+  // master gain after the fade let a stopped meeting's long drone cycles come
+  // back from the dead. Not here. (Nor could they now: the stopped meeting's
+  // doors are shut after the fade and what still sounded behind them is
+  // stopped, THE DOORS' SOURCES.)
   var voicesBus = null;
   // ROOMS — one space, staged in depth (PLAN-ONE-ROOM phases A/B).
   // Two rooms, and EVERY layer sings in both: the CLOSE room is the
@@ -490,6 +492,7 @@ window.KolobAudio = (function () {
   }
   function build() {
     ctx = new (window.AudioContext || window.webkitAudioContext)();
+    sourcesThroughDoors(ctx);        // a meeting's sources are its doors' (THE DOORS' SOURCES)
 
     var noiseSamples = Math.floor(ctx.sampleRate * NOISE_BUF_DURATION);
     sharedNoiseBuf = ctx.createBuffer(1, noiseSamples, ctx.sampleRate);
@@ -932,13 +935,14 @@ window.KolobAudio = (function () {
   // panners, field gains and the tabernacle send its voices connect to. The
   // choir writes its lines up to half a minute ahead and the drone holds for
   // a minute and a half, all of it already in the audio graph, so STOP closes
-  // the meeting's doors (disconnects them once the fade is done) and PLAY
+  // the meeting's doors (disconnects them once the fade is done, and stops
+  // what was still sounding behind them: THE DOORS' SOURCES, below) and PLAY
   // opens new ones. Without them the old meeting's lines came back through
   // the bus when PLAY reopened it within ~30 s of a STOP.
   var doors = null;
   var closing = [];                // doors shut at STOP, disconnected after the fade
   var hallRinging = false;         // a meeting was stopped: its echo is still in the rooms
-  function openDoors() { return { pans: {}, field: {}, wide: null, hands: {}, spent: [], ward: null, seats: {} }; }
+  function openDoors() { return { pans: {}, field: {}, wide: null, hands: {}, spent: [], ward: null, seats: {}, sources: new Set() }; }
   function liveDoors() { return doors || (doors = openDoors()); }
   // (each door is shut on its own, in this order — one that throws, gone
   // already or never a node, leaves none of the others open: shut in one
@@ -953,8 +957,48 @@ window.KolobAudio = (function () {
     for (k in d.seats) all.push(d.seats[k]);
     if (d.ward) all.push(d.ward.hall, d.ward.near);
     disconnectEach(all);
+    stopBehind(d);
   }
   function shutClosingDoors() { while (closing.length) shutDoors(closing.pop()); }
+  // THE DOORS' SOURCES. Shut doors used to leave their meeting's sources
+  // running behind them, each to its own end, feeding nothing: the lines the
+  // ward and the organist had written ahead, the pipes ringing out, a drone
+  // partial for up to a minute and a half (seed 7 stopped at 303 s: 103
+  // sources, the last to 325 s). So every source the house makes while a
+  // meeting's doors stand is written into those doors — the context's three
+  // makers are wrapped once, as the house is built (madeInDoors) — and leaves
+  // them at its own end; when the doors are shut (the fade done, or a PLAY
+  // before it, which shuts them at once) each one still there is stopped
+  // then and there, and let go. Nothing of it is heard: the doors are
+  // disconnected first, and all a meeting makes reaches the hall through its
+  // doors alone (PLAN-REFACTOR §4.6: the harness's mock, made to follow
+  // every connection, found no source sounding once the doors were shut that
+  // still reached the output, at any STOP of two dozen runs — seeds, scripts
+  // and every guest). A PLAY that shuts them stops the old meeting's sources
+  // before the new meeting has made one. A source made while no doors stand
+  // (the house being built) is no meeting's; an audition while stopped opens
+  // the doors the next meeting will use, and its sources are theirs. One is
+  // left to its own end: a guest's teardown sentinel (__kolobTeardown,
+  // kolob-guest-room.js), silent, whose end gives back what the guest
+  // borrowed — the band's and the company's lent town air, whose convolver
+  // still rings for 2.6 s after the last note into it: given back the moment
+  // the doors shut, it could be lent to the next meeting's band still ringing.
+  function stopBehind(d) {
+    var now = ctx.currentTime;
+    d.sources.forEach(function (src) { if (!src.__kolobTeardown) cleanup(function () { src.stop(now); }); });
+    d.sources.clear();
+  }
+  function sourcesThroughDoors(c) {
+    ["createOscillator", "createBufferSource", "createConstantSource"].forEach(function (m) {
+      var make = c[m];
+      if (typeof make !== "function") return;
+      c[m] = function madeInDoors() {
+        var src = make.apply(c, arguments), d = doors;
+        if (d) { d.sources.add(src); src.addEventListener("ended", function () { d.sources.delete(src); }); }
+        return src;
+      };
+    });
+  }
 
   // ==========================================================================
   // THE HOUSE LETS GO (PLAN-COMPOSITION §15, a guest rule of the Score).
@@ -1364,7 +1408,7 @@ window.KolobAudio = (function () {
     playing = true;
     if (bg) bg.started();
     clearStopTimer();                // the last STOP's timer is this press's to cancel: its doors are shut here, now
-    shutClosingDoors();              // the last meeting's written-ahead lines stay outside
+    shutClosingDoors();              // the last meeting's written-ahead lines stay outside, and stop
     if (hallRinging) { flushRooms(); hallRinging = false; }   // and its echo with them
     liveDoors();
     houseNotes = {}; houseRest = {};               // the stopped meeting's held notes stay outside with it
@@ -1472,8 +1516,10 @@ window.KolobAudio = (function () {
     }
     if (voicesBus && ctx) {
       var t = ctx.currentTime;
-      // fade the voices bus to zero and LEAVE it there — the drone's
-      // oscillators keep running for up to 90s, silently, until they end
+      // fade the voices bus to zero and LEAVE it there until PLAY; once the
+      // fade is done the doors are shut, and the sources still sounding
+      // behind them (the drone's partials, up to 90 s on; the lines written
+      // ahead) are stopped (THE DOORS' SOURCES)
       voicesBus.gain.cancelScheduledValues(t);
       voicesBus.gain.setValueAtTime(voicesBus.gain.value != null ? voicesBus.gain.value : 1, t);
       voicesBus.gain.linearRampToValueAtTime(0, t + 0.6);
@@ -1486,7 +1532,8 @@ window.KolobAudio = (function () {
     emitEvent({ type: "transport", action: "stop" });
   }
   // THE STOP'S OWN TIMER. 800 ms after a STOP, the fade done, the stopped
-  // meeting's doors are disconnected and the layer gains zeroed. Its handle
+  // meeting's doors are disconnected (and its sources behind them stopped)
+  // and the layer gains zeroed. Its handle
   // is kept, and a transport press cancels the one before it: STOP clears
   // the handle the STOP before it armed, before arming its own, and PLAY
   // clears it before it opens new doors (it shuts the closed ones itself,
@@ -1500,8 +1547,9 @@ window.KolobAudio = (function () {
     clearStopTimer();
     stopTimer = setTimeout(function () {
       stopTimer = null;
-      // the fade is done: the stopped meeting's doors are disconnected (a PLAY
-      // inside these 800 ms has already shut them, and cleared this timer)
+      // the fade is done: the stopped meeting's doors are disconnected and
+      // what still sounded behind them stopped (a PLAY inside these 800 ms
+      // has already shut them, and cleared this timer)
       shutClosingDoors();
       if (!playing && ctx) {
         // belt and braces: zero the layer gains too, so a later sample() of
