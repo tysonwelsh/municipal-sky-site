@@ -4308,6 +4308,99 @@ body.jd-pod-drag, body.jd-pod-drag * {
   color: var(--tink-2);
 }
 
+/* ---- THE CATALOGUE ENTRY — the bench's closing card (0.13.0, owner
+   2026-10-02) ---------------------------------------------------------------
+   What the intake clerk filed for the prompt, every part correctable: the
+   heading in a text field, the size on the size card's own five tiers
+   (above, reused as they are), and the headings per facet as chips. Laid out
+   as a register's entry: a narrow label column (HEADING / SIZE / HEADINGS)
+   in the form face, the entry beside it; under 700px the label rides above.
+   A filed chip takes the graphite fill the docket uses for a finished step —
+   the owner's pencil, as the chosen tier does. A chip the facet's bounds
+   hold in place (the last subject) keeps its fill and goes dashed. The
+   clerk's reasons and the intake stamp are small print in --tink-3; the
+   scope line under each facet is the taxonomy's own scope note (app copy,
+   the owner's pin). No stamp, no seal: prose and rules only. */
+.jd-turn[data-view="entry"] { width: min(760px, 100%); }
+.jd-cat { margin: var(--sp-3) 0 var(--sp-2); }
+.jd-cat-sec {
+  display: grid; grid-template-columns: 6.5rem 1fr; gap: var(--sp-2) var(--sp-3);
+  padding: var(--sp-3) 0; border-top: 1px solid var(--trule-2);
+}
+.jd-cat-sec:first-child { border-top: 0; padding-top: 0; }
+.jd-cat-label {
+  padding-top: 0.45rem;
+  font-family: var(--tform); font-size: var(--t-label);
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--tink-2);
+}
+.jd-cat-body { min-width: 0; }
+.jd-cat-body .jd-size { margin: 0 0 var(--sp-2); }
+.jd-cat-title {
+  display: block; width: 100%; box-sizing: border-box;
+  min-height: 34px; padding: 0.4rem 0.55rem;
+  background: rgba(255, 252, 240, 0.78);
+  border: 1px solid var(--trule);
+  box-shadow: inset 0 1px 3px rgba(74, 53, 18, 0.12);
+  font-family: var(--tmono); font-size: 0.78rem; color: var(--tink);
+}
+.jd-cat-title::placeholder { color: var(--tink-3); }
+.jd-cat-title:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
+.jd-cat-small, .jd-cat-why, .jd-cat-scope {
+  margin: 6px 2px 0; font-size: var(--t-label); line-height: 1.5; color: var(--tink-2);
+}
+.jd-cat-why { color: var(--tink-3); }
+.jd-cat-why span {
+  font-family: var(--tform); letter-spacing: 0.12em; text-transform: uppercase;
+  font-size: var(--t-micro); margin-right: 0.35em;
+}
+.jd-cat-facet + .jd-cat-facet { margin-top: var(--sp-3); }
+.jd-cat-fhead {
+  display: flex; align-items: baseline; gap: var(--sp-2); margin-bottom: 6px;
+}
+.jd-cat-fhead b {
+  font-family: var(--tform); font-size: var(--t-label); font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--tink);
+}
+.jd-cat-bounds { font-size: var(--t-micro); color: var(--tink-3); letter-spacing: 0.08em; }
+.jd-cat-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.jd-cat-chip {
+  min-height: 28px; padding: 0 0.7rem; cursor: pointer;
+  background: rgba(255, 250, 232, 0.5);
+  border: 1px solid var(--trule); border-radius: 14px;
+  font-family: var(--tmono); font-size: var(--t-label); color: var(--tink);
+  /* a long press reads the scope note: no callout, no selection */
+  -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
+}
+.jd-cat-chip:hover { border-color: var(--tink); }
+.jd-cat-chip.is-on {
+  background: var(--graphite); border-color: var(--graphite); color: var(--tpaper-hi);
+}
+.jd-cat-chip.is-locked { cursor: not-allowed; border-style: dashed; }
+.jd-cat-chip.is-locked:not(.is-on) { opacity: 0.5; }
+.jd-cat-chip:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-cat-scope { min-height: 1.5em; }
+.jd-cat-scope b { color: var(--tink); }
+.jd-cat-scope.is-said { color: var(--tred); }
+.jd-cat-foot {
+  margin: var(--sp-3) 2px 0; padding-top: var(--sp-2);
+  border-top: 1px solid var(--trule-2);
+  font-size: var(--t-label); line-height: 1.5; color: var(--tink-3);
+}
+/* a failed intake is the one footnote that must be read: the card's red */
+.jd-cat-foot.is-failed { color: var(--tred); }
+@media (any-pointer: coarse) {
+  .jd-cat-chip { min-height: 36px; }
+  .jd-cat-title { min-height: 44px; }
+}
+@media (max-width: 700px) {
+  .jd-cat-sec { grid-template-columns: 1fr; gap: 6px; }
+  .jd-cat-label { padding-top: 0; }
+}
+@media (max-width: 768px) {
+  /* 16px kills iOS's focus zoom (as .jd-turn-input) */
+  .jd-cat-title { font-size: 16px; }
+}
+
 /* KEEP IT OUT OF THE DRAWER (owner, 2026-08-30) — the visitor's one say over
    what their finished turn does next. It sits under the last rating card,
    quiet: a finished turn goes into the drawer by default, and this is the

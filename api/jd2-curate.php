@@ -31,6 +31,10 @@
 //                                        it back) without touching its run;
 //                                        prompt_id optional, and must match
 //
+// The bench's CATALOGUE ENTRY card (0.13.0) files here: only the fields the
+// owner changed of `title`, `size_class` and `tags`, in one body (so in one
+// transaction), before the sitting goes to jd2-rate.
+//
 // Only the keys present are touched. Ownership is checked, never assumed: a
 // shown run must be one of the prompt's runs, a pin one of its runs' drawings.
 // Nothing here deletes anything.

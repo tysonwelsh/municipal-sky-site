@@ -41,7 +41,8 @@
 // 41 characters + …, jd_turn_title's fallback>, size_class: null, tags: null,
 // fallback: true} and writes only intake_json (the error, so the failure
 // shows on the ledger); intake_at stays NULL and a later call tries again.
-// The card then shows the size card as before.
+// The visitor's card then shows the size card as before; the bench's
+// catalogue entry opens with no tier and no headings, for the owner to make.
 //
 // Response: {ok, title, size_class, size_by, tags, reasons, intake_version,
 // prompt_id[, stored][, fallback]}.

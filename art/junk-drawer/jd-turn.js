@@ -215,6 +215,18 @@
     bodyEl.addEventListener('click', onClick);
     bodyEl.addEventListener('change', onChange);
     bodyEl.addEventListener('input', onInput);
+    /* the catalogue entry's scope notes: pointed at, focused, or held */
+    bodyEl.addEventListener('pointerover', catOver);
+    bodyEl.addEventListener('pointerout', catOut);
+    bodyEl.addEventListener('focusin', catOver);
+    bodyEl.addEventListener('pointerdown', catDown);
+    bodyEl.addEventListener('pointermove', catMove);
+    bodyEl.addEventListener('pointerup', catUp);
+    bodyEl.addEventListener('pointercancel', catUp);
+    /* a held chip on Android raises the context menu: not on a chip */
+    bodyEl.addEventListener('contextmenu', function (e) {
+      if (catChipOf(e)) e.preventDefault();
+    });
     /* the bench/call plate answers Enter/Space like the button it claims to
        be (role="button" — see plate()); Space is preventDefault'd or the
        card scrolls out from under the enlargement. The paper swap is a real
@@ -1653,7 +1665,8 @@
      see BY HOW MUCH below) — or, on the bench's ?pairs=1 audit only, one
      head-to-head card per unordered pair instead (dataset v2, 2026-10-01 —
      see THE HEAD TO HEAD). Never both in one sitting. Then the size card
-     that closes it (owner, 2026-08-30). */
+     that closes it (owner, 2026-08-30) — on the bench, the catalogue entry
+     (0.13.0), which carries the size among the rest of the entry. */
   function stepSeq() {
     var seq = okSlots();
     if (seq.length > 1) seq = seq.concat(['call']).concat(gapsOn() ? ['gaps'] : pairSteps());
@@ -1667,6 +1680,14 @@
     'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" ' +
     'aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="1"/>' +
     '<rect x="9.5" y="9.5" width="5" height="5" rx="0.5"/></svg>';
+
+  /* the catalogue entry's ring mark (0.13.0): an index card, its heading
+     line drawn heavier than the two entry lines under it */
+  var RAIL_ENTRY =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" ' +
+    'stroke-linecap="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="1"/>' +
+    '<path d="M6 9.5h12"/><path d="M6 13h8M6 16h10" stroke-width="1.1"/></svg>';
 
   /* the head-to-head's ring mark: two prints side by side, a rule between */
   var RAIL_PAIRS =
@@ -1718,10 +1739,16 @@
         count: at ? at + '/' + deck.length : '' });
     }
     /* the size card closes a curation (owner, 2026-08-30): its ring wears
-       the nested-squares mark — the scale itself, small inside large */
+       the nested-squares mark — the scale itself, small inside large. On
+       the bench it is THE CATALOGUE ENTRY (0.13.0), which carries the size
+       among the rest of the entry: the same station (its step id stays
+       'size'), an index card on the ring and its own word */
     if (tiers.length) {
-      steps.push({ id: 'size', n: steps.length + 1, label: 'how big is it',
-        face: RAIL_SIZE, word: 'size' });
+      steps.push(catalogueOn()
+        ? { id: 'size', n: steps.length + 1, label: 'the catalogue entry',
+            face: RAIL_ENTRY, word: 'catalogue entry' }
+        : { id: 'size', n: steps.length + 1, label: 'how big is it',
+            face: RAIL_SIZE, word: 'size' });
     }
     /* seven nodes outgrow a phone's sheet at the default link length: the
        --long modifier shortens the connectors there (the CSS) */
@@ -2801,7 +2828,10 @@
      A tier already on file (the entry's own, or one the bench filed earlier)
      arrives selected. Filing is gated on a choice: the drawer's sizes are
      the owner's, and a silent default would put a size in the collection
-     nobody chose (the standing rule in CLAUDE.md's filing procedure). */
+     nobody chose (the standing rule in CLAUDE.md's filing procedure).
+     SINCE 0.13.0 the bench closes on THE CATALOGUE ENTRY instead (below),
+     which carries this same chooser among the heading and the headings; the
+     plain size card is now only a visitor's, when intake failed. */
   /* THE SCALE, wherever the card is standing (owner, 2026-08-30): a
      curation reads the tiers the bench handed it; a visitor's turn reads
      the same five straight out of the taxonomy the payload already carries.
@@ -2819,7 +2849,9 @@
     });
   }
 
-  function sizePanel(tiers) {
+  /* the five tiers alone — the size card's chooser, and the catalogue
+     entry's (0.13.0) */
+  function sizeTiersHTML(tiers) {
     var chosen = work.size || null;
     var h = '<div class="jd-size">';
     tiers.forEach(function (t) {
@@ -2832,7 +2864,11 @@
         '<span class="jd-size-desc">' + esc(t.description || '') + '</span>' +
         '</button>';
     });
-    h += '</div>';
+    return h + '</div>';
+  }
+  function sizePanel(tiers) {
+    var chosen = work.size || null;
+    var h = sizeTiersHTML(tiers);
     /* THE ONE CARD THAT SAYS WHAT IT WANTS (owner report, 2026-08-30: "it
        won't let me submit"). The bench and the ranking carry no instruction
        line — they are self-evident, and their gates are visibly unmet rows
@@ -2864,6 +2900,278 @@
       esc((work && work.note) || '') + '</textarea></label>';
   }
 
+  /* ---------- THE CATALOGUE ENTRY (0.13.0, owner 2026-10-02) ---------------
+     On the BENCH the closing card is the catalogue entry: what the intake
+     clerk (api/jd2-intake.php) filed for this prompt, every part of it
+     correctable before the sitting files —
+       — THE HEADING, the prompt's title, in a text field (the inverted
+         catalogue form "Noun (kind), descriptor, descriptor" is expected,
+         never enforced);
+       — THE SIZE, on the same five-tier chooser the size card always had,
+         pre-selected on the tier on file;
+       — THE HEADINGS under each facet (subject / treatment / probe), as
+         chips: a tap files or unfiles one, inside the facet's min..max (the
+         last subject cannot come off); each heading's SCOPE NOTE is its
+         tooltip and its long-press text — the scope notes double as app copy
+         here (the owner's pin) — and shows in the line under its facet;
+       — the clerk's one-line REASONS as small print, and the intake's
+         version and model as a footnote ("intake failed" when it fell back);
+       — the "notes for the record", as before.
+     Only a curation whose job carries `catalogue` (jd-bench.js) gets it; a
+     visitor never does (their size card shows only when intake failed, and
+     it is the plain size card), nor does the /about/ walkthrough. The step's
+     id stays 'size' everywhere inside this file — the rail station, the
+     gate and the resume all key on it.
+     WHAT FILES: only what the owner changed. curateFile hands the job's
+     file() a fifth argument, the entry — {title, size, size_pressed, tags,
+     tags_touched} — and the bench sends jd2-curate the fields that differ
+     from what is on file. The size rule (owner's, decided here): pressing a
+     tier — even the clerk's own, pre-selected one — makes the size the
+     OWNER's (size_by 'owner'); filing without pressing leaves the size as it
+     stands (the clerk's stays size_by 'model'). */
+  function catalogueOn() { return !!(curJob && curJob.catalogue); }
+  function catFacets() { return (curJob && curJob.catalogue && curJob.catalogue.facets) || []; }
+  /* a scope note as the card prints it: the taxonomy's *see-also* asterisks
+     become italics (escaped first), or are dropped for a title attribute */
+  function scopeHTML(text) {
+    return esc(String(text || '')).replace(/\*([^*]+)\*/g, '<i>$1</i>');
+  }
+  function scopePlain(text) { return String(text || '').replace(/\*([^*]+)\*/g, '$1'); }
+  /* the working entry, from the job's catalogue: every facet present (an
+     empty list where nothing is filed), the heading as filed */
+  function catBlank(c) {
+    var tags = {};
+    var onFile = c.tags && typeof c.tags === 'object' ? c.tags : null;
+    catFacets().forEach(function (f) {
+      var live = f.headings.map(function (h) { return h.id; });
+      tags[f.id] = ((onFile && onFile[f.id]) || []).filter(function (id) {
+        return live.indexOf(id) !== -1;
+      });
+    });
+    return {
+      title: c.title_on_file ? String(c.title_on_file) : '',
+      tags: tags, tagsTouched: false, sizePressed: false
+    };
+  }
+  function catFacet(fid) {
+    var fs = catFacets();
+    for (var i = 0; i < fs.length; i++) if (fs[i].id === fid) return fs[i];
+    return null;
+  }
+  function catHeading(f, hid) {
+    for (var i = 0; i < f.headings.length; i++) if (f.headings[i].id === hid) return f.headings[i];
+    return null;
+  }
+  function catBounds(f) {
+    return f.min === f.max ? String(f.min) : f.min + '–' + f.max;
+  }
+  /* why a chip will not move, or '' when it will */
+  function catLock(f, hid) {
+    var on = work.entry.tags[f.id] || [];
+    var isOn = on.indexOf(hid) !== -1;
+    if (isOn && on.length <= f.min) {
+      return f.label + ' needs at least ' + f.min + ' heading' + (f.min === 1 ? '' : 's');
+    }
+    if (!isOn && on.length >= f.max) {
+      return f.label + ' takes at most ' + f.max + ' heading' + (f.max === 1 ? '' : 's');
+    }
+    return '';
+  }
+  /* the classification's own gate: only a classification the owner touched
+     is filed, and it must sit inside every facet's bounds (a failed intake
+     starts with nothing, so a treatment tapped on first leaves subject
+     short until a subject is chosen too) */
+  function catProblem() {
+    if (!work.entry || !work.entry.tagsTouched) return '';
+    var fs = catFacets();
+    for (var i = 0; i < fs.length; i++) {
+      var n = (work.entry.tags[fs[i].id] || []).length;
+      if (n < fs[i].min || n > fs[i].max) {
+        return fs[i].label.toLowerCase() + ' takes ' + catBounds(fs[i]) + ' heading' +
+          (fs[i].max === 1 ? '' : 's');
+      }
+    }
+    return '';
+  }
+  function catFileWord() {
+    if (!work.size) return 'choose a size first';
+    var why = catProblem();
+    return why ? why + ' first' : 'file the grades';
+  }
+  function catChipHTML(f, hd) {
+    var on = (work.entry.tags[f.id] || []).indexOf(hd.id) !== -1;
+    var lock = catLock(f, hd.id);
+    return '<button type="button" class="jd-cat-chip' + (on ? ' is-on' : '') +
+      (lock ? ' is-locked' : '') + '" data-act="tag" data-facet="' + esc(f.id) +
+      '" data-heading="' + esc(hd.id) + '" aria-pressed="' + (on ? 'true' : 'false') + '"' +
+      (lock ? ' aria-disabled="true"' : '') +
+      ' title="' + esc(hd.label + ' — ' + scopePlain(hd.scope)) + '">' + esc(hd.label) + '</button>';
+  }
+  /* the size's standing in words: whose tier is on file, or that pressing
+     one makes it the owner's */
+  function catSizeWho() {
+    var c = curJob.catalogue;
+    if (!work.size) return '';
+    if (work.entry.sizePressed) return 'yours — it files as the owner’s size';
+    var by = c.size_by;
+    if (by === 'owner') return 'on file: yours';
+    if (by === 'model') return 'on file: the clerk’s — press a tier to make it yours; left alone, it stays the clerk’s';
+    if (by === 'visitor') return 'on file: the visitor’s — press a tier to make it yours';
+    return 'on file — press a tier to make it yours';
+  }
+  function catFootHTML() {
+    var c = curJob.catalogue;
+    if (c.fallback) {
+      return 'intake failed' + (c.intake_error ? ' (' + esc(c.intake_error) + ')' : '') +
+        ' — the clerk filed nothing; the entry is yours to make';
+    }
+    if (!c.intake_at) return 'not catalogued — the intake clerk has not filed this prompt';
+    return 'catalogued by the intake clerk · ' + esc(c.intake_version || '?') + ' · ' +
+      esc(c.intake_model || '?') + ' · ' + esc(String(c.intake_at).slice(0, 10));
+  }
+  function catWhyHTML(text) {
+    if (!text) return '';
+    return '<p class="jd-cat-why"><span>the clerk’s reason</span> ' + esc(text) + '</p>';
+  }
+  function entryPanel(tiers) {
+    var c = curJob.catalogue, e = work.entry;
+    var reasons = c.reasons || {};
+    var h = '<div class="jd-cat">';
+    /* THE HEADING */
+    h += '<div class="jd-cat-sec"><label class="jd-cat-label" for="jd-cat-title">heading</label>' +
+      '<div class="jd-cat-body">' +
+      '<input type="text" id="jd-cat-title" class="jd-cat-title" data-role="entry-title" maxlength="80" ' +
+      'autocomplete="off" spellcheck="true" value="' + esc(e.title) + '" ' +
+      'placeholder="Noun (kind), descriptor, descriptor">' +
+      '<p class="jd-cat-small">' + (c.title_on_file
+        ? 'inverted, as a card catalogue files it: Noun (kind), descriptor, descriptor'
+        : 'no heading on file — the drawer shows the prompt’s first words until one is') +
+      '</p></div></div>';
+    /* THE SIZE — the size card's own chooser */
+    h += '<div class="jd-cat-sec"><span class="jd-cat-label">size</span><div class="jd-cat-body">' +
+      sizeTiersHTML(tiers) +
+      '<p class="jd-cat-small" data-role="size-who">' + (work.size ? esc(catSizeWho())
+        : 'no size on file — pick one to file this item; it sets how big the object reads in the drawer') +
+      '</p>' + catWhyHTML(reasons.size) + '</div></div>';
+    /* THE HEADINGS, facet by facet */
+    h += '<div class="jd-cat-sec jd-cat-sec--tags"><span class="jd-cat-label">headings</span><div class="jd-cat-body">';
+    catFacets().forEach(function (f) {
+      h += '<div class="jd-cat-facet" data-facet="' + esc(f.id) + '">' +
+        '<div class="jd-cat-fhead"><b>' + esc(f.label) + '</b>' +
+        '<span class="jd-cat-bounds">' + esc(catBounds(f)) + '</span></div>' +
+        '<div class="jd-cat-chips" role="group" aria-label="' + esc(f.label + ': ' + f.question) + '">';
+      f.headings.forEach(function (hd) { h += catChipHTML(f, hd); });
+      h += '</div><p class="jd-cat-scope" data-scope-for="' + esc(f.id) + '" aria-live="polite">' +
+        esc(f.question) + '</p></div>';
+    });
+    h += catWhyHTML(reasons.classification) + '</div></div>';
+    h += '</div>';
+    var ready = !!work.size && !catProblem();
+    return h + sittingNoteHTML() +
+      '<p class="jd-cat-foot' + (c.fallback ? ' is-failed' : '') + '">' + catFootHTML() + '</p>' +
+      actions(
+        '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
+        '<button type="button" class="jd-turn-go" data-act="file"' +
+        (ready ? '' : ' disabled') + '>' + esc(catFileWord()) + '</button>');
+  }
+  /* after any answer on the card, in place (no repaint — the title field
+     and the note keep their caret, the sheet its scroll): every chip's lock,
+     the size's words, the file button's gate and wording */
+  function catRefresh() {
+    if (!bodyEl || !work || !work.entry) return;
+    Array.prototype.forEach.call(bodyEl.querySelectorAll('.jd-cat-chip'), function (b) {
+      var f = catFacet(b.getAttribute('data-facet'));
+      if (!f) return;
+      var hid = b.getAttribute('data-heading');
+      var on = (work.entry.tags[f.id] || []).indexOf(hid) !== -1;
+      var lock = catLock(f, hid);
+      b.classList.toggle('is-on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+      b.classList.toggle('is-locked', !!lock);
+      if (lock) b.setAttribute('aria-disabled', 'true'); else b.removeAttribute('aria-disabled');
+    });
+    var who = bodyEl.querySelector('[data-role="size-who"]');
+    if (who && work.size) who.textContent = catSizeWho();
+    var go = bodyEl.querySelector('[data-act="file"]');
+    if (go) {
+      go.disabled = !(work.size && !catProblem());
+      go.textContent = catFileWord();
+    }
+  }
+  /* a chip's press: file or unfile the heading, unless the facet's bounds
+     forbid it — then the line under the facet says why */
+  function catToggle(b) {
+    var f = catFacet(b.getAttribute('data-facet'));
+    if (!f || !work.entry) return;
+    var hid = b.getAttribute('data-heading');
+    var lock = catLock(f, hid);
+    if (lock) { catScope(f.id, null, lock); return; }
+    var list = work.entry.tags[f.id] || (work.entry.tags[f.id] = []);
+    var at = list.indexOf(hid);
+    if (at !== -1) list.splice(at, 1);
+    else {
+      list.push(hid);
+      /* kept in the taxonomy's order, as the ledger and the clerk list them */
+      var order = f.headings.map(function (x) { return x.id; });
+      list.sort(function (x, y) { return order.indexOf(x) - order.indexOf(y); });
+    }
+    work.entry.tagsTouched = true;
+    catRefresh();
+    catScope(f.id, hid);
+  }
+  /* the line under a facet: a heading's scope note, a refusal, or (with
+     neither) the facet's own question */
+  function catScope(fid, hid, said) {
+    var line = bodyEl && bodyEl.querySelector('.jd-cat-scope[data-scope-for="' + fid + '"]');
+    var f = catFacet(fid);
+    if (!line || !f) return;
+    var hd = hid ? catHeading(f, hid) : null;
+    line.classList.toggle('is-said', !!said);
+    line.innerHTML = said ? esc(said)
+      : hd ? '<b>' + esc(hd.label) + '</b> — ' + scopeHTML(hd.scope)
+      : esc(f.question);
+  }
+  /* THE SCOPE NOTE ON DEMAND: pointing at a chip (mouse) or focusing it
+     (keyboard) shows its note under the facet; on a touch screen a LONG
+     PRESS (~450ms, held still) shows it without filing anything — the press
+     that follows the hold is swallowed. The listeners sit on the card body
+     once (build) and do nothing off the catalogue card. */
+  var catHold = { t: 0, x: 0, y: 0, ate: false };
+  function catChipOf(e) {
+    return e.target && e.target.closest ? e.target.closest('.jd-cat-chip') : null;
+  }
+  function catOver(e) {
+    var b = catChipOf(e);
+    if (b) catScope(b.getAttribute('data-facet'), b.getAttribute('data-heading'));
+  }
+  function catOut(e) {
+    /* a touch's pointerout follows its lift: the note stays up for reading */
+    if (e.pointerType === 'touch') return;
+    var b = catChipOf(e);
+    if (!b) return;
+    var to = e.relatedTarget && e.relatedTarget.closest ? e.relatedTarget.closest('.jd-cat-chip') : null;
+    if (to && to.getAttribute('data-facet') === b.getAttribute('data-facet')) return;
+    catScope(b.getAttribute('data-facet'), null);
+  }
+  function catDown(e) {
+    var b = catChipOf(e);
+    clearTimeout(catHold.t);
+    catHold.ate = false;
+    if (!b || e.pointerType === 'mouse') return;
+    catHold.x = e.clientX; catHold.y = e.clientY;
+    catHold.t = setTimeout(function () {
+      catHold.ate = true;
+      catScope(b.getAttribute('data-facet'), b.getAttribute('data-heading'));
+    }, 450);
+  }
+  function catMove(e) {
+    if (!catHold.t) return;
+    if (Math.abs(e.clientX - catHold.x) > 8 || Math.abs(e.clientY - catHold.y) > 8) {
+      clearTimeout(catHold.t); catHold.t = 0;
+    }
+  }
+  function catUp() { clearTimeout(catHold.t); catHold.t = 0; }
+
   function viewRate() {
     var ok = okSlots();
     /* the scale is read once per render and handed down: the rail, the
@@ -2890,14 +3198,17 @@
     /* entering the pedestal card: a podium re-ranked since the gaps were
        answered clears them (they described a different order) */
     if (gaps) pedSync();
-    return head(size ? 'How big is it' : call ? 'Best to worst'
+    /* the closing card: the catalogue entry on the bench, the size card
+       everywhere else (a visitor whose intake failed) */
+    var entry = size && catalogueOn() && !!work.entry;
+    return head(entry ? 'The catalogue entry' : size ? 'How big is it' : call ? 'Best to worst'
         : gaps ? 'By how much'
         : pair ? 'Head to head · ' + (deck.indexOf(pairOf(work.step)) + 1) + ' of ' + deck.length
         : 'Grade drawing ' + work.step.toUpperCase(),
       size ? 6 : (call || gaps || pair) ? 5 : 4,
-      { view: size ? 'size' : call ? 'call' : gaps ? 'gaps' : pair ? 'pair' : 'bench' }) +
+      { view: entry ? 'entry' : size ? 'size' : call ? 'call' : gaps ? 'gaps' : pair ? 'pair' : 'bench' }) +
       (two || sizes ? railHTML(ok, tiers) : '') +
-      (size ? sizePanel(tiers) : call ? callPanel(ok, tiers)
+      (entry ? entryPanel(tiers) : size ? sizePanel(tiers) : call ? callPanel(ok, tiers)
         : gaps ? pedPanel(ok, tiers)
         : pair ? pairPanel(work.step, ok, tiers) : benchPanel(work.step, ok, tiers));
   }
@@ -3118,6 +3429,9 @@
       work.ratings[t.getAttribute('data-slot')].flagNote = t.value.slice(0, MAX_NOTE);
     } else if (role === 'sitting-note') {
       if (work) work.note = t.value.slice(0, MAX_SITTING_NOTE);
+    } else if (role === 'entry-title') {
+      /* the catalogue entry's heading, typed in place (never repainted) */
+      if (work && work.entry) work.entry.title = t.value.slice(0, 80);
     }
   }
   function setDisabled(sel, off) {
@@ -3157,6 +3471,13 @@
       return;
     }
     var act = b.getAttribute('data-act');
+    if (act === 'tag') {
+      /* a catalogue chip: a long press showed its scope note and files
+         nothing — the click that trails the hold is swallowed */
+      if (catHold.ate) { catHold.ate = false; return; }
+      catToggle(b);
+      return;
+    }
     if (act === 'generate') {
       /* the acknowledgment is recorded at the moment the words are sent —
          the disclosure sits right on this card (the gating consent card
@@ -3206,6 +3527,13 @@
           el.classList.toggle('is-on', on);
           el.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
+      /* on the catalogue entry a press — the clerk's own tier included —
+         makes the size the owner's; the entry re-gates itself */
+      if (catalogueOn() && work.entry) {
+        work.entry.sizePressed = true;
+        catRefresh();
+        return;
+      }
       setDisabled('[data-act="file"]', false);
       var fileBtn = bodyEl.querySelector('[data-act="file"]');
       if (fileBtn) fileBtn.textContent = 'file the grades';
@@ -3240,8 +3568,10 @@
         }
       }
       /* a curation files at the SIZE card, which closes it; the size is the
-         owner's call and never defaulted (CLAUDE.md's filing rule) */
+         owner's call and never defaulted (CLAUDE.md's filing rule) — and the
+         catalogue entry's headings must sit inside their facets' bounds */
       if (curJob && work.step === 'size' && !work.size) return;
+      if (curJob && work.step === 'size' && catalogueOn() && catProblem()) return;
       fileNow();
     } else if (act === 'again') {
       clearTurn();
@@ -3593,8 +3923,8 @@
   /* a filing that didn't take, in either flow: the same shape as the
      apology (§6) — same prose-only pattern, no stamp. `sentence` says what
      the failure means for the grades still on the card. */
-  function paintFileFailure(code, sentence) {
-    paint(head('The grades didn’t file', 6) +
+  function paintFileFailure(code, sentence, title) {
+    paint(head(title || 'The grades didn’t file', 6) +
       '<p class="jd-turn-line">The drawer couldn’t record them ' +
       '(<b>' + esc(code) + '</b>). ' + sentence + '</p>' +
       actions('<button type="button" class="jd-turn-go" data-act="retry-file">try filing again</button>' +
@@ -4200,6 +4530,11 @@
       }
       /* the sitting's note starts empty: it is this sitting's rationale */
       work.note = '';
+      /* THE CATALOGUE ENTRY (0.13.0): the bench's job carries what is on
+         file for the prompt — the heading, the size and who set it, the
+         headings per facet, the clerk's reasons and stamp — and the card
+         works on a copy of it (see THE CATALOGUE ENTRY above) */
+      work.entry = job.catalogue ? catBlank(job.catalogue) : null;
       /* the rail's linear first pass, resumed: every finished drawing is
          reached, the first unfinished one is the bench's opening step */
       var ok = okSlots(), firstOpenSlot = null;
@@ -4269,8 +4604,12 @@
      ids for those seats — or null. Each `per` entry carries `slot`, the
      drawing's REAL slot as the job gave it (resp.slot), so the bench maps
      the shuffled seats back to the run's slots (Phase 4b). `note` is the
-     sitting's "notes for the record" (null when blank). The /about/
-     walkthrough's no-op callback ignores all of it. */
+     sitting's "notes for the record" (null when blank). `entry` (0.13.0)
+     is the catalogue entry card's state on the bench — {title, size,
+     size_pressed, tags, tags_touched} — and null for any job without a
+     `catalogue`; the bench files only what differs from the record, through
+     jd2-curate, BEFORE the sitting. The /about/ walkthrough's no-op
+     callback ignores all of it. */
   function curateFile() {
     if (!curJob) return;
     var ok = okSlots();
@@ -4297,15 +4636,43 @@
       });
     }
     var note = String(work.note || '').trim();
+    /* the catalogue entry as the card holds it — the job's file() decides
+       what differs from the record (only that is sent); null off the bench */
+    var entry = null;
+    if (catalogueOn() && work.entry) {
+      var tags = {};
+      Object.keys(work.entry.tags).forEach(function (f) { tags[f] = work.entry.tags[f].slice(); });
+      entry = {
+        title: String(work.entry.title || '').trim().slice(0, 80),
+        size: work.size || null,
+        size_pressed: !!work.entry.sizePressed,
+        tags: tags,
+        tags_touched: !!work.entry.tagsTouched
+      };
+    }
     var mine = armFiling();
-    curJob.file(per, work.size || null, pairs, note ? note.slice(0, MAX_SITTING_NOTE) : null).then(function () {
+    curJob.file(per, work.size || null, pairs, note ? note.slice(0, MAX_SITTING_NOTE) : null, entry).then(function () {
       if (mine !== token || !isOpen || !curJob) return;
+      /* what just filed is now the record: a refile after a later failure
+         re-sends nothing the record already holds */
+      if (work.entry) { work.entry.sizePressed = false; work.entry.tagsTouched = false; }
       curateUnveil();
     }, function (err) {
       if (mine !== token || !isOpen || !curJob) return;
       var code = (err && err.code) || 'server_error';
-      paintFileFailure(code, 'Your answers are still on the card, and ' +
-        'refiling replaces rather than doubles.');
+      /* the bench files the catalogue entry first, then the sitting: a
+         failure says which half stood (err.stage, jd-bench.js) */
+      if (err && err.stage === 'entry') {
+        paintFileFailure(code, 'Nothing was filed — the grades wait for ' +
+          'the entry, and your answers are still on the card.', 'The catalogue entry didn’t file');
+      } else if (err && err.stage === 'grades' && err.entryFiled) {
+        paintFileFailure(code, 'The catalogue entry was filed; the grades ' +
+          'were not. Your answers are still on the card, and filing again ' +
+          'files only what is missing.');
+      } else {
+        paintFileFailure(code, 'Your answers are still on the card, and ' +
+          'refiling replaces rather than doubles.');
+      }
     });
   }
 

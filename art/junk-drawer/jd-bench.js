@@ -22,8 +22,11 @@
    its `needs` — read, never re-derived here. Filing is ONE owner session
    through /api/jd2-rate.php: the grades and axes by slot, the podium as a
    ranking with the pedestal card's GAPS on it ("by how much", owner
-   2026-10-02 — the server derives the six pair scores from them), the
-   size, and the sitting's "notes for the record". ?pairs=1 is the AUDIT:
+   2026-10-02 — the server derives the six pair scores from them) and the
+   sitting's "notes for the record". The card's closing step is THE
+   CATALOGUE ENTRY (0.13.0): the clerk's heading, size and headings, every
+   one correctable; what the owner changed files through /api/jd2-curate.php
+   FIRST, then the sitting (fileItem says why). ?pairs=1 is the AUDIT:
    the card skips the pedestal step and runs the six side-by-side
    head-to-head cards instead, filing DIRECT pairs and a ranking with no
    gaps — never both in one sitting. Sessions are append-only: re-rating a
@@ -89,7 +92,7 @@
   var svgCache = {};        /* generation id -> SVG text */
   var intent = null;        /* why the card is coming down: scrap|skip|prev|owner */
   var pendingRun = null;    /* an owner's run waiting for the card to come down */
-  var running = null;       /* the owner's run holding the stage: {kind, prompt_id?, title?, size?, category?} */
+  var running = null;       /* the owner's run holding the stage: {kind, prompt_id?, title?, category?} */
   var stale = false;        /* a deploy landed since this page loaded */
   var sync = { state: 'idle', detail: '' };
   var bar = null, sheet = null;
@@ -185,15 +188,88 @@
     paintBar();
   }
 
-  /* the curate card's file() callback: ONE owner session through jd2-rate.
-     The card seats the drawings in a shuffled order, so every answer is
+  /* THE CATALOGUE ENTRY'S EDITS (0.13.0): what the card's entry changed
+     against the record on the queue row, as a jd2-curate body — or null
+     when nothing did. Unchanged fields are never sent:
+       title       sent when the trimmed field differs from the heading on
+                   file (a field left empty keeps the one on file);
+       size_class  sent when the owner PRESSED a tier and that makes a
+                   difference — another tier, or the same tier not yet the
+                   owner's — so jd2-curate files it with size_by 'owner'.
+                   Filed without a press, the size stands as it is (the
+                   clerk's stays size_by 'model');
+       tags        sent when the owner touched a chip and the headings differ
+                   from the record (as sets, facet by facet). */
+  function sameTags(a, b) {
+    var keys = {};
+    Object.keys(a || {}).concat(Object.keys(b || {})).forEach(function (k) { keys[k] = true; });
+    return Object.keys(keys).every(function (k) {
+      var x = ((a || {})[k] || []).slice().sort(), y = ((b || {})[k] || []).slice().sort();
+      return x.join('|') === y.join('|');
+    });
+  }
+  function entryEdits(it, entry) {
+    if (!entry) return null;
+    var body = { prompt_id: it.prompt_id }, any = false;
+    if (entry.title && entry.title !== (it.title_on_file || '')) { body.title = entry.title; any = true; }
+    if (entry.size_pressed && entry.size &&
+        (entry.size !== it.size_class || it.size_by !== 'owner')) {
+      body.size_class = entry.size; any = true;
+    }
+    if (entry.tags_touched && entry.tags && !sameTags(entry.tags, it.tags)) {
+      body.tags = entry.tags; any = true;
+    }
+    return any ? body : null;
+  }
+
+  /* the curate card's file() callback (fileItem, then fileSitting below):
+     ONE owner session through jd2-rate. The card seats the drawings in a shuffled order, so every answer is
      mapped back to the run's REAL slot — by its generation id against the
      queue row (each `per` entry also carries the job's real slot, and the
      pairs their generation ids). blind: true — the bench never showed a
      name. The filing answers with the reveal, which names the models on the
      job's responses for the unveil the card is about to stand. */
-  function fileItem(it, job, per, size, pairs, note) {
+  /* ONE PATH FOR THE ENTRY (0.13.0): the heading, the size and the
+     headings all file through jd2-curate — the one writer of the prompt's
+     catalogue columns, which validates the tags against the facets and
+     writes the three in one transaction — and jd2-rate files only the
+     sitting (no `size` on the bench's body any more). The entry goes FIRST:
+     jd2-curate sets columns, so it is safe to repeat, while a sitting is
+     append-only — had the grades gone first, a retry after a failed entry
+     would file a second sitting. A failure of either is thrown with its
+     `stage` ('entry' | 'grades', and `entryFiled` when the entry stood),
+     and the card says which half is on file. */
+  function fileItem(it, job, per, size, pairs, note, entry) {
     setSync('saving');
+    var edits = entryEdits(it, entry);
+    var first = edits ? post(API_C, edits).then(function (res) {
+      /* the record is now the owner's edit: the queue copy learns it (so a
+         prev re-seat shows it, and a retry re-sends nothing), and so does
+         the job (the card's who-set-it words) */
+      var p = (res && res.prompt) || {};
+      if ('title' in edits) { it.title_on_file = p.title != null ? p.title : edits.title; it.title = it.title_on_file; }
+      if ('size_class' in edits) { it.size_class = edits.size_class; it.size_by = 'owner'; }
+      if ('tags' in edits) it.tags = p.tags || edits.tags;
+      if (job.catalogue) {
+        job.catalogue.title_on_file = it.title_on_file;
+        job.catalogue.size_class = it.size_class;
+        job.catalogue.size_by = it.size_by;
+        job.catalogue.tags = it.tags;
+      }
+      return true;
+    }, function (err) {
+      setSync('failed', 'catalogue entry: ' + ((err && err.code) || 'failed'));
+      var e = { code: (err && err.code) || 'server_error', stage: 'entry' };
+      throw e;
+    }) : Promise.resolve(false);
+    return first.then(function (entryFiled) {
+      return fileSitting(it, job, per, size, pairs, note, !!entry).then(null, function (err) {
+        var e = { code: (err && err.code) || 'server_error', stage: 'grades', entryFiled: entryFiled };
+        throw e;
+      });
+    });
+  }
+  function fileSitting(it, job, per, size, pairs, note, viaEntry) {
     var realOf = {};
     seatable(it).forEach(function (r) { realOf[r.generation_id] = r.slot; });
     function real(gid, fallback) { return realOf[gid] || fallback || null; }
@@ -230,13 +306,15 @@
       pairs: wirePairs.length ? wirePairs : null,
       blind: true
     };
-    if (size) body.size = size;
+    /* a card with no catalogue entry (none on the bench since 0.13.0) still
+       files its size with the sitting, as before */
+    if (size && !viaEntry) body.size = size;
     if (note) body.note = note;
     return post(API_R, body).then(function (res) {
       filedNow[it.prompt_id] = true;
       it.complete = !!res.complete;
       if (res.complete) it.needs = [];
-      if (size) it.size_class = size;
+      if (size && !viaEntry) { it.size_class = size; it.size_by = 'owner'; }
       /* fold the answers back into the queue copy, so prev re-seats what
          the server now holds */
       per.forEach(function (p) {
@@ -294,10 +372,28 @@
       var models = (Q && Q.models) || {};
       var job = {
         prompt: it.prompt,
-        /* the closing size card's scale, and the tier already on file */
+        /* the closing card's scale, and the tier already on file */
         sizeTiers: (Q && Q.size_tiers) || [],
         size: it.size_class || null,
-        /* the size card carries "notes for the record" for the bench */
+        /* THE CATALOGUE ENTRY (0.13.0): what is on file for the prompt, for
+           the closing card to show and correct — the heading as filed, the
+           size and who set it, the headings per facet, the clerk's reasons,
+           its stamp or why it failed, and the facets with their scope notes */
+        catalogue: {
+          title: it.title,
+          title_on_file: it.title_on_file != null ? it.title_on_file : null,
+          size_class: it.size_class || null,
+          size_by: it.size_by || null,
+          tags: it.tags || null,
+          reasons: it.reasons || null,
+          fallback: !!it.fallback,
+          intake_error: it.intake_error || null,
+          intake_version: it.intake_version || null,
+          intake_model: it.intake_model || null,
+          intake_at: it.intake_at || null,
+          facets: (Q && Q.facets) || []
+        },
+        /* the closing card carries "notes for the record" for the bench */
         withNote: true,
         /* ?pairs=1: the six side-by-side cards instead of the pedestal card */
         pairsAudit: PAIRS_AUDIT,
@@ -324,8 +420,8 @@
            derived pair is an inference from gaps, not an answer to carry) */
         pairs: (it.pairs_prefill || []).filter(function (p) { return p.source === 'direct'; })
           .map(function (p) { return { slot_a: p.slot_a, slot_b: p.slot_b, score: p.score }; }),
-        file: function (per, size, pairs, note) {
-          return fileItem(it, job, per, size, pairs, note);
+        file: function (per, size, pairs, note, entry) {
+          return fileItem(it, job, per, size, pairs, note, entry);
         }
       };
       if (!window.JD_turn.curate(job)) setSync('failed', 'the card would not open');
@@ -360,32 +456,29 @@
     }
     setSync('idle');
   }
-  /* the run is back (or was stopped): file a new prompt's title, size and
-     category, ask the intake clerk for what the form left open, re-read the
-     queue for that prompt, and seat its new run */
+  /* the run is back (or was stopped): file a new prompt's title and
+     category, ask the intake clerk for the rest, re-read the queue for that
+     prompt, and seat its new run */
   function runLanded(r) {
     var run = running;
     running = null;
     var pid = r.prompt_id || (run && run.prompt_id) || null;
     var chain = Promise.resolve();
     var fresh = run && run.kind === 'new' && pid;
-    if (fresh && (run.title || run.size || run.category)) {
+    if (fresh && (run.title || run.category)) {
       var cb = { prompt_id: pid };
       if (run.title) cb.title = run.title;
-      /* a size chosen here is the owner's (size_by owner): the clerk never overwrites it */
-      if (run.size) cb.size_class = run.size;
       if (run.category) cb.category = run.category;
       chain = post(API_C, cb).then(null, function (err) {
-        setSync('failed', 'title/size/category: ' + ((err && err.code) || 'failed'));
+        setSync('failed', 'title/category: ' + ((err && err.code) || 'failed'));
       });
     }
     /* THE INTAKE (2026-10-02): the clerk files the heading, the size tier and
-       the classification on the new prompt — unless the form gave both a
-       title and a size. It fills only what the owner left open (a title the
-       owner typed and an owner's size stand), and a failed intake simply
-       leaves the size card to ask. The queue is read after it, so the size
-       card opens on the clerk's tier. */
-    if (fresh && !(run.title && run.size)) {
+       the classification on every new prompt. It fills only what the owner
+       left open (a title the owner typed stands), and a failed intake leaves
+       the catalogue entry empty for the owner to make. The queue is read
+       after it, so the catalogue entry opens on the clerk's answer. */
+    if (fresh) {
       chain = chain.then(function () {
         setSync('saving', 'intake');
         return post(API_I, { prompt_id: pid }).then(function (j) {
@@ -569,7 +662,6 @@
       '<label>prompt<textarea name="prompt" rows="3" maxlength="500" required></textarea></label>' +
       '<div class="jd-bench-new-row">' +
       '<label>title <i>(optional)</i><input name="title" maxlength="80"></label>' +
-      '<label>size <i>(optional)</i><select name="size">' + sizeOptions() + '</select></label>' +
       '<label>category <i>(optional)</i><input name="category" maxlength="32"></label>' +
       '</div>' +
       '<div class="jd-bench-new-row">' +
@@ -579,12 +671,9 @@
     var ta = sheet.querySelector('textarea');
     if (ta) ta.focus();
   }
-  /* the NEW PROMPT form's size: the queue's tiers; blank = the intake clerk decides */
-  function sizeOptions() {
-    return '<option value="">the clerk decides</option>' + ((Q && Q.size_tiers) || []).map(function (t) {
-      return '<option value="' + esc(t.id) + '">' + esc(t.label || t.id) + '</option>';
-    }).join('');
-  }
+  /* (the form's optional size select left in 0.13.0: the clerk sizes every
+     new prompt, and the catalogue entry that closes its first sitting is
+     where the owner confirms or changes the tier) */
   function submitNewPrompt(form) {
     function val(name) {
       var el = form.querySelector('[name="' + name + '"]');
@@ -595,7 +684,6 @@
     var run = {
       kind: 'new', prompt: text,
       title: val('title').trim().slice(0, 80) || null,
-      size: val('size') || null,
       category: val('category').trim().slice(0, 32) || null
     };
     hideSheet();

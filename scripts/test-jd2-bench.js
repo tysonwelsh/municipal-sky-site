@@ -33,7 +33,7 @@
 //          a jd2-curate answer naming another build (the response rewritten
 //          in flight) trips the strip's "a deploy landed" line
 //   intake the intake clerk (the mock) files P2's heading, tier and headings;
-//          the bench's size card still closes the sitting and OPENS ON THE
+//          the bench's closing card (the catalogue entry) OPENS ON THE
 //          CLERK'S TIER (pre-selected); the owner's pick files size_by owner
 //   new    NEW PROMPT draws under the bench profile through the darkroom with
 //          the mock provider, files title and category, runs the intake
@@ -45,6 +45,20 @@
 //   audit  ?bench&prompt=<id>&pairs=1 runs the six side-by-side head-to-head
 //          cards in the pedestal card's place and files DIRECT pairs with a
 //          ranking that carries no gaps
+//   entry  THE CATALOGUE ENTRY (0.13.0) closes P2's sitting: the clerk's
+//          heading, tier (pre-selected) and headings, every chip's tooltip
+//          its scope note, the reasons and the intake stamp; the last
+//          subject chip will not come off; the heading edited, a subject
+//          swapped, a treatment added and the size changed file through
+//          jd2-curate BEFORE jd2-rate (which carries no size); SQLite, the
+//          queue and the ledger hold the edits with size_by owner; the
+//          ?bench&prompt= reopen shows them; on a 390×844 phone the entry
+//          fits and a long press shows a scope note without filing it
+//   untouched  the rerun filed with the entry untouched sends no jd2-curate
+//          and the clerk's size stays size_by model
+//   fallback  a prompt whose intake failed shows "intake failed", no chips,
+//          no tier; subject's minimum holds the file button; its first
+//          headings and size file as the owner's
 //   gate   without the key, JD_turn.rerun refuses (a rerun is never a
 //          visitor turn) and the strip shows only the key gate
 // One PASS/FAIL line per check; exit 0 iff all pass.
@@ -112,6 +126,13 @@ async function waitPort(port) {
   return false;
 }
 
+// the rubric as the card reads it: the facets' live headings and scope notes
+const TAX = JSON.parse(fs.readFileSync(path.join(ROOT, 'art/junk-drawer/taxonomy.json'), 'utf8'));
+const FACETS = TAX.facets.map((f) => Object.assign({}, f, { headings: f.headings.filter((h) => !h.defunct) }));
+const scopeOf = (f, h) => FACETS.find((x) => x.id === f).headings.find((x) => x.id === h).scope;
+const plain = (t) => String(t).replace(/\*([^*]+)\*/g, '$1');
+const sameSet = (a, b) => (a || []).slice().sort().join('|') === (b || []).slice().sort().join('|');
+
 let KEY = '';
 async function api(method, p, body) {
   const headers = { Origin: BASE, 'X-Bench-Key': KEY };
@@ -157,7 +178,7 @@ const pedState = (pg) => pg.evaluate(() => {
 // mode 'gaps' (the instrument) answers the pedestal card by ballot with
 // `gaps` (the card's stops: 0.5 = negligibly); mode 'pairs' (?pairs=1) runs
 // the six side-by-side cards
-async function rateThrough(pg, note, mode, gaps) {
+async function rateThrough(pg, note, mode, gaps, atEntry) {
   // the four grading panels: every select answered (varied values)
   for (let d = 0; d < 4; d++) {
     await pg.waitForSelector('.jd-bench', { timeout: 10000 });
@@ -206,16 +227,63 @@ async function rateThrough(pg, note, mode, gaps) {
       await pg.click('.jd-turn-actions .jd-turn-go');
     }
   }
-  // the size card: the tier, and the notes for the record
+  // the closing card (the catalogue entry on the bench): the tier, and the
+  // notes for the record — or whatever the caller's atEntry does there
   await pg.waitForSelector('[data-act="size"][data-size="m"]');
   const preset = await pg.$$eval('.jd-size-tier.is-on', (b) => b.map((x) => x.getAttribute('data-size')));
   const hasNote = !!(await pg.$('textarea[data-role="sitting-note"]'));
-  await pg.click('[data-act="size"][data-size="m"]');
+  const entry = await entryState(pg);
+  let edits = null;
+  if (atEntry) edits = await atEntry(pg);
+  else await pg.click('[data-act="size"][data-size="m"]');
   if (hasNote) await pg.fill('textarea[data-role="sitting-note"]', note);
   await shot(pg, '4-size-note');
   await pg.click('.jd-turn-actions [data-act="file"]');
-  return { cards, hasNote, preset, ped, rail };
+  return { cards, hasNote, preset, ped, rail, entry, edits };
 }
+
+// the catalogue entry card, read off the page: its heading, the view, the
+// rail's last station, the title field, the chips (on, locked, their
+// tooltips), the scope lines, the reasons, the footnote and the file button
+const entryState = (pg) => pg.evaluate(() => {
+  const card = document.querySelector('.jd-turn');
+  const go = document.querySelector('.jd-turn-actions [data-act="file"]');
+  const steps = [...document.querySelectorAll('.jd-rail-step')];
+  const last = steps[steps.length - 1];
+  const chips = {};
+  document.querySelectorAll('.jd-cat-chip').forEach((c) => {
+    const f = c.getAttribute('data-facet');
+    (chips[f] = chips[f] || []).push({ id: c.getAttribute('data-heading'), on: c.classList.contains('is-on'),
+      locked: c.getAttribute('aria-disabled') === 'true', title: c.getAttribute('title') });
+  });
+  const ti = document.querySelector('.jd-cat-title');
+  return {
+    view: card && card.getAttribute('data-view'),
+    heading: (document.querySelector('.jd-turn-title') || {}).textContent,
+    station: last ? { step: last.getAttribute('data-step'), word: (last.querySelector('.jd-rail-word') || {}).textContent,
+      label: last.getAttribute('aria-label') } : null,
+    title: ti ? ti.value : null,
+    placeholder: ti ? ti.getAttribute('placeholder') : null,
+    chips,
+    on: Object.fromEntries(Object.entries(chips).map(([f, l]) => [f, l.filter((x) => x.on).map((x) => x.id)])),
+    scope: Object.fromEntries([...document.querySelectorAll('.jd-cat-scope')].map((x) => [x.getAttribute('data-scope-for'), x.textContent])),
+    why: [...document.querySelectorAll('.jd-cat-why')].map((x) => x.textContent),
+    who: (document.querySelector('[data-role="size-who"]') || {}).textContent,
+    foot: (document.querySelector('.jd-cat-foot') || {}).textContent,
+    go: go ? { disabled: go.disabled, text: go.textContent } : null
+  };
+});
+// the pedestal card's own button walks its questions, then hands on: press
+// it until the card has moved on to the catalogue entry
+async function throughGaps(pg) {
+  for (let i = 0; i < 6 && (await view(pg)) === 'gaps'; i++) {
+    await pg.click('.jd-turn-actions .jd-turn-go');
+    await pg.waitForTimeout(250);
+  }
+  await pg.waitForSelector('.jd-turn[data-view="entry"] .jd-cat');
+  await pg.waitForTimeout(400);   // the sheet's width transition settles
+}
+const chip = (f, h) => '.jd-cat-chip[data-facet="' + f + '"][data-heading="' + h + '"]';
 
 async function main() {
   if (!(await portFree(PORT))) {
@@ -281,9 +349,67 @@ async function main() {
     check('the queue was read blind (no model_id without ?reveal=1)', blind);
 
     const NOTE = 'b and d missed the dried crust; a reads as an inkwell at a glance';
-    const filing = page.waitForRequest((rq) => /\/api\/jd2-rate\.php/.test(rq.url()) && rq.method() === 'POST', { timeout: 30000 })
+    // every POST to the two writers, in the order the page sent them
+    const posts = [];
+    page.on('request', (rq) => {
+      if (rq.method() === 'POST' && /\/api\/jd2-(curate|rate)\.php/.test(rq.url())) {
+        posts.push({ to: /curate/.test(rq.url()) ? 'curate' : 'rate', body: JSON.parse(rq.postData() || '{}') });
+      }
+    });
+    const filing = page.waitForRequest((rq) => /\/api\/jd2-rate\.php/.test(rq.url()) && rq.method() === 'POST', { timeout: 120000 })
       .then((rq) => JSON.parse(rq.postData() || '{}'));
-    const r = await rateThrough(page, NOTE, 'gaps', ['1', '0.5', '2']);
+    filing.catch(() => { /* awaited below; a failure inside rateThrough is the error to report */ });
+    // THE CATALOGUE ENTRY on P2: read it as the clerk filed it, try to take
+    // the only subject off (refused), point at a probe (its scope note), then
+    // edit the heading, swap subject object → creature, add treatment retro,
+    // and change the size to m
+    const P2TITLE = 'Inkwell, glass, crust dried blue';
+    let p2min = null, p2hover = null;
+    const r = await rateThrough(page, NOTE, 'gaps', ['1', '0.5', '2'], async (pg) => {
+      await pg.waitForTimeout(500);   // the sheet's width transition settles
+      await shot(pg, '4a-entry-as-filed');
+      await pg.$eval('.jd-turn-scroll', (el) => { el.scrollTop = el.scrollHeight; });
+      await shot(pg, '4a-entry-as-filed-foot');
+      // aria-disabled: a real press still lands (force), and must change nothing
+      await pg.click(chip('subject', 'object'), { force: true });
+      p2min = await entryState(pg);
+      await pg.hover(chip('probe', 'transparency'));
+      p2hover = (await entryState(pg)).scope.probe;
+      await pg.fill('.jd-cat-title', P2TITLE);
+      await pg.click(chip('subject', 'creature'));
+      await pg.click(chip('subject', 'object'));
+      await pg.click(chip('treatment', 'retro'));
+      await pg.click('[data-act="size"][data-size="m"]');
+      const after = await entryState(pg);
+      await shot(pg, '4b-entry-edited');
+      return after;
+    });
+    const e0 = r.entry;
+    check('the closing card is THE CATALOGUE ENTRY (heading, data-view, its rail station replacing the size\'s)',
+      e0.heading === 'The catalogue entry' && e0.view === 'entry' && e0.station && e0.station.step === 'size' &&
+      /catalogue entry/.test(e0.station.word) && !r.rail.some((x) => x === 'entry'), JSON.stringify([e0.heading, e0.view, e0.station]));
+    check("…it shows the clerk's heading in the title field, the clerk's tier pre-selected and the clerk's headings on",
+      e0.title === P2intake.title && r.preset.join() === P2tier &&
+      ['subject', 'treatment', 'probe'].every((f) => sameSet(e0.on[f], (P2intake.tags || {})[f])),
+      JSON.stringify({ title: e0.title, preset: r.preset, on: e0.on, clerk: P2intake.tags }));
+    const tipsOk = FACETS.every((f) => (e0.chips[f.id] || []).length === f.headings.length &&
+      f.headings.every((h) => (e0.chips[f.id].find((c) => c.id === h.id) || {}).title === h.label + ' — ' + plain(h.scope)));
+    check('…every heading of every facet is a chip whose tooltip is its scope note (taxonomy.json)', tipsOk,
+      JSON.stringify(e0.chips.subject && e0.chips.subject[0]));
+    check("…pointing at a chip puts its scope note in the line under its facet",
+      typeof p2hover === 'string' && p2hover.indexOf(plain(scopeOf('probe', 'transparency')).slice(0, 60)) !== -1, p2hover);
+    check("…the clerk's reasons are small print and the intake's version and model the footnote",
+      e0.why.length === 2 && /The mock sizes by the prompt/.test(e0.why[0]) && /first subject heading/.test(e0.why[1]) &&
+      e0.foot.indexOf(String(P2intake.intake_version)) !== -1 && /mock/.test(e0.foot) && /the clerk’s/.test(e0.who),
+      JSON.stringify({ why: e0.why, foot: e0.foot, who: e0.who }));
+    check('min: the last subject chip cannot come off (stays on, locked, the facet line says why)',
+      !!p2min && sameSet(p2min.on.subject, ['object']) &&
+      p2min.chips.subject.find((c) => c.id === 'object').locked && /Subject needs at least 1 heading/.test(p2min.scope.subject),
+      JSON.stringify(p2min && { on: p2min.on.subject, scope: p2min.scope.subject }));
+    const ed = r.edits;
+    check('…the edits show on the card: the new heading, creature + retro on, object off, m pressed — "yours"',
+      ed.title === P2TITLE && sameSet(ed.on.subject, ['creature']) && sameSet(ed.on.treatment, ['retro']) &&
+      sameSet(ed.on.probe, []) && /yours/.test(ed.who) && !ed.go.disabled, JSON.stringify(ed.on) + ' ' + ed.who);
     check('the card ran the pedestal card — one rail station, no head-to-head cards',
       r.cards === 0 && r.rail.filter((x) => x === 'gaps').length === 1 && !r.rail.some((x) => x === 'pairs'),
       JSON.stringify(r.rail));
@@ -294,8 +420,8 @@ async function main() {
     check('the bench files the ranking with gaps 1/0/2 (none on the last) and pairs null',
       body.pairs === null && Array.isArray(body.ranking) && body.ranking.map((p) => p.gap).join() === '1,0,2,' &&
       !('gap' in body.ranking[3]), JSON.stringify({ ranking: body.ranking, pairs: body.pairs }));
-    check('the size card carries "notes for the record" on the bench', r.hasNote);
-    check("the bench's size card opens on the clerk's tier (" + P2tier + ', pre-selected)',
+    check('the catalogue entry carries "notes for the record" on the bench', r.hasNote);
+    check("the bench's catalogue entry opens on the clerk's tier (" + P2tier + ', pre-selected)',
       r.preset.length === 1 && r.preset[0] === P2tier, JSON.stringify(r.preset));
     await page.waitForSelector('.jd-pod--said', { timeout: 20000 });
     await page.waitForTimeout(800);
@@ -327,9 +453,36 @@ async function main() {
     const ranks = sess.length ? q('SELECT rank_pos FROM jd2_rankings WHERE session_id = ? ORDER BY rank_pos', [sess[0].id]) : [];
     check('SQLite: four grades and a strict ranking 1..4', Number(cells) === 4 &&
       ranks.map((x) => Number(x.rank_pos)).join() === '1,2,3,4', cells + ' / ' + JSON.stringify(ranks));
-    const p2row = q('SELECT visibility, size_class, size_by FROM jd2_prompts WHERE id = ?', [P2.prompt_id])[0];
+    const p2row = q('SELECT visibility, title, size_class, size_by, tags FROM jd2_prompts WHERE id = ?', [P2.prompt_id])[0];
     check('the complete sitting made the prompt live, sized m — the owner\'s size (size_by owner)',
       p2row.visibility === 'live' && p2row.size_class === 'm' && p2row.size_by === 'owner', JSON.stringify(p2row));
+    // ONE PATH: the entry's edits through jd2-curate, FIRST, only what changed;
+    // the sitting through jd2-rate with no size
+    const cPosts = posts.filter((x) => x.to === 'curate'), rPosts = posts.filter((x) => x.to === 'rate');
+    const cb = cPosts[0] && cPosts[0].body;
+    check('filing sends jd2-curate the heading, the size and the headings — and nothing else — before jd2-rate',
+      cPosts.length === 1 && rPosts.length === 1 && posts.indexOf(cPosts[0]) < posts.indexOf(rPosts[0]) &&
+      Object.keys(cb).sort().join() === 'prompt_id,size_class,tags,title' && cb.title === P2TITLE && cb.size_class === 'm' &&
+      sameSet(cb.tags.subject, ['creature']) && sameSet(cb.tags.treatment, ['retro']) && sameSet(cb.tags.probe, []),
+      JSON.stringify(posts.map((x) => [x.to, Object.keys(x.body)])));
+    check('…and jd2-rate carries no size (the entry is curate\'s)', !('size' in body) && !('title' in body), Object.keys(body).join());
+    let p2tags = null;
+    try { p2tags = JSON.parse(p2row.tags); } catch (e) { /* null */ }
+    check('SQLite: jd2_prompts holds the owner\'s heading and headings',
+      p2row.title === P2TITLE && p2tags && sameSet(p2tags.subject, ['creature']) && sameSet(p2tags.treatment, ['retro']) &&
+      sameSet(p2tags.probe, []), JSON.stringify(p2row));
+    const qP2 = await api('GET', '/api/jd2-queue.php?prompt=' + P2.prompt_id);
+    const qi = qP2.items && qP2.items[0];
+    check('the queue reflects the edits: title, title_on_file, size m by the owner, the headings',
+      !!qi && qi.title === P2TITLE && qi.title_on_file === P2TITLE && qi.size_class === 'm' && qi.size_by === 'owner' &&
+      sameSet(qi.tags.subject, ['creature']) && sameSet(qi.tags.treatment, ['retro']) && Array.isArray(qP2.facets) && qP2.facets.length === 3,
+      JSON.stringify(qi && { title: qi.title, size: qi.size_class, by: qi.size_by, tags: qi.tags }));
+    const led = await api('GET', '/api/jd2-ledger.php');
+    const li = (led.items || []).find((x) => x.prompt_id === P2.prompt_id);
+    check('the ledger reflects the edits: title, size m by the owner, the headings',
+      !!li && li.title === P2TITLE && li.size_class === 'm' && li.size_by === 'owner' &&
+      sameSet((li.tags || {}).subject, ['creature']) && sameSet((li.tags || {}).treatment, ['retro']),
+      JSON.stringify(li && { title: li.title, size: li.size_class, by: li.size_by, tags: li.tags }));
 
     // --- direct ------------------------------------------------------------
     await page.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P2.prompt_id, { waitUntil: 'load' });
@@ -355,6 +508,52 @@ async function main() {
       gapsReached && pre.slips.join('|') === 'slightly|≈ negligibly|better' && pre.answer.complete &&
       pre.answer.ranking.slice(0, 3).map((p) => p.gap).join() === '1,0,2' && !pre.go.disabled,
       JSON.stringify({ gapsReached, pre }));
+    // …and on to the catalogue entry: the owner's edits, not the clerk's originals
+    await throughGaps(page);
+    const re = await entryState(page);
+    const rePreset = await page.$$eval('.jd-size-tier.is-on', (b) => b.map((x) => x.getAttribute('data-size')));
+    await shot(page, '6c-direct-entry');
+    check('a reopen (?bench&prompt=) shows the owner\'s edits on the catalogue entry: heading, m ("yours"), creature + retro',
+      re.title === P2TITLE && rePreset.join() === 'm' && /on file: yours/.test(re.who) &&
+      sameSet(re.on.subject, ['creature']) && sameSet(re.on.treatment, ['retro']) && sameSet(re.on.probe, []),
+      JSON.stringify({ title: re.title, preset: rePreset, who: re.who, on: re.on }));
+
+    // --- phone ------------------------------------------------------------------
+    // the same reopen at 390×844 (touch): the entry stacks, and a LONG PRESS
+    // on a chip shows its scope note without filing or unfiling it
+    const phoneCtx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const ph = await phoneCtx.newPage();
+    ph.on('pageerror', (e) => errors.push('phone: ' + String(e)));
+    await ph.goto(BASE + '/art/junk-drawer/', { waitUntil: 'load' });
+    await ph.evaluate((k) => localStorage.setItem('jd-admin-key', k), KEY);
+    await ph.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P2.prompt_id, { waitUntil: 'load' });
+    await seated(ph, P2.prompt_id);
+    await ph.click('.jd-turn-actions [data-act="next"]');
+    await ph.waitForSelector('.jd-turn[data-view="gaps"] .jd-ped');
+    await throughGaps(ph);
+    await shot(ph, '12-entry-390');
+    // the long press: pointerdown (touch), held 700ms, lifted, and the click it trails
+    const held = await ph.$eval(chip('probe', 'layering'), async (b) => {
+      b.scrollIntoView({ block: 'center' });
+      await new Promise((res) => setTimeout(res, 100));
+      const r = b.getBoundingClientRect();
+      const o = { bubbles: true, pointerType: 'touch', clientX: r.left + 5, clientY: r.top + 5, isPrimary: true };
+      b.dispatchEvent(new PointerEvent('pointerdown', o));
+      await new Promise((res) => setTimeout(res, 700));
+      b.dispatchEvent(new PointerEvent('pointerup', o));
+      b.click();
+      return { on: b.classList.contains('is-on'),
+        scope: document.querySelector('.jd-cat-scope[data-scope-for="probe"]').textContent };
+    });
+    await shot(ph, '12b-entry-390-longpress');
+    check('phone: a long press on a chip shows its scope note and files nothing',
+      held.on === false && held.scope.indexOf(plain(scopeOf('probe', 'layering')).slice(0, 50)) !== -1, JSON.stringify(held));
+    await ph.$eval('.jd-turn-scroll', (el) => { el.scrollTop = el.scrollHeight; });
+    await shot(ph, '12c-entry-390-foot');
+    const phWide = await ph.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth &&
+      [...document.querySelectorAll('.jd-cat-chip, .jd-cat-title')].every((el) => el.getBoundingClientRect().right <= window.innerWidth));
+    check('phone: the catalogue entry fits 390px (no sideways scroll, every chip on the sheet)', phWide);
+    await phoneCtx.close();
 
     // --- scrap ---------------------------------------------------------------
     await page.click('.jd-bench-bar [data-bench="scrap"]');
@@ -437,6 +636,20 @@ async function main() {
     check('RERUN draws a new bench run of the prompt and seats it', runs.length === 2 && runs[0].kind === 'rerun' &&
       runs[0].profile === 'bench-medium' && runs[0].requested_by === 'owner' && seatedRun === runs[0].id, JSON.stringify(runs) + ' seated ' + seatedRun);
 
+    // --- untouched ----------------------------------------------------------------
+    // the rerun rated through and filed WITHOUT touching the entry: no
+    // jd2-curate at all, and the clerk's size stands as size_by model
+    posts.length = 0;
+    const npBefore = q('SELECT title, size_class, size_by, tags FROM jd2_prompts WHERE id = ?', [np[0].id])[0];
+    const ru = await rateThrough(page, '', 'gaps', ['2', '1', '0.5'], async () => null);
+    await page.waitForSelector('.jd-pod--said', { timeout: 20000 });
+    const npAfter = q('SELECT title, size_class, size_by, tags FROM jd2_prompts WHERE id = ?', [np[0].id])[0];
+    check("filing the entry untouched sends no jd2-curate and leaves the clerk's size as the model's",
+      ru.entry.title === 'Porcelain Doorknob' && posts.filter((x) => x.to === 'curate').length === 0 &&
+      posts.filter((x) => x.to === 'rate').length === 1 && !('size' in posts.filter((x) => x.to === 'rate')[0].body) &&
+      npAfter.size_by === 'model' && npAfter.size_class === npBefore.size_class && npAfter.tags === npBefore.tags &&
+      npAfter.title === npBefore.title, JSON.stringify({ npBefore, npAfter, posts: posts.map((x) => x.to) }));
+
     // --- the ?item= alias --------------------------------------------------------
     await page.goto(BASE + '/art/junk-drawer/?bench&item=' + P1.prompt_id, { waitUntil: 'load' });
     await seated(page, P1.prompt_id);
@@ -459,7 +672,7 @@ async function main() {
     // and file DIRECT pairs, the ranking without gaps — never both
     await page.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P1.prompt_id + '&pairs=1', { waitUntil: 'load' });
     await seated(page, P1.prompt_id);
-    const auditFiling = page.waitForRequest((rq) => /\/api\/jd2-rate\.php/.test(rq.url()) && rq.method() === 'POST', { timeout: 30000 })
+    const auditFiling = page.waitForRequest((rq) => /\/api\/jd2-rate\.php/.test(rq.url()) && rq.method() === 'POST', { timeout: 120000 })
       .then((rq) => JSON.parse(rq.postData() || '{}'));
     const ra = await rateThrough(page, 'audit sitting: the side-by-side cards', 'pairs');
     check('?pairs=1 runs the six side-by-side cards and no pedestal card',
@@ -475,6 +688,53 @@ async function main() {
     check('SQLite: the audit sitting holds six DIRECT pairs with shown_left and no gap_after anywhere',
       as.length === 1 && apairs.length === 6 && apairs.every((p) => p.source === 'direct' && p.method === null && p.shown_left) &&
       ag.length === 4 && ag.every((x) => x.gap_after === null), JSON.stringify({ apairs, ag }));
+
+    // --- fallback ---------------------------------------------------------------------
+    // a prompt whose intake FAILED (the mock told to fail, its record filed
+    // the way jd2-intake files a failure): the entry says "intake failed",
+    // every chip is off, no tier is chosen; a treatment alone leaves subject
+    // short and the file button says so; a subject and a size file it
+    const P3TEXT = "a ship's bell, green with verdigris (bench fallback " + stamp + ')';
+    const P3 = await seedPrompt(P3TEXT);
+    php('require_once "api/jd2-intake-prompt.php"; if (!JD_DEV_MODE) { exit(2); } ' +
+      '$t = jd_taxonomy(); $id = getenv("JD_P3"); $q = jd_db()->prepare("SELECT text FROM jd2_prompts WHERE id = ?"); $q->execute([$id]); ' +
+      '$res = jd2_intake_answer($t, (string) $q->fetchColumn(), true); if ($res["ok"]) { exit(3); } ' +
+      'jd_db()->prepare("UPDATE jd2_prompts SET intake_json = ? WHERE id = ? AND intake_at IS NULL")' +
+      '->execute([json_encode($res["record"] + ["at" => jd_now()]), $id]);',
+    { JD_P3: P3.prompt_id, JD_INTAKE_MOCK_FAIL: 'provider' });
+    await page.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P3.prompt_id, { waitUntil: 'load' });
+    await seated(page, P3.prompt_id);
+    posts.length = 0;
+    const rf = await rateThrough(page, 'fallback sitting', 'gaps', ['1', '1', '1'], async (pg) => {
+      await pg.waitForTimeout(500);
+      await pg.$eval('.jd-turn-scroll', (el) => { el.scrollTop = el.scrollHeight; });
+      await shot(pg, '11a-entry-fallback-as-arrived');
+      await pg.click('[data-act="size"][data-size="s"]');
+      await pg.click(chip('treatment', 'retro'));
+      const short = await entryState(pg);
+      await pg.click(chip('subject', 'object'));
+      const ready = await entryState(pg);
+      await shot(pg, '11-entry-fallback');
+      return { short, ready };
+    });
+    const f0 = rf.entry;
+    const allOff = Object.values(f0.on).every((l) => l.length === 0) && Object.keys(f0.on).length === 3;
+    check('fallback: the entry says "intake failed", every chip is off, no heading and no tier on file',
+      /intake failed \(provider_failed\)/.test(f0.foot) && allOff && f0.title === '' && rf.preset.length === 0 &&
+      f0.why.length === 0 && f0.go.disabled && /choose a size first/.test(f0.go.text),
+      JSON.stringify({ foot: f0.foot, on: f0.on, title: f0.title, preset: rf.preset, go: f0.go }));
+    check('…a treatment alone leaves subject short: the file button is held and says why',
+      rf.edits.short.go.disabled && /subject takes 1–6 headings/.test(rf.edits.short.go.text) && !rf.edits.ready.go.disabled,
+      JSON.stringify([rf.edits.short.go, rf.edits.ready.go]));
+    await page.waitForSelector('.jd-pod--said', { timeout: 20000 });
+    const p3row = q('SELECT title, size_class, size_by, tags, intake_at FROM jd2_prompts WHERE id = ?', [P3.prompt_id])[0];
+    let p3tags = null;
+    try { p3tags = JSON.parse(p3row.tags); } catch (e) { /* null */ }
+    const p3c = posts.filter((x) => x.to === 'curate');
+    check('…and files its first headings and the owner\'s size through jd2-curate (no title: none was typed)',
+      p3c.length === 1 && !('title' in p3c[0].body) && p3row.title === null && p3row.size_class === 's' &&
+      p3row.size_by === 'owner' && p3tags && sameSet(p3tags.subject, ['object']) && sameSet(p3tags.treatment, ['retro']) &&
+      sameSet(p3tags.probe, []) && p3row.intake_at === null, JSON.stringify({ p3row, body: p3c[0] && p3c[0].body }));
 
     // --- gate ---------------------------------------------------------------------
     const anon = await browser.newContext({ viewport: { width: 1280, height: 800 } });

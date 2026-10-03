@@ -146,3 +146,4 @@
 0.10.3 — review fixes: visitor sittings need the turn's own token; admin save never copies a visitor's ranking; cached drawings; set-based manifest and analytics
 0.11.0 — intake: Sonnet files the catalogue heading, the size tier and the faceted classification the moment a prompt is filed; visitors no longer pick a size
 0.12.0 — by how much: the pedestal card asks each adjacent pair's margin after the podium; the six side-by-side cards become the bench's audit mode
+0.13.0 — the bench's closing card is the catalogue entry: the clerk's heading, size and headings shown, every one correctable

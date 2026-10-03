@@ -25,8 +25,12 @@
 //                  {ok, today: {generations, limit, remaining, since}}
 //
 // Each item also carries the intake facts: tags, size_by, intake_version,
-// intake_model, intake_at, the clerk's `reasons` and `fallback` (intake
-// failed). Each response carries the owner's latest sitting as `prefill` (grade, axes,
+// intake_model, intake_at, the clerk's `reasons`, `fallback` (intake
+// failed) and `intake_error` (its code), and `title_on_file` — the heading
+// as filed, null when there is none (`title` is what the card prints: that
+// heading, else the prompt's first words). The payload carries the
+// taxonomy's live `facets` (jd2_facets: id, label, question, min, max,
+// headings with their scope notes) for the bench's catalogue entry card. Each response carries the owner's latest sitting as `prefill` (grade, axes,
 // rank_pos, gap_after) and the visitor's current sitting as `visitor`; the
 // owner's pairs ride on the item as `pairs_prefill` by slot. `needs` says in
 // plain words what the owner's sitting still lacks (jd2_needs). `progress`
@@ -151,6 +155,9 @@ jd_json_out(200, [
     'axes' => $axes,
     'grades' => $grades,
     'size_tiers' => $sizeTiers,
+    // the classification's facets and their headings (scope notes included),
+    // for the catalogue entry card that closes a bench sitting
+    'facets' => jd2_facets($taxonomy),
     'comparison' => $taxonomy['comparison'] ?? null,
     'gaps' => $taxonomy['gaps'] ?? null,
     // id => label, for the unveil; the payload's one list of names, which the
@@ -206,6 +213,7 @@ function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal): a
         'prompt_id' => (string) $p['id'],
         'run_id' => $run === null ? null : (string) $run['id'],
         'title' => jd_turn_title($p['title'], (string) $p['text']),
+        'title_on_file' => ($p['title'] === null || trim((string) $p['title']) === '') ? null : (string) $p['title'],
         'prompt' => (string) $p['text'],
         'created' => (string) $p['created'],
         'origin' => (string) $p['origin'],
@@ -224,15 +232,16 @@ function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal): a
 
 /**
  * The intake facts (jd2_intake_fields): tags, size_by, intake_version,
- * intake_model, intake_at, the reasons from intake_json as `reasons`, and
- * `fallback` (intake was tried and failed).
+ * intake_model, intake_at, the reasons from intake_json as `reasons`,
+ * `fallback` (intake was tried and failed) and `intake_error` (its code).
  */
 function jd2_q_intake(array $p): array
 {
     $f = jd2_intake_fields($p);
     return ['size_by' => $f['size_by'], 'tags' => $f['tags'], 'intake_version' => $f['intake_version'],
             'intake_model' => $f['intake_model'], 'intake_at' => $f['intake_at'],
-            'reasons' => $f['intake_reasons'], 'fallback' => $f['intake_fallback']];
+            'reasons' => $f['intake_reasons'], 'fallback' => $f['intake_fallback'],
+            'intake_error' => $f['intake_error']];
 }
 
 /** One drawing's cells in a standing: {grade, axes{}, rank_pos[, gap_after]}, or null when the sitting has none. */

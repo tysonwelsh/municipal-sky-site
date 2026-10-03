@@ -358,7 +358,7 @@
       h += '<span class="who">· ' + esc(it.intake_version || '') + ' · ' + esc(it.intake_model || '') + ' · ' + esc(it.intake_at) +
         (it.intake_cost_usd != null ? ' · ' + esc(money(it.intake_cost_usd)) : '') + '</span>';
     } else if (it.fallback) {
-      h += '<span class="who" style="color:var(--red)">· intake failed (' + esc(it.intake_error || 'error') + ') — no size or headings from the clerk; the bench\'s size card asks</span>';
+      h += '<span class="who" style="color:var(--red)">· intake failed (' + esc(it.intake_error || 'error') + ') — no size or headings from the clerk; the bench\'s catalogue entry asks</span>';
     } else {
       h += '<span class="who">· not run on this prompt</span>';
     }

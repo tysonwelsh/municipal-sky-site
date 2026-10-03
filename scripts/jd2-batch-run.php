@@ -614,7 +614,7 @@ function run_intake(string $base, int $n, array &$entry): void
     }
     $entry['intake'] = !empty($res['fallback']) ? 'fallback' : 'ok';
     if (!empty($res['fallback'])) {
-        echo sprintf("  #%-3d intake fell back — no size or headings filed (the bench's size card asks; the ledger shows the error)\n", $n + 1);
+        echo sprintf("  #%-3d intake fell back — no size or headings filed (the bench's catalogue entry asks; the ledger shows the error)\n", $n + 1);
         return;
     }
     $tags = [];
