@@ -3612,26 +3612,32 @@ html.jd-bench-on .jd-turn[data-view="preview"] {
 /* ---- the question card's sheet (ONE QUESTION A CARD, 0.18.0) ---------------
    A drawing's station is a run of question cards (jd-turn.js, ONE QUESTION
    A CARD): the drawing on top, then one question and its options as a
-   vertical list of large radio rows. PHONE FIRST: by default the card is the
-   form's own 680px measure and the DOM's order is the flow — the plate,
-   centred and sized so the question and its first options stand under it
-   on the first screen (--qplate), then the progress line, the prompt, the
-   question and its rows, then back/next. The sheet takes the whole padded
-   viewport and the question column scrolls under the drawing when a long
-   question needs it. From 900px wide (and on a phone held landscape, where
-   height is what is short) it lays out like the report card: the drawing
-   LEFT at the report card's own ruler (--plate), the question RIGHT, the
-   options still a vertical list. The plate is the only drawing on the card,
-   so it keeps the filmstrip paint() mounts under it, the paper swap and the
-   enlarge press, and its blind letter is pencilled over it. */
+   vertical list of radio rows. PHONE FIRST: by default the card is the
+   form's own 680px measure, takes the whole padded viewport, and the DOM's
+   order is the flow — the plate, centred, then the progress line, the
+   prompt, the question and its rows, then back/next in a bar that sticks to
+   the foot of the scroller. The plate's size (--qplate) is the window's
+   height less everything else the fullest card carries (the grade's five
+   rows and two-line question), so on a 390×844 phone — the bench strip
+   folded to one row — every row of every card and the buttons stand on the
+   first screen, and the drawing is the same size on all six cards. From
+   900px wide (and on a phone held landscape, where height is what is short)
+   it lays out like the report card: the drawing LEFT at the report card's
+   own ruler (--plate), the question RIGHT, the sheet anchored to the top of
+   the window so the drawing stays put from card to card. */
 .jd-turn[data-view="bench"] {
-  /* phone: the drawing gives way to the question — a third of the window,
-     never so small it stops reading as the thing being judged */
-  --qplate: clamp(150px, 28dvh, 330px);
+  /* the fullest card's furniture, measured at 390×844 (head, rail, the
+     progress line, the one-line prompt, a two-line question, five rows,
+     the button bar and the paddings); a bench strip adds its own height */
+  --q-budget: 614px;
+  --q-strip: 0px;
+  --qplate: clamp(120px, calc(100vh - var(--q-budget) - var(--q-strip)), 330px);
+  --qplate: clamp(120px, calc(100dvh - var(--q-budget) - var(--q-strip)), 330px);
   --plate: clamp(240px, min(52dvh, 42vw), 420px);
   width: min(680px, 100%);
   height: 100%;
 }
+html.jd-bench-on .jd-turn[data-view="bench"] { --q-strip: calc(var(--jd-bench-bar-h, 40px) - 4px); }
 .jd-turn[data-view="bench"] .jd-turn-scroll { display: flex; flex-direction: column; }
 .jd-bench--q { display: flex; flex-direction: column; flex: 0 0 auto; }
 .jd-bench--q .jd-bench-l { display: flex; justify-content: center; }
@@ -3641,7 +3647,9 @@ html.jd-bench-on .jd-turn[data-view="preview"] {
 .jd-bench--q .jd-turn-pin { margin: 0 0 var(--sp-2); }
 .jd-bench--q .jd-turn-actions { margin-top: var(--sp-3); }
 @media (min-width: 900px), (min-width: 600px) and (max-height: 500px) and (orientation: landscape) {
-  .jd-turn[data-view="bench"] { width: min(960px, 100%); height: auto; }
+  /* anchored to the top of the window (critic, round 2: centred, the sheet
+     re-centred as each card's height changed and the drawing jumped) */
+  .jd-turn[data-view="bench"] { width: min(960px, 100%); height: auto; align-self: flex-start; }
   .jd-turn[data-view="bench"] .jd-turn-scroll { display: block; }
   /* the report card's two-column pattern: the exhibit LEFT on its ruler,
      the question RIGHT behind a hairline, top-anchored under the rail */
@@ -3660,10 +3668,14 @@ html.jd-bench-on .jd-turn[data-view="preview"] {
   /* the buttons settle at the column's foot when the drawing runs taller */
   .jd-bench--q .jd-turn-actions { margin-top: auto; padding-top: var(--sp-3); }
 }
-/* a phone held landscape: the ruler's floor stands down so the whole
-   drawing is on the short screen */
+/* a phone held landscape: the drawing is sized from the card's real height
+   — the window less the banner band, the card's head and rail and its
+   paddings — so the whole of it, filmstrip and all, is on the short screen */
 @media (max-width: 1000px) and (max-height: 500px) and (orientation: landscape) {
-  .jd-turn[data-view="bench"] { --plate: clamp(160px, min(60dvh, 40vw), 420px); }
+  .jd-turn[data-view="bench"] {
+    --plate: clamp(120px, calc(100vh - var(--banner-h, 56px) - 186px), 420px);
+    --plate: clamp(120px, calc(100dvh - var(--banner-h, 56px) - 186px), 420px);
+  }
 }
 
 /* ---- the prompt (owner, 2026-08-28; reseated to the paperwork column the
@@ -3754,26 +3766,32 @@ html.jd-bench-on .jd-turn[data-view="preview"] {
 
 /* ---- the question and its options (ONE QUESTION A CARD, 0.18.0) -----------
    The selects' row table retired with them. A card asks one thing: the
-   progress line (which drawing, which question of how many), the question
-   — the axis label as the heading, its summary as the line under it, the
-   long description folded behind "more" — and the options, best first, as
-   a vertical list of radio rows. Each row is one press target the sheet's
-   full width and at least 48px tall: a ring, the value's label in bold over
-   its description, and the report card's own gauge for that value. The
-   chosen row fills its ring and edges itself in the axis's rank pencil
-   (the rc-q / rc-r / rc-g classes on the row, the same inks the record
-   card's marks and bars wear — see the rank rules above); a choice is
-   never colour alone: the ring fills, the row's ground lifts and its
-   border thickens. */
+   progress line (which drawing, which question of how many; the answer just
+   given echoed; on a phone the "definitions" switch), the question — the
+   axis label as the heading, its summary as the line under it, the long
+   description (and, for the axes judged against it, the house rule) folded
+   behind "more" — and the options, best first, as a vertical list of radio
+   rows. Each row is one press target the sheet's full width and at least
+   48px tall: a ring, the value's label and the report card's own gauge for
+   that value, and the value's description under them (on a phone only the
+   chosen row's, or every row's with "definitions" on). The chosen row fills
+   its ring and edges itself in the axis's rank pencil (the rc-q / rc-r /
+   rc-g classes on the row, the same inks the record card's marks and bars
+   wear — see the rank rules above); a choice is never colour alone: the
+   ring fills, the row's ground lifts and its border thickens. */
 .jd-q-step {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px;
   margin: 0 0 var(--sp-2);
   font-family: var(--tform); font-size: var(--t-label);
   letter-spacing: 0.16em; text-transform: uppercase; color: var(--tink-2);
 }
+/* the answer just given, on the card it advanced to: the pencil's tick */
+.jd-q-echo { letter-spacing: 0.04em; text-transform: none; font-style: italic; color: var(--tink-2); }
+/* "definitions": a phone's switch (the desk shows every description) */
+.jd-q-defs { display: none; }
 .jd-q .jd-turn-assign { margin: 0 0 var(--sp-2); }
-.jd-q .jd-turn-rule { text-align: left; margin: 0 0 var(--sp-2); }
 .jd-q .jd-turn-pruned { margin: 0 0 var(--sp-2); }
-.jd-q-ask { margin: 0 0 10px; }
+.jd-q-ask { margin: 0 0 16px; }
 .jd-q-label {
   margin: 0 0 3px;
   font-family: var(--tform); font-weight: 700; font-size: 0.95rem;
@@ -3783,27 +3801,39 @@ html.jd-bench-on .jd-turn[data-view="preview"] {
   margin: 0;
   font-size: 0.74rem; line-height: 1.5; color: var(--tink-2);
 }
-/* "more": the description's fold, a pencilled word after the question */
-.jd-q-more {
-  display: inline; margin: 0 0 0 2px; padding: 0 0 1px; cursor: pointer;
-  border: 0; border-bottom: 1px dotted var(--trule); background: none;
+/* "more" and "definitions": pencilled words with a finger's band — a 48px
+   box around the word, its vertical overhang given back by negative
+   margins so the line it sits on keeps its own height */
+.jd-q-more, .jd-q-defs {
+  align-items: center; justify-content: center;
+  min-height: 48px; min-width: 48px; margin: -16px 0; padding: 0 4px;
+  vertical-align: middle; cursor: pointer;
+  border: 0; background: none;
   font-family: var(--tmono); font-size: var(--t-label); letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--tink-2);
+  text-decoration: underline dotted var(--trule); text-underline-offset: 3px;
 }
-.jd-q-more:hover { color: var(--tred); border-bottom-color: var(--tred); }
-/* a word-sized mark gets a finger's band, painting nothing (the small
-   marks' ::before pads, below) */
-.jd-q-more { position: relative; }
-.jd-q-more::before { content: ""; position: absolute; inset: -12px -10px; }
-.jd-q-more[aria-expanded="true"] { color: var(--tink); }
-.jd-q-more:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-q-more { display: inline-flex; margin-left: 2px; }
+.jd-q-more:hover, .jd-q-defs:hover { color: var(--tred); text-decoration-color: var(--tred); }
+.jd-q-more[aria-expanded="true"], .jd-q-defs[aria-pressed="true"] { color: var(--tink); text-decoration-style: solid; }
+.jd-q-more:focus-visible, .jd-q-defs:focus-visible { outline: 2px solid var(--tred); outline-offset: -8px; }
+/* the definition: the body face, not the form's typewriter */
 .jd-q-desc {
   margin: 6px 0 0; padding: 2px 0 2px 10px;
   border-left: 2px solid var(--trule);
-  font-size: 0.68rem; line-height: 1.6; color: var(--tink-2);
+  font-family: var(--tform); font-size: 0.74rem; line-height: 1.5; color: var(--tink-2);
+}
+.jd-q-desc p { margin: 0; }
+.jd-q-desc p + p { margin-top: 6px; }
+.jd-q-desc-rule { font-style: italic; }
+/* a re-rate's prefilled answer, said on its own row: "last time: … — tap
+   to keep" (a press on it keeps it and goes on) */
+.jd-q-last {
+  font-family: var(--tform); font-size: 0.74rem; font-style: italic; color: var(--tink);
 }
 .jd-q-opts { display: flex; flex-direction: column; gap: 6px; }
 .jd-q-opt {
+  position: relative;   /* above the "more" band where the two meet */
   display: flex; align-items: flex-start; gap: 10px;
   width: 100%; min-height: 48px; box-sizing: border-box;
   margin: 0; padding: 8px 12px;
@@ -3861,22 +3891,52 @@ html.jd-bench-on .jd-turn[data-view="preview"] {
   .jd-q-opt.is-on { border-width: 3px; }
   .jd-q-opt.is-on .jd-q-dot::after { background: CanvasText; }
 }
-/* the phone reads the question at a phone's size: the type steps up, the
-   rows stay a full-width strip (16px is the sheet's own gutter there) */
+/* THE PHONE (critic, round 2: "every option on every one of the six cards,
+   and back, visible without scrolling"): the type steps up to a phone's
+   size, a row is its label and gauge (~50px) with only the chosen row's
+   description under it — or every row's, with "definitions" on — the
+   prompt folds to one line, the replay strip stands down (the enlargement
+   keeps REDRAW), and back/next ride a bar stuck to the foot of the
+   scroller, so they are on screen whatever the card carries. */
 @media (max-width: 899px) {
   .jd-q-label { font-size: 1.05rem; }
   .jd-q-sum { font-size: 0.86rem; }
   .jd-q-txt b { font-size: 0.95rem; }
   .jd-q-txt small { font-size: 0.84rem; line-height: 1.35; }
-  .jd-q-desc { font-size: 0.8rem; }
-  .jd-q-more { font-size: 0.66rem; }
+  .jd-q-desc { font-size: 0.86rem; }
+  .jd-q-more, .jd-q-defs { font-size: 0.66rem; }
   .jd-q-step { font-size: 0.62rem; }
-  /* the prompt folds to two lines under the drawing; "show full prompt"
-     unfolds it in place */
-  .jd-q .jd-turn-assign:not(.is-open):not(.is-fit) p { max-height: 3.1em; }
-  .jd-q .jd-turn-assign { padding: 6px 10px; }
+  .jd-q-last { font-size: 0.84rem; }
+  .jd-q-opt { padding: 13px 12px; }
+  .jd-q-ask { margin-bottom: 14px; }
+  .jd-q-opt small { display: none; }
+  .jd-q-opt.is-on small, .jd-q.is-defs .jd-q-opt small { display: block; }
+  /* …but a re-rate's prefilled row says "last time" in its place */
+  .jd-q:not(.is-defs) .jd-q-opt.is-last small { display: none; }
+  .jd-q-defs { display: inline-flex; margin-left: auto; }
+  .jd-bench--q .jd-filmstrip { display: none; }
+  /* the prompt on one line, cut with an ellipsis; "show full prompt"
+     beside it unfolds it, and the card remembers (work.briefOpen) */
+  .jd-q .jd-turn-assign { padding: 6px 10px; display: flex; align-items: baseline; gap: 8px; }
   .jd-q .jd-turn-assign-tag { display: none; }
-  .jd-q .jd-turn-assign p { font-size: 0.8rem; }
+  .jd-q .jd-turn-assign p { flex: 1 1 auto; min-width: 0; font-size: 0.8rem; }
+  .jd-q .jd-turn-assign:not(.is-open) p {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-height: none; -webkit-mask-image: none; mask-image: none;
+  }
+  .jd-q .jd-turn-assign.is-open { flex-wrap: wrap; }
+  .jd-q .jd-turn-assign .jd-turn-pv { flex: 0 0 auto; margin-top: 0; }
+}
+/* back/next: a bar stuck to the scroller's foot, on the sheet's paper — a
+   phone held upright only (held landscape, the two columns leave the first
+   row and the buttons in the flow, and a stuck bar would cover the row) */
+@media (max-width: 899px) and (min-height: 501px) {
+  .jd-q .jd-turn-actions {
+    position: sticky; bottom: -12px; z-index: 3;
+    margin: var(--sp-2) -12px -12px; padding: 6px 12px 10px;
+    background: var(--tpaper) var(--tgrain);
+    box-shadow: 0 -8px 10px -9px rgba(20, 10, 3, 0.45);
+  }
 }
 
 /* ---- the report path: a checkbox, and a note only once it is ticked ------ */
@@ -5704,6 +5764,31 @@ html.jd-bench-on .jd-record-scrim {
   html.jd-bench-on .jd-turn-scrim {
     padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
     padding-bottom: max(calc(84px + env(safe-area-inset-bottom, 0px)), calc(var(--jd-bench-bar-h, 0px) + 6px));
+  }
+}
+/* THE STRIP WHILE A QUESTION CARD IS UP (0.18.0, critic round 2): on a
+   phone the strip folds to ONE row — its tag, how many to go and the
+   prompt's title — so the card above it can stand every row of a question
+   on one screen. The turn card sets html.jd-turn-q while a question card is
+   painted; the strip's tools (new prompt, rated, hidden items, the ledger,
+   skip / scrap / rerun, sign out) come back on every other card and when
+   the card closes. jd-bench.js re-measures --jd-bench-bar-h as it folds. */
+@media (max-width: 899px) {
+  html.jd-turn-q .jd-bench-bar { flex-wrap: nowrap; }
+  html.jd-turn-q .jd-bench-bar .jd-bench-new-btn,
+  html.jd-turn-q .jd-bench-bar [data-bench="rated"],
+  html.jd-turn-q .jd-bench-bar [data-bench="hidden"],
+  html.jd-turn-q .jd-bench-bar [data-bench="resume"],
+  html.jd-turn-q .jd-bench-bar .jd-bench-link,
+  html.jd-turn-q .jd-bench-bar .jd-bench-acts,
+  html.jd-turn-q .jd-bench-bar .jd-bench-build,
+  html.jd-turn-q .jd-bench-bar .jd-bench-out { display: none; }
+  html.jd-turn-q .jd-bench-bar .jd-bench-title {
+    flex: 1 1 auto; min-width: 0; max-width: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  html.jd-bench-on.jd-turn-q .jd-turn-scrim {
+    padding-bottom: calc(var(--jd-bench-bar-h, 40px) + 6px);
   }
 }
 

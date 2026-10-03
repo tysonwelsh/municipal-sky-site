@@ -57,7 +57,7 @@ two are never pooled. The full reasoning and every owner decision are in
 | v2 schema runner + doc | `api/setup-jd2-tables.php`, `db/junk-drawer-v2-schema.md` |
 | v1 endpoints (frozen, reads only) | `api/jd-*.php`; `JD_V1_FROZEN = true` in `api/jd-config.php` |
 | v1 archive | `~/Media/junk-drawer-v1/2026-10-01/` (dump, JSONL, CSVs, items); runbook `db/junk-drawer-v1-archive.md`; git tag `junk-drawer-v1-final` |
-| the rubric | `art/junk-drawer/taxonomy.json` (v36) — grades, axes, the house rule, size tiers, model registry + pool, comparison and gap scales, the intake facets, `intakeVersion` and the intake model |
+| the rubric | `art/junk-drawer/taxonomy.json` (v37) — grades, axes, the house rule, size tiers, model registry + pool, comparison and gap scales, the intake facets, `intakeVersion` and the intake model |
 | the curator's ledger | `art/junk-drawer/ledger.html` |
 | the owner's bench | `index.php?bench` (`?bench&prompt=<id>` for one prompt; `?admin` for the card editor) |
 | owner scripts | `scripts/jd2-batch-run.php` (CSV batch generation), `scripts/jd2-export.py` (JSONL + CSVs) |
@@ -119,8 +119,8 @@ including an unrequested setting), repaint in place (Paintwork, including
 every cast shadow). The four issue axes read No / Minor / Moderate /
 Major problems. Since 0.18.0 they are asked ONE QUESTION A CARD: six cards
 per drawing (the five axes, then the grade), each a list of radio rows that
-goes on by itself when one is pressed; each drawing's first card prints
-the house rule (`houseRule`: what every model was told). Then the
+goes on by itself when one is pressed; the preview prints the house rule
+(`houseRule`: what every model was told) once per sitting. Then the
 podium: drag or tap the drawings into 1st..4th. Then the **pedestal card**
 is live (0.12.0): one card asks each adjacent pair "how much better?"
 (negligibly / slightly / better / much better, a brass shim = gap 0) and

@@ -180,31 +180,47 @@ card, and never forked into a bench-only copy.
 ONE QUESTION A CARD in `jd-turn.js`, replacing the panel of selects). A
 drawing's rail station (still one step, its slot letter, in `stepSeq`) is a
 run of six cards: the live axes in taxonomy order, then the overall grade
-last (`qList()`); `work.qAt` says which card stands. Each card, phone first:
-the drawing on top (its blind letter pencilled on, press to enlarge —
-`openZoom`), the progress line "Drawing B · 3 of 6", the prompt (folded to
-two lines on a phone), the house rule on the drawing's first card only, the
-axis `label` as the heading and its `summary` as the question (the
-`description` behind "more"; the grade asks the drawing as a whole), and the
-values best first as large radio rows (`role="radiogroup"` of
+last (`qList()`; its name and question are `taxonomy.json` `gradeQuestion`,
+read through `JD_gradeQuestion` by this card, the report card and the
+analytics folder); `work.qAt` says which card stands. Each card, phone
+first: the drawing on top (its blind letter pencilled on, press to enlarge
+— `openZoom`), the progress line "Drawing B · 3 of 6" (echoing the answer
+just given, "✓ Minor problems"; on a phone the "definitions" switch), the
+prompt (one line on a phone; "show full prompt" stays open for the sitting,
+`work.briefOpen`), the axis `label` as the heading and its `summary` as the
+question (the `description` behind "more" — with the house rule after it
+for the axes in `houseRuleAxes`), and the values best first as radio rows
+(`role="radiogroup"` named by the progress line and the question, of
 `role="radio"` buttons with `aria-checked`, the whole row the target,
-≥ 48px; each row its value's `label` over its `description` and the report
-card's gauge; the chosen row in the `JD_axisCls` / `rc-g` pencil). A press
-records the answer in `work.ratings` at once (`qPick`) and goes on after
-`Q_BEAT` (250 ms; at once under prefers-reduced-motion) through `nav()`: to
-the next card, the next drawing's first, or after the last drawing's grade
-to the ranking; the one-drawing turn's last card files only by its button.
-Back walks the cards, across drawings too (into the drawing before at its
-grade); next stands armed on an answered card (a re-rate's prefill shows
-each answer checked). The arrows move between rows, Enter/Space choose.
-Entering a drawing by the rail or a resume lands on its first unanswered
-card (`firstOpenQ`). A card change inside a drawing repaints only the
-question column (`qShow`). `stepAnswered(slot)` is still every question
-answered (`benchRated`), and a drawing's rail ring fills only then. The
-filing payload and `work.ratings` are unchanged. Desktop (≥ 900px, and a
-phone held landscape) puts the drawing left and the question right. The
-`?bench&pairs=1` audit and the `?admin` report-card editor are other
-instruments and keep their own controls. Never bring the selects back.
+≥ 48px; label and the report card's gauge, the description under it — on a
+phone only the chosen row's, or all with "definitions" on, remembered per
+device; the chosen row in the `JD_axisCls` / `rc-g` pencil). A press records
+the answer in `work.ratings` at once (`qPick`) and goes on after `Q_BEAT`
+(350 ms; at once under prefers-reduced-motion) through `nav()`: to the next
+card, the next drawing's first, or after the last drawing's grade to the
+ranking; the one-drawing turn's last card files only by its button (the
+press brings it into view). A press within `Q_GUARD` (400 ms) of a question
+being painted is ignored, so a double tap never answers the next card. Back
+walks the cards, across drawings too (into the drawing before at its
+grade); next stands armed on an answered card. The arrows move between
+rows and Enter/Space choose (moving must not choose, since a choice
+advances). Entering a drawing by the rail or a partial resume lands on its
+first unanswered card (`firstOpenQ`); a COMPLETE re-rate's preview opens
+drawing A's first card (owner, 2026-10-03), each prefilled row saying "last
+time: <label> — tap to keep" (`work.qPrefilled`). A card change inside a
+drawing repaints only the question column (`qShow`). `stepAnswered(slot)`
+is still every question answered (`benchRated`), and a drawing's rail ring
+fills only then. The filing payload and `work.ratings` are unchanged. The
+house rule shows ONCE per sitting, on the preview. On a phone the drawing's
+size (`--qplate`) is the window less the fullest card's furniture, back/next
+ride a bar stuck to the scroller's foot, the replay strip stands down, and
+the bench strip folds to one row while a question card is up
+(`html.jd-turn-q`), so at 390×844 every row of every card and back are on
+the first screen with the strip mounted. Desktop (≥ 900px, and a phone held
+landscape) puts the drawing left and the question right, the sheet anchored
+to the top. The `?bench&pairs=1` audit and the `?admin` report-card editor
+are other instruments and keep their own controls. Never bring the selects
+back.
 
 **The head-to-head instrument is the pedestal card** (since 0.12.0, owner
 2026-10-02; design source `mockups/mockup-50-pedestal-margins.html`). After
@@ -390,8 +406,9 @@ before.
   per live axis (`JD_axisRates` + `JD_axisBuckets`, which names each
   panel's two segments from the value labels).
 - **`houseRule`** is the drawing system prompt's house rules in one
-  rater-facing sentence; the rating card prints it on each drawing's first
-  question card, above the question, and the
+  rater-facing sentence; the rating card prints it once per sitting, on the
+  preview card, and inside the "more" of each axis in `houseRuleAxes`
+  (v37: structural-coherence-2, layering-2, paintwork), and the
   report card above its grades table. Display only: no axis reads it, and
   it is not in the intake prompt.
 - **`comparison`** is the 7-point head-to-head scale (+3 = the first much
