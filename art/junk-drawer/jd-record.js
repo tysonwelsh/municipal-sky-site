@@ -178,11 +178,31 @@
     gauge verbatim once a value is picked, instead of inventing a second one —
     a filled-in bench and the report card it produces are meant to speak the
     same visual language */
-  /* an annotation is a bare rank number or { value: <rank>, note } */
+  /* an annotation is a bare rank number or { value: <rank>, note } —
+     or, read through the taxonomy's `successor` map (v36), { value: <the
+     mapped rank>, mapped_from: { axis, value } } (data.php) */
   function annOf(resp, axisId) {
     var a = (resp.annotations || {})[axisId];
     if (a == null) return null;
     return typeof a === 'object' ? a : { value: a };
+  }
+  /* A MAPPED VALUE (taxonomy v36, owner 2026-10-03): a drawing rated on a
+     retired scale (layering's three points) is shown under its successor
+     (Layering's four) at the rank the taxonomy's `successor.map` gives —
+     the filed answer itself stays as filed. One quiet line under the
+     grade says so, and its tooltip names the answer on file. The words
+     come from the taxonomy: the retired axis's step count and value label. */
+  function mappedNote(a) {
+    var m = a && a.mapped_from;
+    if (!m) return '';
+    var old = byId((payload.taxonomy || {}).axes, m.axis) || {};
+    var pts = (old.values || []).length;
+    var was = JD_byRank(old.values, m.value);
+    var scale = pts ? 'the ' + pts + '-point scale' : 'an earlier scale';
+    var tip = 'Rated “' + JD_labelText(was ? was.label : String(m.value)) +
+      '” on ' + scale + '; shown here on the current scale by the taxonomy’s own ' +
+      'mapping. The rating on file is unchanged.';
+    return '<span class="rc-mapped" title="' + esc(tip) + '">mapped from ' + esc(scale) + '</span>';
   }
 
   /* RETIRED — kept as a backup on the same terms as checkerFloorSVG below
@@ -432,7 +452,7 @@
       rows += '<tr><td>' +
         axisBtn('<span class="rc-subj-name">' + esc(axis.label || axis.id) +
           '</span>', descId) +
-        '</td><td>' + cell + '</td></tr>' +
+        '</td><td>' + cell + mappedNote(a) + '</td></tr>' +
         descRow(descId, axis.description || '');
     });
     var g = gradeOf(resp.grade);

@@ -466,14 +466,15 @@ check('grades[]: exactly {model_id, avg, n, hist}, hist sums to n, 3 runs × 4 =
     $gradeKeysOk && $gradeN === 12, json_encode($A['grades']));
 $axesOk = count($A['axes']) === count($liveAxisIds);
 foreach ($A['axes'] as $ax) {
-    $axesOk = $axesOk && array_keys($ax) === ['axis_id', 'label', 'points', 'values', 'models'] && in_array($ax['axis_id'], $liveAxisIds, true)
+    $axesOk = $axesOk && array_keys($ax) === ['axis_id', 'label', 'points', 'values', 'models', 'mapped', 'mapped_from']
+        && in_array($ax['axis_id'], $liveAxisIds, true) && $ax['mapped'] === 0 && $ax['mapped_from'] === []
         && count($ax['values']) === $ax['points'] && $ax['values'][0]['rank'] === $ax['points']
         && array_keys($ax['values'][0]) === ['rank', 'label'];
     foreach ($ax['models'] as $m) {
         $axesOk = $axesOk && array_keys($m) === ['model_id', 'avg', 'n', 'hist'] && array_sum((array) $m['hist']) === $m['n'];
     }
 }
-check('axes[]: exactly {axis_id, label, points, values[{rank, label}] best first, models[{model_id, avg, n, hist}]}, live axes only, in taxonomy order',
+check('axes[]: exactly {axis_id, label, points, values[{rank, label}] best first, models[{model_id, avg, n, hist}], mapped, mapped_from} (0 and [] — every fixture sitting is on today\'s rubric), live axes only, in taxonomy order',
     $axesOk && array_column($A['axes'], 'axis_id') === $liveAxisIds, json_encode($A['axes'][0]));
 $costOk = count($A['cost']) === 4;
 foreach ($A['cost'] as $c) {
@@ -603,11 +604,32 @@ check('standing CSV: one row per generation (20), grade + every live axis + rank
     count($sc) === (int) one($db, 'SELECT COUNT(*) FROM jd2_generations') && in_array('grade', $head, true)
     && array_diff($liveAxisIds, $head) === [] && in_array('rank_pos', $head, true), json_encode($head));
 // the axis columns: the live axes in taxonomy order, then every retired axis a
-// v2 rubric required — the 3-point structural-coherence stays a column
+// v2 rubric required — the 3-point structural-coherence and layering stay
+// columns — then each live axis that succeeds a retired one (taxonomy
+// `successor`, v36: layering-2) as <axis>_onescale and <axis>_mapped_from
 $ixG = array_search('grade', $head, true);
-$axisHead = array_slice($head, $ixG + 1, count($liveAxisIds) + 1);
-check('standing CSV: the axis columns are the live axes in taxonomy order, then the retired structural-coherence (kept, not vanished)',
-    $axisHead === array_merge($liveAxisIds, ['structural-coherence']), json_encode($axisHead));
+$axisHead = array_slice($head, $ixG + 1, count($liveAxisIds) + 4);
+check('standing CSV: the axis columns are the live axes in taxonomy order, then the retired structural-coherence and layering (kept, not vanished), then layering-2_onescale and layering-2_mapped_from',
+    $axisHead === array_merge($liveAxisIds, ['structural-coherence', 'layering', 'layering-2_onescale', 'layering-2_mapped_from']), json_encode($axisHead));
+$ix1 = array_search('layering-2', $head, true);
+$ix1s = array_search('layering-2_onescale', $head, true);
+$ix1f = array_search('layering-2_mapped_from', $head, true);
+$oneOk = $ix1 !== false && $ix1s !== false && $ix1f !== false;
+foreach ($sc as $r) {
+    $oneOk = $oneOk && $r[$ix1s] === $r[$ix1] && $r[$ix1f] === '';
+}
+check('standing CSV: with nothing to map, layering-2_onescale repeats layering-2 and layering-2_mapped_from is empty', $oneOk);
+$jOk = true;
+foreach ($recs as $rec) {
+    foreach ($rec['runs'] as $run) {
+        foreach ($run['sessions'] as $sess) {
+            foreach ($sess['judgments'] as $j) {
+                $jOk = $jOk && array_key_exists('mapped_axis_id', $j) && $j['mapped_axis_id'] === null && $j['mapped_value'] === null;
+            }
+        }
+    }
+}
+check('export JSONL: every judgment carries mapped_axis_id and mapped_value, null where no successor map applies', $jOk);
 $cellsOk = true;
 foreach ($recs as $rec) {
     foreach ($rec['runs'] as $run) {

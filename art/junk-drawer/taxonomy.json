@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "version": 35,
-  "updated": "2026-10-02",
+  "version": 36,
+  "updated": "2026-10-03",
   "instrument": "v2.0",
   "instrumentNote": "The dataset v2 instrument: this rubric plus the comparison and gaps scales below and the rules of a sitting; every v2 session stamps it beside the taxonomy version. v1 instruments ignore it.",
   "poolVersion": "pool-2026-10-02b",
@@ -409,7 +409,16 @@
     {
       "id": "layering",
       "label": "Layering",
-      "description": "Are the constituent parts of the item stacked in the correct order? Are there any issues with opacity, fill, or undesired background elements? If the drawing could be fixed by making adjustments to how parts of the image are arranged on the z-axis or by erasing a setting the subject was drawn into — ground, sky, water, a backdrop, a vignette or frame — it is an issue with Layering. Every model was told to draw the subject alone; a setting counts against the drawing unless the prompt asked for one. A picture-bearing object (a photograph, card, poster, screen) keeps the scene inside its own edges.",
+      "defunct": true,
+      "successor": {
+        "id": "layering-2",
+        "map": {
+          "3": 4,
+          "2": 3,
+          "1": 1
+        }
+      },
+      "description": "Are the constituent parts of the item stacked in the correct order? Are there any issues with opacity, fill, or undesired background elements? If the drawing could be fixed by making adjustments to how parts of the image are arranged on the z-axis or by erasing a setting the subject was drawn into — ground, sky, water, a backdrop, a vignette or frame — it is an issue with Layering. Every model was told to draw the subject alone; a setting counts against the drawing unless the prompt asked for one. A picture-bearing object (a photograph, card, poster, screen) keeps the scene inside its own edges. (Defunct as of v36, 2026-10-03 — superseded by the 4-point `layering-2`, v36; kept for responses graded under it, and read onto `layering-2` through `successor`.)",
       "summary": "Are the parts stacked in the right order, with correct use of opacity?",
       "values": [
         {
@@ -429,6 +438,38 @@
           "rank": 1,
           "label": "Big problems",
           "description": "A visible rendering error changes how the image reads, or the picture loses outright to its own stacking."
+        }
+      ]
+    },
+    {
+      "id": "layering-2",
+      "label": "Layering",
+      "description": "Are the constituent parts of the item stacked in the correct order? Are there any issues with opacity, fill, or undesired background elements? If the drawing could be fixed by making adjustments to how parts of the image are arranged on the z-axis or by erasing a setting the subject was drawn into — ground, sky, water, a backdrop, a vignette or frame — it is an issue with Layering. Every model was told to draw the subject alone; a setting counts against the drawing unless the prompt asked for one. A picture-bearing object (a photograph, card, poster, screen) keeps the scene inside its own edges.",
+      "summary": "Are the parts stacked in the right order, with correct use of opacity?",
+      "values": [
+        {
+          "id": "no-problems",
+          "rank": 4,
+          "label": "No problems",
+          "description": "Stacking, opacity and the empty background all read as intended."
+        },
+        {
+          "id": "minor",
+          "rank": 3,
+          "label": "Minor problems",
+          "description": "A slip you find on inspection — one wrong overlap."
+        },
+        {
+          "id": "moderate",
+          "rank": 2,
+          "label": "Moderate problems",
+          "description": "Visible at a glance: a stacking or opacity error that needs real restacking, or a setting to erase."
+        },
+        {
+          "id": "major",
+          "rank": 1,
+          "label": "Major problems",
+          "description": "A visible error changes how the image reads: the picture loses outright to its own stacking, or a backdrop or setting dominates the read."
         }
       ]
     },
@@ -1088,6 +1129,11 @@
       "date": "2026-10-02",
       "version": 35,
       "note": "Owner call (2026-10-02), the taxonomy pass before the first bench sitting — ROADMAP's \"settle the scales\" gate: a fifth axis, and every axis's boundaries redrawn so each issue axis is named by the edit that fixes it (Understanding Assignment: redraw; Structural Coherence: move on x/y; Layering: restack on z or erase; Paintwork: repaint in place). NEW: `paintwork` \"Paintwork\", 4-point (No / Minor / Moderate / Major problems) — how well the surface is executed in the style the drawing chose (light and shadow, gradients, colour and value, line, texture, lettering), judged on execution, not the choice, so a clean flat style has no problems; every cast shadow belongs to it, the forbidden shadow beneath the subject included (a shadow grown into ground the subject stands on is setting, Layering's). RESCALED UNDER A NEW ID: `structural-coherence` (3-point) is defunct, kept for the responses graded under it, and `structural-coherence-2` \"Structural Coherence\" is 4-point (No / Minor / Moderate / Major problems; the owner's end-point words kept, the middle two new), its description the owner's v23 text plus framing: a subject clipped by the canvas edge, marooned, or swimming in empty space (every model was told to fill the canvas edge to edge). One id, one scale. REWORDED: Understanding Assignment gains every unrequested THING wherever it sits (an extra object, an accessory, decoration, a label or caption; one that fits still makes a drawing Mostly Understands at best, the value wording kept), a setting the prompt asked for and the drawing left out, and the benefit-of-the-doubt rule for ambiguous prompts; Layering's background clause becomes the unrequested SETTING (ground, sky, water, a backdrop, a vignette or frame; a picture-bearing object keeps its scene inside its own edges), and its value descriptions lose \"paint\" and \"framing\". NEW top-level `houseRule` (and `houseRuleNote`): the sentence every rater now reads above the axes on the rating card and above the report card's grades table — \"Every model was told: draw the subject alone on a transparent background — no setting (ground, sky, water, frame) and no shadow beneath it, unless the prompt asks for one — and fill the canvas edge to edge.\" — data, so it rewords without code. Order (display order everywhere): understanding-assignment, structural-coherence-2, layering, paintwork, jnsq. Scales: 4, 4, 3, 4, 3 — the 4-point issue axes read No / Minor / Moderate / Major problems, Layering keeps No / Small / Big problems. Nothing filed is affected: values are filed as ranks under axis ids, no id or rank was renamed or reused, and every sitting stamps the taxonomy version it was rated under and, from this version, the cells it was required to carry (jd2_sessions.required_cells), so a sitting filed under v34 or earlier stays complete under its own rubric. The v1 archive (its own taxonomy-v25.json, and legacy/'s copy) is unaffected. `instrument` stays v2.0: the rules of a sitting are unchanged; the RUBRIC changed, and this version records that. The intake prompt renders no axis, so intakeVersion stays intake-v4. No grade, comparison, gaps, facets or pool change."
+    },
+    {
+      "date": "2026-10-03",
+      "version": 36,
+      "note": "Owner call (2026-10-03, mid-campaign): \"start using a 4-point axis for layering. Any ratings left where it was rated 'Small Problem' can be adjusted to be minor problems.\" RESCALED UNDER A NEW ID, as v35 did for Structural Coherence: `layering` (3-point) is defunct, kept for the responses graded under it, and `layering-2` \"Layering\" is 4-point (No / Minor / Moderate / Major problems, the house wording of the other 4-point issue axes), its summary and description `layering`'s unchanged — the owner's boundary rulings stand (an unrequested setting is Layering's, framing is Structural Coherence's, every cast shadow is Paintwork's). Values: No problems (the old No problems' text), Minor problems (the old Small problems' text: a slip you find on inspection, one wrong overlap), Moderate problems (new: visible at a glance, a stacking or opacity error that needs real restacking or a setting to erase), Major problems (the old Big problems' reach: the picture loses to its own stacking, or a backdrop or setting dominates the read). One id, one scale. NEW FIELD `successor` on a defunct axis: {id, map}, the owner's \"adjust\" stated as data — `layering`'s is {\"id\": \"layering-2\", \"map\": {\"3\": 4, \"2\": 3, \"1\": 1}}: No → No problems, Small → Minor problems, Big → Major problems; nothing maps to Moderate. The map is applied at READ time only — the bench prefill carries a `layering` answer onto `layering-2` (`prefill_mapped`), the analytics' Layering panel folds the `layering` judgments in (`mapped`), the export adds the mapped id and value beside the filed ones, and the report card shows a `layering` value under Layering at the mapped value, marked — and no filed judgment is edited: the 40 `layering` judgments of the campaign's first ten v35 sittings stay `layering` at their filed ranks. Those sittings stay complete under their own `required_cells`; a sitting filed now requires `layering-2`. Order (display order): understanding-assignment, structural-coherence-2, layering-2, paintwork, jnsq; scales 4, 4, 4, 4, 3. `instrument` stays v2.0 (the rules of a sitting are unchanged). The intake prompt renders no axis, so intakeVersion stays intake-v4. No grade, comparison, gaps, facets or pool change."
     }
   ]
 }

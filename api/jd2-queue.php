@@ -46,6 +46,15 @@
 // again. The item then says `prefill_pruned: true`, and the card notes that
 // those earlier answers were not carried over. The visitor's sitting
 // (`visitor`) is shown, never refiled, so it is passed as filed.
+//
+// …EXCEPT WHERE THE TAXONOMY SAYS HOW THE OLD SCALE READS ON THE NEW ONE
+// (taxonomy v36, 2026-10-03). A value on a defunct axis that carries a
+// `successor` ({id, map}: v36's `layering` → `layering-2`, 3 → 4, 2 → 3,
+// 1 → 1) is carried onto the successor at the mapped rank before the prune
+// runs (jd2_map_axes), and the item says `prefill_mapped: true`; the card
+// says so where it says "pruned". The filed judgment is not touched: the
+// carried value becomes a filed one only if the owner files the new sitting.
+// A defunct axis without a successor still prunes.
 
 require_once __DIR__ . '/jd2-config.php';
 require_once __DIR__ . '/jd-origin.php';
@@ -190,7 +199,9 @@ function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal, ar
     $responses = [];
     $slotOf = [];
     $pruned = false;
+    $mapped = false;
     $scales = ['axes' => jd_axis_ranks($taxonomy), 'grade' => jd_grade_ranks($taxonomy)];
+    $successors = jd2_axis_successors($taxonomy);
     foreach ($run['gens'] ?? [] as $g) {
         if ($g['status'] !== JD2_GEN_OK) {
             continue;   // a failed or rejected slot has nothing to seat
@@ -207,7 +218,7 @@ function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal, ar
         $r += [
             'svg_url' => '/api/jd2-gen-svg.php?gen=' . rawurlencode($gid),
             'hidden' => (int) $g['hidden'] === 1,
-            'prefill' => jd2q_prune(jd2q_cells($owner, $gid, true), $scales, $pruned),
+            'prefill' => jd2q_prune(jd2q_carry(jd2q_cells($owner, $gid, true), $successors, $mapped), $scales, $pruned),
             'visitor' => jd2q_cells($visitor, $gid, false),
         ];
         $responses[] = $r;
@@ -240,6 +251,9 @@ function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal, ar
         // true when a prefill value sat on a retired axis or off its current
         // scale and was left out (jd2q_prune)
         'prefill_pruned' => $pruned,
+        // true when a prefill value sat on a retired axis with a successor
+        // and was carried onto it through the taxonomy's map (jd2q_carry)
+        'prefill_mapped' => $mapped,
         'complete' => $view['complete'],
         'needs' => $view['needs'],
     ];
@@ -285,6 +299,27 @@ function jd2q_prune(?array $cells, array $scales, bool &$pruned): ?array
     if ($cells['grade'] !== null && jd_rank_on_scale($cells['grade'], $scales['grade']) === null) {
         $cells['grade'] = null;
         $pruned = true;
+    }
+    return $cells;
+}
+
+/**
+ * The owner's prefill with every value on a defunct axis that has a successor
+ * carried onto that successor through the taxonomy's map (jd2_map_axes). Sets
+ * $mapped when anything was carried. Runs before jd2q_prune, which drops what
+ * is left on a retired axis.
+ *
+ * @param array<string,array> $successors  jd2_axis_successors()
+ */
+function jd2q_carry(?array $cells, array $successors, bool &$mapped): ?array
+{
+    if ($cells === null || $successors === []) {
+        return $cells;
+    }
+    $read = jd2_map_axes((array) $cells['axes'], $successors);
+    if ($read['mapped'] !== []) {
+        $mapped = true;
+        $cells['axes'] = (object) $read['axes'];
     }
     return $cells;
 }

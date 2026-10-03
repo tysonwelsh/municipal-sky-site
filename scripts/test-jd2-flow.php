@@ -44,7 +44,16 @@
 // ledger — after the taxonomy gained Paintwork and the four-point Structural
 // Coherence; the queue's prefill drops its retired-axis values and says so.
 //
-// One PASS/FAIL line per check, grouped by case (a)–(m); exit 0 iff all pass.
+// (n) is the successor map (taxonomy v36): `layering` is defunct with
+// `successor` {layering-2, 3→4, 2→3, 1→1}. A sitting seeded as the campaign's
+// v35 sittings were filed (layering on three points) stays complete under its
+// own cells, and its layering answers read onto layering-2 through the map in
+// the bench prefill (prefill_mapped), the analytics panel (mapped), data.php's
+// annotations (mapped_from) and the export (mapped_axis_id / mapped_value,
+// the _onescale columns) — while the judgment rows stay as filed; a sitting
+// filed now requires layering-2.
+//
+// One PASS/FAIL line per check, grouped by case (a)–(n); exit 0 iff all pass.
 
 putenv('JD_DEV_MOCK=1');
 putenv('JD_DEV_LATENCY_MS=1');
@@ -1087,21 +1096,219 @@ check('the bench queue counts it done (complete, nothing needed) and is not in t
       $st === 200 && ($qi['complete'] ?? null) === true && ($qi['needs'] ?? null) === []
       && !in_array($promptV, array_column(req('GET', '/api/jd2-queue.php', null, true)[1]['items'] ?? [], 'prompt_id'), true),
       json_encode([$qi['complete'] ?? null, $qi['needs'] ?? null]));
-check('…and its prefill drops the retired axis (structural-coherence) and says so: prefill_pruned true, the live axes kept',
+check('…and its prefill drops the retired axis with no successor (structural-coherence) and says so: prefill_pruned true, the live axes kept',
       ($qi['prefill_pruned'] ?? null) === true && !array_key_exists('structural-coherence', $pf)
-      && jd2t_sorted(array_keys($pf)) === jd2t_sorted(array_intersect(array_keys($liveAxes), JD2_CELLS_BEFORE_V35))   // as a set: the prefill's order follows the stored judgments, not the taxonomy
+      && jd2t_sorted(array_keys($pf)) === jd2t_sorted(array_merge(array_intersect(array_keys($liveAxes), JD2_CELLS_BEFORE_V35), ['layering-2']))   // as a set: the prefill's order follows the stored judgments, not the taxonomy
       && (float) ($qi['responses'][0]['prefill']['grade'] ?? 0) === 4.0, json_encode($qi['responses'][0]['prefill'] ?? null));
+check('…and carries the retired axis WITH a successor (layering 3) onto layering-2 at 4 through the map: prefill_mapped true',
+      ($qi['prefill_mapped'] ?? null) === true && !array_key_exists('layering', $pf) && (float) ($pf['layering-2'] ?? 0) === 4.0,
+      json_encode([$qi['prefill_mapped'] ?? null, $pf]));
 [$st, $l] = req('GET', '/api/jd2-ledger.php?prompt=' . $promptV, null, true);
 $ls = $l['items'][0]['runs'][0]['sessions'][0] ?? [];
 check('the ledger reads the sitting complete, with the cells it had to carry',
       $st === 200 && ($ls['complete'] ?? null) === true && ($ls['required_cells'] ?? null) === JD2_CELLS_BEFORE_V35, json_encode($ls));
 [$st, $q] = req('GET', '/api/jd2-queue.php?prompt=' . $prompt1, null, true);
-check('a prompt whose owner sitting is on the current rubric carries prefill_pruned false',
-      $st === 200 && ($q['items'][0]['prefill_pruned'] ?? null) === false, json_encode($q['items'][0]['prefill_pruned'] ?? null));
+check('a prompt whose owner sitting is on the current rubric carries prefill_pruned false and prefill_mapped false',
+      $st === 200 && ($q['items'][0]['prefill_pruned'] ?? null) === false && ($q['items'][0]['prefill_mapped'] ?? null) === false,
+      json_encode([$q['items'][0]['prefill_pruned'] ?? null, $q['items'][0]['prefill_mapped'] ?? null]));
 $setup = [];
 exec('JD_DEV_MOCK=1 ' . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/api/setup-jd2-tables.php') . ' 2>&1', $setup, $rc);
 check('the backfill is idempotent: a second run has nothing to backfill', $rc === 0
       && str_contains(implode("\n", $setup), 'nothing to backfill'), implode("\n", $setup));
+
+// ============================================================================
+section('(n) the successor map (taxonomy v36): a v35 sitting\'s 3-point layering reads onto the 4-point layering-2 — and nothing filed moves');
+$axById = array_column($taxonomy['axes'], null, 'id');
+check('taxonomy: layering is defunct with successor {layering-2, map 3→4, 2→3, 1→1}; layering-2 is live, 4-point, where layering sat',
+      !empty($axById['layering']['defunct']) && ($axById['layering']['successor'] ?? null) === ['id' => 'layering-2', 'map' => ['3' => 4, '2' => 3, '1' => 1]]
+      && isset($liveAxes['layering-2']) && count($axById['layering-2']['values']) === 4
+      && array_keys($liveAxes) === ['understanding-assignment', 'structural-coherence-2', 'layering-2', 'paintwork', 'jnsq'],
+      json_encode(array_keys($liveAxes)));
+check('jd2_axis_successors reads it: layering => layering-2 with the map; no other axis has one',
+      jd2_axis_successors($taxonomy) === ['layering' => ['id' => 'layering-2', 'map' => ['3' => 4.0, '2' => 3.0, '1' => 1.0]]],
+      json_encode(jd2_axis_successors($taxonomy)));
+$succ = jd2_axis_successors($taxonomy);
+$m1 = jd2_map_axes(['layering' => 2.0, 'jnsq' => 3.0], $succ);
+$m2 = jd2_map_axes(['layering' => 2.0, 'layering-2' => 1.0], $succ);
+check('jd2_map_axes: Small (2) reads as Minor (3) and says where from; a value filed on the successor itself wins',
+      $m1 === ['axes' => ['jnsq' => 3.0, 'layering-2' => 3.0], 'mapped' => ['layering-2' => ['axis' => 'layering', 'value' => 2.0]]]
+      && $m2 === ['axes' => ['layering' => 2.0, 'layering-2' => 1.0], 'mapped' => []], json_encode([$m1, $m2]));
+
+$panel = static function (array $A): array {
+    foreach ($A['axes'] ?? [] as $ax) {
+        if ($ax['axis_id'] === 'layering-2') {
+            return $ax;
+        }
+    }
+    return [];
+};
+[, $A0] = req('GET', '/api/jd2-analytics.php');
+$P0 = $panel($A0);
+// the v34 sitting above (prompt V, live, complete) filed layering 3 on four drawings
+check('analytics before the v35 seed: the layering-2 panel already folds in the v34 sitting\'s four layering judgments (mapped 4, from layering)',
+      ($P0['mapped'] ?? null) === 4 && ($P0['mapped_from'] ?? null) === ['layering'], json_encode($P0));
+
+[$tn, $runN] = ownerTurn('a brass doorknob with a loose spindle');
+$promptN = $tn['a'][1]['prompt_id'] ?? null;
+$gn = [];
+$modelN = [];
+foreach (rows($db, "SELECT id, slot, model_id FROM jd2_generations WHERE run_id = ? AND status = 'ok' ORDER BY slot", [$runN]) as $g) {
+    $gn[$g['slot']] = $g['id'];
+    $modelN[$g['id']] = $g['model_id'];
+}
+// Seed the sitting the way the campaign's v35 sittings were filed: stamped
+// taxonomy 35 with the v35 cells (layering on its three points), Layering
+// Small, Big, Small, No on slots a..d. Straight to the tables: jd2-rate
+// (rightly) refuses the retired axis today.
+$cellsV35 = ['understanding-assignment', 'structural-coherence-2', 'layering', 'paintwork', 'jnsq', 'grade'];
+$layN = ['a' => 2.0, 'b' => 1.0, 'c' => 2.0, 'd' => 3.0];
+$wantN = ['a' => 3.0, 'b' => 1.0, 'c' => 3.0, 'd' => 4.0];
+$sidN = jd_ulid();
+$db->prepare("INSERT INTO jd2_sessions (id, run_id, rater_role, rater_hash, client, taxonomy_version, instrument_version,
+                                        required_cells, blind, seat_order, started_at, filed_at, status)
+              VALUES (?, ?, 'owner', ?, 'web', 35, 'v2.0', ?, 1, ?, ?, ?, 'filed')")
+   ->execute([$sidN, $runN, jd_curator_hash(), json_encode($cellsV35), json_encode((object) $gn), jd_now(), jd_now()]);
+$slotsN = array_keys($gn);
+foreach ($slotsN as $i => $slot) {
+    $insJ->execute([jd_ulid(), $sidN, $gn[$slot], 'grade', '', 3.0]);
+    foreach ($cellsV35 as $cell) {
+        if ($cell === 'layering') {
+            $insJ->execute([jd_ulid(), $sidN, $gn[$slot], 'axis', $cell, $layN[$slot]]);
+        } elseif ($cell !== 'grade') {
+            $insJ->execute([jd_ulid(), $sidN, $gn[$slot], 'axis', $cell, max($axisRanks[$cell])]);
+        }
+    }
+    $insR->execute([jd_ulid(), $sidN, $gn[$slot], $i + 1, $i + 1 < count($slotsN) ? 1 : null]);
+}
+foreach ($slotsN as $i => $a) {
+    foreach (array_slice($slotsN, $i + 1, null, true) as $j => $b) {
+        $insP->execute([jd_ulid(), $sidN, $gn[$a], $gn[$b], min(3, $j - $i), JD2_DERIVE_METHOD]);
+    }
+}
+$db->prepare("UPDATE jd2_prompts SET visibility = 'live' WHERE id = ?")->execute([$promptN]);
+$filedN = rows($db, "SELECT generation_id, axis_id, value FROM jd2_judgments WHERE session_id = ? AND axis_id IN ('layering', 'layering-2') ORDER BY generation_id", [$sidN]);
+check('seed: a v35 owner sitting, four drawings, layering 2 / 1 / 2 / 3 on its three points, the prompt live',
+      count($gn) === 4 && count($filedN) === 4 && array_unique(array_column($filedN, 'axis_id')) === ['layering']);
+$dn = jd2_display_session($db, $runN, array_values($gn), $taxonomy);
+check('it is COMPLETE under its own rubric (required_cells names layering, not layering-2)',
+      ($dn['session']['id'] ?? null) === $sidN && ($dn['complete'] ?? false) === true);
+
+[$st, $q] = req('GET', '/api/jd2-queue.php?prompt=' . $promptN, null, true);
+$qn = $q['items'][0] ?? [];
+$pfN = [];
+foreach ($qn['responses'] ?? [] as $r) {
+    $pfN[$r['slot']] = (array) ($r['prefill']['axes'] ?? []);
+}
+$pfOk = count($pfN) === 4;
+foreach ($pfN as $slot => $axes) {
+    $pfOk = $pfOk && !array_key_exists('layering', $axes) && (float) ($axes['layering-2'] ?? 0) === $wantN[$slot]
+        && jd2t_sorted(array_keys($axes)) === jd2t_sorted(array_keys($liveAxes));
+}
+check('bench prefill: layering 2 / 1 / 2 / 3 arrive as layering-2 3 / 1 / 3 / 4 (Small → Minor, Big → Major, No → No), every live axis seated, prefill_mapped true, prefill_pruned false',
+      $st === 200 && $pfOk && ($qn['prefill_mapped'] ?? null) === true && ($qn['prefill_pruned'] ?? null) === false
+      && ($qn['complete'] ?? null) === true, json_encode([$pfN, $qn['prefill_mapped'] ?? null, $qn['prefill_pruned'] ?? null]));
+
+[, $A1] = req('GET', '/api/jd2-analytics.php');
+$P1 = $panel($A1);
+$histOk = true;
+$byModel0 = array_column($P0['models'] ?? [], null, 'model_id');
+$byModel1 = array_column($P1['models'] ?? [], null, 'model_id');
+foreach ($gn as $slot => $gid) {
+    $m = $modelN[$gid];
+    $k = (string) (int) $wantN[$slot];
+    $before = (int) (((array) ($byModel0[$m]['hist'] ?? []))[$k] ?? 0);
+    $after = (int) (((array) ($byModel1[$m]['hist'] ?? []))[$k] ?? 0);
+    $histOk = $histOk && $after - $before === 1 && ($byModel1[$m]['n'] ?? 0) - ($byModel0[$m]['n'] ?? 0) === 1;
+}
+check('analytics: the layering-2 panel folds the four in at 3 / 1 / 3 / 4 (each model\'s hist and n move by one, at the mapped rank) and says so: mapped 4 → 8, mapped_from [layering]',
+      $histOk && ($P1['mapped'] ?? null) === 8 && ($P1['mapped_from'] ?? null) === ['layering'] && $P1['points'] === 4,
+      json_encode([$P0['models'] ?? null, $P1['models'] ?? null, $P1['mapped'] ?? null]));
+$noPanel = true;
+foreach ($A1['axes'] as $ax) {
+    $noPanel = $noPanel && $ax['axis_id'] !== 'layering' && ($ax['axis_id'] === 'layering-2' || $ax['mapped'] === 0);
+}
+check('analytics: no panel for the retired layering; every other panel says mapped 0', $noPanel);
+
+[$st, $mi] = manifest('?item=' . $promptN);
+$annOk = count($mi['item']['responses'] ?? []) === 4;
+foreach ($mi['item']['responses'] ?? [] as $r) {
+    $slot = array_search($r['gen_id'], $gn, true);
+    $an = (array) $r['annotations'];
+    $l2 = $an['layering-2'] ?? null;
+    $annOk = $annOk && !array_key_exists('layering', $an) && is_array($l2) && array_keys($l2) === ['value', 'mapped_from']
+        && (float) $l2['value'] === $wantN[$slot] && ($l2['mapped_from']['axis'] ?? null) === 'layering'
+        && (float) ($l2['mapped_from']['value'] ?? 0) === $layN[$slot];
+}
+check('data.php (the report card): layering-2 annotated at the mapped rank with mapped_from {axis: layering, value: as filed}; no layering key',
+      $st === 200 && $annOk, json_encode(array_map(fn ($r) => $r['annotations'], $mi['item']['responses'] ?? [])));
+
+$exJ = tempnam(sys_get_temp_dir(), 'jd2-flow-x-');
+$exS = tempnam(sys_get_temp_dir(), 'jd2-flow-s-');
+$xo = [];
+exec('python3 ' . escapeshellarg($root . '/scripts/jd2-export.py') . ' --sqlite ' . escapeshellarg($root . '/local-dev/jd-dev.sqlite')
+    . ' --out ' . escapeshellarg($exJ) . ' --standing ' . escapeshellarg($exS) . ' 2>&1', $xo, $rc);
+$xjOk = $rc === 0;
+$seen = 0;
+foreach (file($exJ, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+    $rec = json_decode($line, true);
+    foreach ($rec['runs'] ?? [] as $run) {
+        foreach ($run['sessions'] as $sess) {
+            if ($sess['id'] !== $sidN) {
+                continue;
+            }
+            foreach ($sess['judgments'] as $j) {
+                $slot = $j['slot'];
+                if ($j['axis_id'] === 'layering') {
+                    $seen++;
+                    $xjOk = $xjOk && $j['value'] === $layN[$slot] && $j['mapped_axis_id'] === 'layering-2' && $j['mapped_value'] === $wantN[$slot];
+                } else {
+                    $xjOk = $xjOk && array_key_exists('mapped_axis_id', $j) && $j['mapped_axis_id'] === null && $j['mapped_value'] === null;
+                }
+            }
+        }
+    }
+}
+check('export JSONL: each layering judgment keeps axis_id layering and its filed value, plus mapped_axis_id layering-2 and mapped_value 3 / 1 / 3 / 4; every other judgment carries nulls',
+      $xjOk && $seen === 4, implode("\n", $xo));
+$xs = array_map(fn ($l) => str_getcsv($l, ',', '"', ''), file($exS, FILE_IGNORE_NEW_LINES));
+$xh = array_shift($xs);
+$col = array_flip($xh);
+$xsOk = isset($col['layering'], $col['layering-2'], $col['layering-2_onescale'], $col['layering-2_mapped_from']);
+$rowsN = 0;
+foreach ($xs as $r) {
+    if (($r[$col['run_id']] ?? '') !== $runN) {
+        continue;
+    }
+    $rowsN++;
+    $slot = $r[$col['slot']];
+    $xsOk = $xsOk && (float) $r[$col['layering']] === $layN[$slot] && $r[$col['layering-2']] === ''
+        && (float) $r[$col['layering-2_onescale']] === $wantN[$slot] && $r[$col['layering-2_mapped_from']] === 'layering';
+}
+check('export standing CSV: the filed layering column as filed, layering-2 empty, layering-2_onescale 3 / 1 / 3 / 4 with layering-2_mapped_from = layering',
+      $xsOk && $rowsN === 4, json_encode($xh));
+@unlink($exJ);
+@unlink($exS);
+
+check('nothing filed moved: the four judgments are still axis layering at 2 / 1 / 2 / 3',
+      rows($db, "SELECT generation_id, axis_id, value FROM jd2_judgments WHERE session_id = ? AND axis_id IN ('layering', 'layering-2') ORDER BY generation_id", [$sidN]) === $filedN);
+
+[$st, $bad] = rate(['run_id' => $runN, 'client' => 'web', 'blind' => true,
+                    'ratings' => [['slot' => 'a', 'kind' => 'axis', 'axis_id' => 'layering', 'value' => 2]]], true);
+check('jd2-rate refuses a value on the retired layering (400 rating_invalid)',
+      $st === 400 && ($bad['error']['code'] ?? '') === 'rating_invalid', json_encode($bad));
+$rankingN = [];
+foreach (array_keys($gn) as $i => $slot) {
+    $rankingN[] = ['slot' => $slot, 'rank' => $i + 1, 'gap' => $i + 1 < count($gn) ? 1 : null];
+}
+[$st, $newN] = rate(['run_id' => $runN, 'client' => 'web', 'blind' => true,
+                     'ratings' => fullRatings(['a' => 3, 'b' => 3, 'c' => 3, 'd' => 3], $axisRanks), 'ranking' => $rankingN, 'pairs' => null], true);
+$rcN = json_decode((string) one($db, 'SELECT required_cells FROM jd2_sessions WHERE run_id = ? ORDER BY filed_at DESC, id DESC LIMIT 1', [$runN]), true);
+check('a sitting filed now requires layering-2, not layering (required_cells), and files complete',
+      $st === 200 && ($newN['complete'] ?? null) === true && is_array($rcN) && in_array('layering-2', $rcN, true) && !in_array('layering', $rcN, true),
+      json_encode([$st, $newN['error'] ?? null, $rcN]));
+[$st, $q] = req('GET', '/api/jd2-queue.php?prompt=' . $promptN, null, true);
+check('…and the prompt\'s prefill is now its own: prefill_mapped false',
+      $st === 200 && ($q['items'][0]['prefill_mapped'] ?? null) === false, json_encode($q['items'][0]['prefill_mapped'] ?? null));
 
 printf("\n%d passed, %d failed\n", $passed, $failed);
 if ($failed > 0) {

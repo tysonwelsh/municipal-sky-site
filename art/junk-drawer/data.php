@@ -243,6 +243,7 @@ function jd2_data_item(array $prompt, array $runs, array $current, array $standi
 
     $standing = $display['standing'] ?? ['judgments' => [], 'rankings' => [], 'pairs' => []];
     $liveAxes = jd_live_axes($taxonomy);
+    $successors = jd2_axis_successors($taxonomy);
 
     // place order: ranked drawings by place, any unranked after them by slot
     usort($gens, static function ($a, $b) use ($standing) {
@@ -260,14 +261,26 @@ function jd2_data_item(array $prompt, array $runs, array $current, array $standi
         $ridOf[$gid] = $rid;
         $j = $standing['judgments'][$gid] ?? ['grade' => null, 'axes' => [], 'notes' => []];
         // the report card renders a bare rank, or {value, note} when the
-        // rater left a remark on that axis; live axes only, as v1's fold
+        // rater left a remark on that axis; live axes only, as v1's fold.
+        // A value on a retired axis with a `successor` (taxonomy v36:
+        // layering → layering-2) is served under the successor at the
+        // mapped rank, READ TIME ONLY (jd2_map_axes), as {value,
+        // mapped_from: {axis, value}} — the filed axis and rank — so the
+        // card can mark it; the judgment row is not touched.
         $annotations = [];
-        foreach ($j['axes'] as $axis => $value) {
+        $read = jd2_map_axes($j['axes'], $successors);
+        foreach ($read['axes'] as $axis => $value) {
             if (!isset($liveAxes[$axis])) {
                 continue;
             }
-            $note = $j['notes'][$axis] ?? null;
-            $annotations[$axis] = $note !== null ? ['value' => $value, 'note' => $note] : $value;
+            $from = $read['mapped'][$axis] ?? null;
+            $note = $j['notes'][$from === null ? $axis : $from['axis']] ?? null;
+            $cell = $note !== null ? ['value' => $value, 'note' => $note] : $value;
+            if ($from !== null) {
+                $cell = ['value' => $value] + ($note !== null ? ['note' => $note] : [])
+                      + ['mapped_from' => ['axis' => $from['axis'], 'value' => $from['value']]];
+            }
+            $annotations[$axis] = $cell;
         }
         $rank = $standing['rankings'][$gid]['rank_pos'] ?? (count($gens) === 1 ? 1 : null);
         $row = [

@@ -12,9 +12,16 @@
 //   firsts  [{model_id, firsts, judged, rate}]    rank-1 share, by rate
 //   grades  [{model_id, avg, n, hist{"1".."5"}}]  by avg
 //   axes    [{axis_id, label, points, values:[{rank, label}] best first,
-//            models:[{model_id, avg, n, hist}]}]   live axes, taxonomy order;
+//            models:[{model_id, avg, n, hist}], mapped, mapped_from}]
+//                                                 live axes, taxonomy order;
 //            `values` names each rank so a chart can say which levels it
-//            groups (the folder's issue rates, JD_axisBuckets)
+//            groups (the folder's issue rates, JD_axisBuckets). A live axis
+//            that succeeds a retired one (taxonomy `successor`, v36: layering
+//            → layering-2) folds the retired axis's judgments in at READ time
+//            through the taxonomy's map (jd2_map_axes), so the panel is one
+//            scale: `mapped` counts the judgments read that way (they are in
+//            n and hist at their mapped rank) and `mapped_from` names the
+//            retired axis ids; 0 and [] when nothing was. No filed row moves.
 //   spend   [{date, usd, cum_usd, by_model{}}]
 //   turns   [{date, prompt, grades{model_id: grade}, prompt_id, run_id, origin}]
 //
@@ -145,6 +152,8 @@ $totals = ['turns' => 0, 'drawings' => 0, 'survived' => 0, 'rated_responses' => 
 $costByModel = [];   // model => {sum, n}
 $gradeByModel = [];  // model => {sum, n, hist}
 $axisByModel = [];   // axis => model => {sum, n, hist}
+$axisMapped = [];    // axis => retired axis id => judgments read onto it through `successor`
+$successors = jd2_axis_successors($taxonomy);
 $firstsByModel = [];
 $judgedByModel = [];
 $pairRows = [];      // [model_a, model_b, score] — score positive = model_a preferred
@@ -258,7 +267,12 @@ try {
                     $gp['n']++;
                     unset($gp);
                 }
-                foreach ($j['axes'] as $axis => $value) {
+                // a retired axis with a successor reads onto it (jd2_map_axes)
+                $read = jd2_map_axes($j['axes'], $successors);
+                foreach ($read['mapped'] as $to => $from) {
+                    $axisMapped[$to][$from['axis']] = ($axisMapped[$to][$from['axis']] ?? 0) + 1;
+                }
+                foreach ($read['axes'] as $axis => $value) {
                     if (!isset($axisDefs[$axis])) {
                         continue;   // a defunct axis is history, not a chart
                     }
@@ -390,7 +404,9 @@ foreach ($axisDefs as $axisId => $def) {
                    'hist' => (object) $cell['hist']];
     }
     $axes[] = ['axis_id' => $axisId, 'label' => $def['label'], 'points' => $def['points'], 'values' => $def['values'],
-               'models' => $rows];
+               'models' => $rows,
+               'mapped' => array_sum($axisMapped[$axisId] ?? []),
+               'mapped_from' => array_map('strval', array_keys($axisMapped[$axisId] ?? []))];
 }
 
 ksort($spendByDate);

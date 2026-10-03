@@ -1641,10 +1641,30 @@
      starts without it (jd2-queue's prefill_pruned, and curateOpen's own
      check) — say so once, above the rows, so a blank row is not a mystery */
   function prunedHTML() {
-    return work && work.prefillPruned
+    return (work && work.prefillPruned
       ? '<p class="jd-turn-pruned" role="note">earlier answers on a retired or ' +
         'rescaled axis were not carried over</p>'
-      : '';
+      : '') + mappedHTML();
+  }
+  /* THE MAPPED PREFILL (taxonomy v36, owner 2026-10-03): a reopen whose
+     earlier sitting answered on a retired axis that names a `successor`
+     (layering → layering-2) starts with those answers carried onto the new
+     scale through the taxonomy's map (jd2-queue's prefill_mapped) — said
+     in the same place, so a value the owner never pressed on this scale is
+     not a mystery either. The axis name and step count are the taxonomy's. */
+  function mappedHTML() {
+    if (!work || !work.prefillMapped) return '';
+    var live = {}, to = [];
+    JD_liveAxes(tax()).forEach(function (ax) { live[ax.id] = ax; });
+    (tax().axes || []).forEach(function (ax) {
+      var s = ax.defunct && ax.successor, nx = s && live[s.id];
+      if (nx && to.indexOf(nx) === -1) to.push(nx);
+    });
+    var what = to.length === 1
+      ? 'earlier ' + esc(JD_labelText(to[0].label)) + ' answers were carried onto its new ' +
+        (to[0].values || []).length + '-point scale'
+      : 'earlier answers on a rescaled axis were carried onto its new scale';
+    return '<p class="jd-turn-pruned jd-turn-mapped" role="note">' + what + '</p>';
   }
   /* the bench gate (owner, 2026-08-27): a drawing's panel doesn't hand off
      — to the next drawing or to the ranking — until every scale on it is
@@ -4608,7 +4628,7 @@
          sitting — jd2-rate would refuse the whole filing over it. The queue
          prunes first and says so (job.prefillPruned); this is the card's
          own check of the same rule against the taxonomy it renders. */
-      var liveAx = {}, pruned = !!job.prefillPruned;
+      var liveAx = {}, pruned = !!job.prefillPruned, mapped = !!job.prefillMapped;
       JD_liveAxes(tax()).forEach(function (ax) { liveAx[ax.id] = ax; });
       function onGradeScale(v) { return v != null && !!window.JD_gradeOf(tax(), v); }
       order.forEach(function (resp, k) {
@@ -4625,6 +4645,12 @@
         if (r.grade != null && !onGradeScale(r.grade)) { r.grade = null; pruned = true; }
         Object.keys(resp.axes || {}).forEach(function (a) {
           var v = resp.axes[a];
+          /* a report-card annotation ({value, note}, or {value,
+             mapped_from} read through a `successor` map) seats its value */
+          if (v && typeof v === 'object') {
+            if (v.mapped_from) mapped = true;
+            v = v.value;
+          }
           if (v == null) return;
           if (!liveAx[a] || !window.JD_byRank(liveAx[a].values, v)) { pruned = true; return; }
           r.axes[a] = v;
@@ -4665,6 +4691,7 @@
         pedRestore(shape);
       }
       work.prefillPruned = pruned;
+      work.prefillMapped = mapped;
       /* the sitting's note starts empty: it is this sitting's rationale */
       work.note = '';
       /* THE CATALOGUE ENTRY (0.13.0): the bench's job carries what is on

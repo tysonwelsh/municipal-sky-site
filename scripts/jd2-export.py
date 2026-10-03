@@ -7,7 +7,8 @@ JSONL, one object per line, one line per PROMPT, everything filed about it:
      "runs": [ {...run..., "deal": {slot: model_id},
                 "generations": [ {...one per slot...} ],
                 "sessions": [ {...sitting...,
-                               "judgments": [ {generation_id, slot, kind, axis_id, value, note} ],
+                               "judgments": [ {generation_id, slot, kind, axis_id, value, note,
+                                               mapped_axis_id, mapped_value} ],
                                "rankings":  [ {generation_id, slot, rank_pos, gap_after} ],
                                "pairs":     [ {gen_a, gen_b, slot_a, slot_b, score, source, method, shown_left} ]} ],
                 "display_session_id": id | null} ]}
@@ -55,6 +56,20 @@ folded, merged or re-derived. Each session in the JSONL carries its
     intake), `intake_cost_usd`, `intake_at`; the standing CSV carries
     size_class, size_by and one `tags_<facet>` column per taxonomy facet
     (heading ids joined with ";").
+
+    THE SUCCESSOR MAP (taxonomy v36). A judgment keeps its FILED axis_id and
+    value. Where the taxonomy names a successor for the filed axis (a defunct
+    axis's `"successor": {"id", "map"}`: v36's `layering` → `layering-2`,
+    3 → 4, 2 → 3, 1 → 1) the judgment also carries `mapped_axis_id` and
+    `mapped_value`, the same answer read on the live scale (null where no map
+    applies, the grade included) — api/jd2-config.php's jd2_axis_successors /
+    jd2_map_axes, stated here once. In the standing CSV each live axis that
+    succeeds a retired one gets two more columns after the axis columns:
+    `<axis>_onescale`, the drawing's value on the live scale (filed directly
+    on it, else mapped from the retired axis), and `<axis>_mapped_from`, the
+    retired axis id when the value was mapped (empty when filed directly). The
+    filed columns are unchanged, so an analyst can use the one scale or the
+    filed ones.
 
     --pairs out.csv      one row per pair of every run's display session,
                          with both sides' slot and model; score is signed for
@@ -211,6 +226,62 @@ def live_axes(taxonomy):
     return [a["id"] for a in taxonomy.get("axes", []) if not a.get("defunct")]
 
 
+def _rank_key(v):
+    return str(int(round(float(v))))
+
+
+def axis_successors(taxonomy):
+    """jd2_axis_successors: retired axis id => (live successor id, {old rank key: new rank}).
+    Chains are followed to a live axis and their maps composed; a broken entry (an unknown
+    or still-retired end, a cycle, a rank off the successor's scale) is left out."""
+    by_id = {a["id"]: a for a in taxonomy.get("axes", []) if isinstance(a, dict) and "id" in a}
+    live = {a: [float(v["rank"]) for v in by_id[a].get("values", []) if "rank" in v] for a in live_axes(taxonomy)}
+
+    def hop(axis):
+        s = axis.get("successor")
+        if not axis.get("defunct") or not isinstance(s, dict) or not isinstance(s.get("id"), str) \
+                or not isinstance(s.get("map"), dict):
+            return None
+        return s
+
+    def clean(m):
+        out = {}
+        for f, t in m.items():
+            try:
+                out[_rank_key(f)] = float(t)
+            except (TypeError, ValueError):
+                pass
+        return out
+
+    out = {}
+    for aid, axis in by_id.items():
+        s = hop(axis)
+        if s is None:
+            continue
+        m, seen, to = clean(s["map"]), {aid}, s["id"]
+        while to not in live and to in by_id and to not in seen and hop(by_id[to]) is not None:
+            seen.add(to)
+            nxt = hop(by_id[to])
+            step = clean(nxt["map"])
+            m = {f: step[_rank_key(t)] for f, t in m.items() if _rank_key(t) in step}
+            to = nxt["id"]
+        if to not in live:
+            continue
+        m = {f: t for f, t in m.items() if any(abs(t - r) < 0.05 for r in live[to])}
+        if m:
+            out[aid] = (to, m)
+    return out
+
+
+def mapped_cell(axis_id, value, successors):
+    """(mapped axis id, mapped value) for one filed axis judgment, or (None, None)."""
+    s = successors.get(axis_id) if axis_id else None
+    if s is None or value is None:
+        return None, None
+    to = s[1].get(_rank_key(value))
+    return (s[0], to) if to is not None else (None, None)
+
+
 # api/jd2-config.php's JD2_CELLS_BEFORE_V35: the cells the v2 rubric required
 # from its baseline through taxonomy v34 (the setup runner backfills them onto
 # those sittings). Read here only to keep their axes' columns in the CSV.
@@ -265,12 +336,27 @@ def is_complete(session, counting, axes):
     return True
 
 
+def judgment_out(j, slot_of, successors):
+    """One filed judgment as exported: the filed cell, then its reading on the live scale (or nulls)."""
+    value = as_float(j["value"])
+    mid, mv = mapped_cell(j["axis_id"] if j["kind"] == "axis" else None, value, successors)
+    return {
+        "generation_id": j["generation_id"], "slot": slot_of.get(j["generation_id"]),
+        "kind": j["kind"], "axis_id": j["axis_id"] or None, "value": value, "note": as_text(j["note"]),
+        "mapped_axis_id": mid, "mapped_value": mv,
+    }
+
+
 def facet_ids(taxonomy):
     return [f["id"] for f in taxonomy.get("facets", []) if isinstance(f, dict) and f.get("id")]
 
 
 def export(conn, args, taxonomy):
     live = live_axes(taxonomy)
+    successors = axis_successors(taxonomy)
+    # the live axes a retired one maps onto, in taxonomy order: each gets the
+    # standing CSV's _onescale and _mapped_from columns
+    onescale = [a for a in live if any(s[0] == a for s in successors.values())]
     facets = facet_ids(taxonomy)
     prompts = rows(conn, "SELECT * FROM jd2_prompts ORDER BY created, id")
     runs = rows(conn, "SELECT * FROM jd2_runs ORDER BY created, id")
@@ -323,10 +409,7 @@ def export(conn, args, taxonomy):
                     "blind": as_int(s["blind"]), "seat_order": as_json(s["seat_order"]),
                     "note": as_text(s.get("note")),
                     "started_at": as_stamp(s["started_at"]), "filed_at": as_stamp(s["filed_at"]), "status": s["status"],
-                    "judgments": sorted(({
-                        "generation_id": j["generation_id"], "slot": slot_of.get(j["generation_id"]),
-                        "kind": j["kind"], "axis_id": j["axis_id"] or None, "value": as_float(j["value"]),
-                        "note": as_text(j["note"])} for j in f["judgments"]),
+                    "judgments": sorted((judgment_out(j, slot_of, successors) for j in f["judgments"]),
                         key=lambda j: (j["slot"] or "", j["kind"] != "grade", j["axis_id"] or "")),
                     "rankings": [{"generation_id": r["generation_id"], "slot": slot_of.get(r["generation_id"]),
                                   "rank_pos": as_int(r["rank_pos"]), "gap_after": as_int(r["gap_after"])}
@@ -408,6 +491,16 @@ def export(conn, args, taxonomy):
                 }
                 for a in axes:
                     row[a] = c.get(a)
+                for a in onescale:
+                    # filed directly on the live axis, else read from a retired one
+                    # through the taxonomy's map (the first that applies, in taxonomy order)
+                    row[a + "_onescale"], row[a + "_mapped_from"] = c.get(a), None
+                    if c.get(a) is None:
+                        for old, (to, _m) in successors.items():
+                            mid, mv = mapped_cell(old, c.get(old), successors)
+                            if to == a and mid is not None:
+                                row[a + "_onescale"], row[a + "_mapped_from"] = mv, old
+                                break
                 for fid in facets:
                     row["tags_" + fid] = ";".join(ptags.get(fid) or []) if isinstance(ptags, dict) else ""
                 row["rank_pos"] = rk.get("rank_pos")
@@ -445,7 +538,7 @@ def export(conn, args, taxonomy):
             },
             "runs": out_runs,
         })
-    return records, standing_rows, pair_rows, axes, facets
+    return records, standing_rows, pair_rows, axes + [x for a in onescale for x in (a + "_onescale", a + "_mapped_from")], facets
 
 
 def write_csv(path, fieldnames, data):

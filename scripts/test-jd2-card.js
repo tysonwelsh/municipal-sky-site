@@ -188,6 +188,20 @@ async function toPodium(pg, text, tag, shots) {
           axes, pruned: !!document.querySelector('.jd-turn-pruned'),
           overflow: document.documentElement.scrollWidth > window.innerWidth };
       });
+      // THE 4-POINT LAYERING (taxonomy v36): every level of layering-2 in
+      // turn, each read back with the gauge it pencils (JD_axisCls)
+      const l2 = '.jd-bench select[data-role="axis"][data-axis="layering-2"]';
+      panel.layering2 = [];
+      if (await pg.$(l2)) {
+        const k = await pg.$eval(l2, (s) => s.options.length);
+        for (let o = 1; o < k; o++) {
+          await pg.selectOption(l2, { index: o });
+          panel.layering2.push(await pg.$eval(l2, (s) => {
+            const bar = s.parentNode.querySelector('.rc-bar');
+            return { label: s.options[s.selectedIndex].textContent, value: s.value, cls: bar ? bar.className : '' };
+          }));
+        }
+      }
     }
     if (d === 0 && shots) await shot(pg, tag + '-2-bench');
     const nextTo = await pg.$eval('.jd-turn-actions [data-act="next"]', (b) => b.textContent);
@@ -350,13 +364,23 @@ async function main() {
         PV.cols === 2 && PV.cells.every((c) => c.box[3] <= PV.vh) && PV.cells[0].box[1] === PV.cells[1].box[1],
         JSON.stringify({ cols: PV.cols, boxes: PV.cells.map((c) => c.box), vh: PV.vh }));
     }
-    // THE FIVE-AXIS RATING CARD (taxonomy v35) and the house rule over it
+    // THE FIVE-AXIS RATING CARD (taxonomy v36: Layering is the 4-point
+    // layering-2) and the house rule over it
     const live = taxonomy.axes.filter((a) => !a.defunct);
     const P = t.panel || { axes: [] };
     check(tag + ': the rating panel asks every live axis in taxonomy order, each on its own scale (' +
       live.map((a) => a.id + ' ' + a.values.length).join(', ') + ')',
       JSON.stringify(P.axes.map((a) => [a.id, a.steps])) === JSON.stringify(live.map((a) => [a.id, a.values.length])),
       JSON.stringify(P.axes));
+    check(tag + ': the live axes are UA, SC-2, layering-2, paintwork, jnsq — Layering on four points (taxonomy v36)',
+      JSON.stringify(live.map((a) => [a.id, a.values.length])) === JSON.stringify([['understanding-assignment', 4],
+        ['structural-coherence-2', 4], ['layering-2', 4], ['paintwork', 4], ['jnsq', 3]]), JSON.stringify(live.map((a) => a.id)));
+    const l2tax = (taxonomy.axes.filter((a) => a.id === 'layering-2')[0] || { values: [] }).values.slice()
+      .sort((a, b) => b.rank - a.rank);
+    check(tag + ': Layering\'s four levels render best first in the taxonomy\'s words, each pencilling rc-q4..rc-q1',
+      (P.layering2 || []).length === 4 && P.layering2.every((x, i) => x.label === l2tax[i].label &&
+        Number(x.value) === l2tax[i].rank && new RegExp('\\brc-q' + l2tax[i].rank + '\\b').test(x.cls)),
+      JSON.stringify(P.layering2));
     check(tag + ': a 4-point axis pencils on the rc-q ramp and a 3-point one on rc-r (JD_axisCls)',
       P.axes.length === live.length && P.axes.every((a) => new RegExp('\\brc-' + (a.steps === 4 ? 'q' : 'r') + '[1-4]\\b').test(a.cls)),
       JSON.stringify(P.axes));
