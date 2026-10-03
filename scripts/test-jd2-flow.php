@@ -59,6 +59,9 @@ $root = realpath(__DIR__ . '/..');
 $passed = 0;
 $failed = 0;
 
+/** the same ids in a fixed order, for set comparisons */
+function jd2t_sorted(array $ids): array { $ids = array_values(array_map('strval', $ids)); sort($ids); return $ids; }
+
 function check(string $name, bool $ok, string $detail = ''): void
 {
     global $passed, $failed;
@@ -1086,7 +1089,7 @@ check('the bench queue counts it done (complete, nothing needed) and is not in t
       json_encode([$qi['complete'] ?? null, $qi['needs'] ?? null]));
 check('…and its prefill drops the retired axis (structural-coherence) and says so: prefill_pruned true, the live axes kept',
       ($qi['prefill_pruned'] ?? null) === true && !array_key_exists('structural-coherence', $pf)
-      && array_keys($pf) === array_values(array_intersect(array_keys($liveAxes), JD2_CELLS_BEFORE_V35))
+      && jd2t_sorted(array_keys($pf)) === jd2t_sorted(array_intersect(array_keys($liveAxes), JD2_CELLS_BEFORE_V35))   // as a set: the prefill's order follows the stored judgments, not the taxonomy
       && (float) ($qi['responses'][0]['prefill']['grade'] ?? 0) === 4.0, json_encode($qi['responses'][0]['prefill'] ?? null));
 [$st, $l] = req('GET', '/api/jd2-ledger.php?prompt=' . $promptV, null, true);
 $ls = $l['items'][0]['runs'][0]['sessions'][0] ?? [];

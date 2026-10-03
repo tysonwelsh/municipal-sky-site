@@ -707,13 +707,16 @@ check('without --resume, rows already in the state file are refused (exit 2)', $
 $big = "$scratch/big.csv";
 $fh = fopen($big, 'w');
 fputcsv($fh, ['prompt'], ',', '"', '');
-for ($i = 1; $i <= 60; $i++) {
+// sized from the breaker itself (it is raised for the campaign window and
+// dropped back after; the test must not assume 200): ten rows past the cap
+$bigRows = intdiv(JD_LIMIT_GLOBAL_DAILY, 4) + 10;
+for ($i = 1; $i <= $bigRows; $i++) {
     fputcsv($fh, ["guard prompt $i"], ',', '"', '');
 }
 fclose($fh);
 $left = JD_LIMIT_GLOBAL_DAILY - (int) one($db, 'SELECT COUNT(*) FROM jd2_generations WHERE created >= ?', [jd_utc_midnight()]);
 [$rc, $o] = batch(escapeshellarg($big) . ' --local --state ' . escapeshellarg("$scratch/state2.json"));
-check("the spend guard refuses 240 drawings against $left left, says how many rows fit, draws nothing",
+check("the spend guard refuses " . ($bigRows * 4) . " drawings against $left left, says how many rows fit, draws nothing",
     $rc === 2 && str_contains($o, 'Refusing to start') && str_contains($o, 'run the first ' . intdiv($left, 4) . ' row(s)')
     && (int) one($db, 'SELECT COUNT(*) FROM jd2_generations') === $after, $o);
 [$rc, $o] = batch(escapeshellarg($big) . ' --local --dry-run --state ' . escapeshellarg("$scratch/state2.json"));
