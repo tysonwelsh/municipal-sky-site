@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 34,
+  "version": 35,
   "updated": "2026-10-02",
   "instrument": "v2.0",
   "instrumentNote": "The dataset v2 instrument: this rubric plus the comparison and gaps scales below and the rules of a sitting; every v2 session stamps it beside the taxonomy version. v1 instruments ignore it.",
@@ -52,6 +52,8 @@
       "description": "Barely recognizable. Not just unusable but unsalvageable: you wouldn’t know where to begin fixing it."
     }
   ],
+  "houseRule": "Every model was told: draw the subject alone on a transparent background — no setting (ground, sky, water, frame) and no shadow beneath it, unless the prompt asks for one — and fill the canvas edge to edge.",
+  "houseRuleNote": "The drawing system prompt's house rules in one rater-facing sentence (the system prompt itself, JD_SYSTEM_PROMPT in api/jd-config.php, is never shown). The rating card prints it above the axes, for visitors and the bench alike, and the report card above its grades table; it is display only — no axis reads it, and the intake prompt does not render it.",
   "axes": [
     {
       "id": "prompt-fidelity",
@@ -290,7 +292,7 @@
     {
       "id": "understanding-assignment",
       "label": "Understanding Assignment",
-      "description": "Did the model appear to understand the intent behind the user's request? Did it attempt to render the objects specified in the prompt? Setting aside any issues related to execution, does the drawing resemble what you would expect given the prompt?",
+      "description": "Did the model appear to understand the intent behind the user's request? Did it attempt to render the objects specified in the prompt? Setting aside any issues related to execution, does the drawing resemble what you would expect given the prompt? Anything added that wasn't asked for — an extra object, an accessory, decoration, a label or caption — belongs here, wherever it sits in the drawing. An unrequested addition, even one that fits, makes the drawing Mostly Understands at best; additions that crowd the subject, contradict the prompt, or change what was drawn count further against it. If the prompt asks for a setting and the drawing leaves it out, that is a miss here. If the prompt is ambiguous, any reasonable reading counts as understanding it; do not penalise a drawing for choosing a different reasonable reading than you had in mind.",
       "summary": "Did the model attempt to draw what the prompt asked for?",
       "values": [
         {
@@ -348,7 +350,8 @@
     {
       "id": "structural-coherence",
       "label": "Structural Coherence",
-      "description": "Are the constituent parts that make up the item well assembled, and do they connect to each other correctly? Does the drawing correctly depict anatomy, proportions, and point of view? If fixing the drawing means repositioning parts of the item on the x or y-axis, it is an issue with Structural Coherence.",
+      "defunct": true,
+      "description": "Are the constituent parts that make up the item well assembled, and do they connect to each other correctly? Does the drawing correctly depict anatomy, proportions, and point of view? If fixing the drawing means repositioning parts of the item on the x or y-axis, it is an issue with Structural Coherence. (Defunct as of v35, 2026-10-02 — superseded by the 4-point `structural-coherence-2`, v35; kept for responses graded under it.)",
       "summary": "Do the individual parts connect, with correct proportions, anatomy, and perspective?",
       "values": [
         {
@@ -372,28 +375,92 @@
       ]
     },
     {
+      "id": "structural-coherence-2",
+      "label": "Structural Coherence",
+      "description": "Are the constituent parts that make up the item well assembled, and do they connect to each other correctly? Does the drawing correctly depict anatomy, proportions, and point of view? If fixing the drawing means repositioning parts of the item on the x or y-axis, it is an issue with Structural Coherence. This includes the subject as a whole in its canvas: every model was told to fill the canvas edge to edge, so a subject that is clipped by the edge, marooned, or swimming in empty space has a problem here.",
+      "summary": "Do the individual parts connect, with correct proportions, anatomy, and perspective?",
+      "values": [
+        {
+          "id": "no-problems",
+          "rank": 4,
+          "label": "No problems",
+          "description": "Coherent construction; nothing floats, breaks, or contradicts itself."
+        },
+        {
+          "id": "minor",
+          "rank": 3,
+          "label": "Minor problems",
+          "description": "A small slip found on inspection (a seam, a small misalignment)."
+        },
+        {
+          "id": "moderate",
+          "rank": 2,
+          "label": "Moderate problems",
+          "description": "Visible at a glance; parts or the framing need real repositioning."
+        },
+        {
+          "id": "major",
+          "rank": 1,
+          "label": "Major problems",
+          "description": "The object could not exist; structural failures dominate the read."
+        }
+      ]
+    },
+    {
       "id": "layering",
       "label": "Layering",
-      "description": "Are the constituent parts of the item stacked in the correct order? Are there any issues with opacity, fill, or undesired background elements? If the drawing could be fixed by making adjustments to how parts of the image are arranged on the z-axis or by erasing an undesired part of the background, it is an issue with Layering.",
+      "description": "Are the constituent parts of the item stacked in the correct order? Are there any issues with opacity, fill, or undesired background elements? If the drawing could be fixed by making adjustments to how parts of the image are arranged on the z-axis or by erasing a setting the subject was drawn into — ground, sky, water, a backdrop, a vignette or frame — it is an issue with Layering. Every model was told to draw the subject alone; a setting counts against the drawing unless the prompt asked for one. A picture-bearing object (a photograph, card, poster, screen) keeps the scene inside its own edges.",
       "summary": "Are the parts stacked in the right order, with correct use of opacity?",
       "values": [
         {
           "id": "clean",
           "rank": 3,
           "label": "No problems",
-          "description": "Stacking, paint, and framing all read as intended."
+          "description": "Stacking, opacity and the empty background all read as intended."
         },
         {
           "id": "shuffled",
           "rank": 2,
           "label": "Small problems",
-          "description": "A slip you find on inspection — one wrong overlap, a paint or framing oddity."
+          "description": "A slip you find on inspection — one wrong overlap."
         },
         {
           "id": "fifty-two-pickup",
           "rank": 1,
           "label": "Big problems",
-          "description": "A visible rendering error changes how the image reads, or the picture loses outright to its own stacking, paint, or framing."
+          "description": "A visible rendering error changes how the image reads, or the picture loses outright to its own stacking."
+        }
+      ]
+    },
+    {
+      "id": "paintwork",
+      "label": "Paintwork",
+      "description": "How well is the surface of the drawing executed, in the style it chose? Look at light and shadow, gradients, colour and value, line quality, texture and lettering. Judge the execution, not the choice: a simple, flat style done cleanly has no problems. If fixing the drawing means repainting parts in place (changing fills, gradients, strokes, colours, highlights or shadows) without changing what the drawing shows, it is an issue with Paintwork. Shadows belong here: a shadow that contradicts the light, and a shadow cast beneath the subject, which every model was told to leave out. A shadow that has grown into ground the subject stands on is setting, and belongs to Layering.",
+      "summary": "Is the paint well done — light, colour, line and texture?",
+      "values": [
+        {
+          "id": "no-problems",
+          "rank": 4,
+          "label": "No problems",
+          "description": "The paint does what the style asks; light, shadow, colour and line hold together."
+        },
+        {
+          "id": "minor",
+          "rank": 3,
+          "label": "Minor problems",
+          "description": "Touch-ups: a slip you find on inspection — a stray highlight, a faint shadow beneath the subject, a banding gradient, a wobbly line."
+        },
+        {
+          "id": "moderate",
+          "rank": 2,
+          "label": "Moderate problems",
+          "description": "Visible at a glance and real work to fix: shading that fights the form, a muddy palette, texture that reads as noise in places."
+        },
+        {
+          "id": "major",
+          "rank": 1,
+          "label": "Major problems",
+          "description": "The paint undercuts the read: the light contradicts itself, a heavy shadow pools under the subject, colour muddies the form. You would repaint it."
         }
       ]
     },
@@ -1016,6 +1083,11 @@
       "date": "2026-10-02",
       "version": 34,
       "note": "Owner call: the OpenAI chair is the Sol tier, not Astra — GPT-6.1 Sol (`gpt-6.1-sol`, 'near-Astra performance for complex work at a lower cost', $2/$10 per MTok) is the price-and-tier peer of Claude Opus 5.5; GPT-6 Astra ($10/$50) stays registered with pool: false. Same effort ladder (low..max; Chat Completions accepts up to xhigh). poolVersion pool-2026-10-02b; no harness change (parameters identical), no consent change (same vendor)."
+    },
+    {
+      "date": "2026-10-02",
+      "version": 35,
+      "note": "Owner call (2026-10-02), the taxonomy pass before the first bench sitting — ROADMAP's \"settle the scales\" gate: a fifth axis, and every axis's boundaries redrawn so each issue axis is named by the edit that fixes it (Understanding Assignment: redraw; Structural Coherence: move on x/y; Layering: restack on z or erase; Paintwork: repaint in place). NEW: `paintwork` \"Paintwork\", 4-point (No / Minor / Moderate / Major problems) — how well the surface is executed in the style the drawing chose (light and shadow, gradients, colour and value, line, texture, lettering), judged on execution, not the choice, so a clean flat style has no problems; every cast shadow belongs to it, the forbidden shadow beneath the subject included (a shadow grown into ground the subject stands on is setting, Layering's). RESCALED UNDER A NEW ID: `structural-coherence` (3-point) is defunct, kept for the responses graded under it, and `structural-coherence-2` \"Structural Coherence\" is 4-point (No / Minor / Moderate / Major problems; the owner's end-point words kept, the middle two new), its description the owner's v23 text plus framing: a subject clipped by the canvas edge, marooned, or swimming in empty space (every model was told to fill the canvas edge to edge). One id, one scale. REWORDED: Understanding Assignment gains every unrequested THING wherever it sits (an extra object, an accessory, decoration, a label or caption; one that fits still makes a drawing Mostly Understands at best, the value wording kept), a setting the prompt asked for and the drawing left out, and the benefit-of-the-doubt rule for ambiguous prompts; Layering's background clause becomes the unrequested SETTING (ground, sky, water, a backdrop, a vignette or frame; a picture-bearing object keeps its scene inside its own edges), and its value descriptions lose \"paint\" and \"framing\". NEW top-level `houseRule` (and `houseRuleNote`): the sentence every rater now reads above the axes on the rating card and above the report card's grades table — \"Every model was told: draw the subject alone on a transparent background — no setting (ground, sky, water, frame) and no shadow beneath it, unless the prompt asks for one — and fill the canvas edge to edge.\" — data, so it rewords without code. Order (display order everywhere): understanding-assignment, structural-coherence-2, layering, paintwork, jnsq. Scales: 4, 4, 3, 4, 3 — the 4-point issue axes read No / Minor / Moderate / Major problems, Layering keeps No / Small / Big problems. Nothing filed is affected: values are filed as ranks under axis ids, no id or rank was renamed or reused, and every sitting stamps the taxonomy version it was rated under and, from this version, the cells it was required to carry (jd2_sessions.required_cells), so a sitting filed under v34 or earlier stays complete under its own rubric. The v1 archive (its own taxonomy-v25.json, and legacy/'s copy) is unaffected. `instrument` stays v2.0: the rules of a sitting are unchanged; the RUBRIC changed, and this version records that. The intake prompt renders no axis, so intakeVersion stays intake-v4. No grade, comparison, gaps, facets or pool change."
     }
   ]
 }
