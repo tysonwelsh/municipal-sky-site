@@ -2049,3 +2049,34 @@
   .zankyo-frame { border-radius: 0; outline-offset: -6px; }
   .zk-ledge { border-radius: 0 0 calc(var(--r-casing) - 1px) calc(var(--r-casing) - 1px); }
 }
+
+/* ---------------------------------------------------------------------------
+   THE SET'S CONTROLS ARE IN ITS CASING, NOT ON A TRAY UNDER IT (owner,
+   2026-10-02, rc.121). The 操作段 ledge was added after the set and styled as
+   its own moulded part — a groove across the full width under the bezel, the
+   bezel's shadow cast down a new face, a lit front arris, two ejector-pin
+   witnesses, and margins that ran out past the casing's walls — so it read as
+   a tray bolted under the monitor. Now the casing simply carries on around the
+   controls, the way the scope's casing holds its transport: the ledge paints
+   nothing, sits inside the walls, and the casing's foot is the same 13 px wall
+   as its sides. The well (the key bed), the model line and every control are
+   unchanged.
+   --------------------------------------------------------------------------- */
+.zk-ledge {
+  margin: 8px 0 0; padding: 0 0 13px;
+  background: none; box-shadow: none; border-radius: 0;
+}
+.zk-pin { display: none; }
+.zk-ledge-brand { padding: 0 1px 5px; }
+@media (max-width: 700px) {
+  .zk-ledge { margin: 8px 0 0; padding: 0 0 9px; border-radius: 0; }
+}
+
+/* NO HOVER LIGHT ON THE SET'S BUTTONS (owner, 2026-10-02, rc.121). The caps
+   lightened under the pointer, and the swap — a shorthand `background` that
+   also cleared the cap's base colour, under a 0.12 s background transition —
+   could flash the cap through other colours on the way. The deck keys have no
+   hover state; neither do these now. The press (the cap going down) stays. */
+.zk-rocker:hover .zk-cap,
+.zk-push:hover .zk-push-cap { background: var(--cap); background-color: var(--cap-base); }
+.zk-cap, .zk-push-cap { transition: transform 0.07s ease-out, box-shadow 0.07s ease-out; }
