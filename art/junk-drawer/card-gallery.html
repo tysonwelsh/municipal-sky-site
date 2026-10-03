@@ -283,14 +283,13 @@
     snap('preview', '§4 · ALL FOUR — the preview',
       'The first step of every sitting: the four drawings in the darkroom’s 2×2, blind letters pencilled over them, each print the enlarge control; next goes to drawing A.');
     click('[data-act="next"]'); await sleep(150);
-    /* one answered row, so the in-place gauge shows in the layout */
-    var sel = q('select[data-role="axis"]');
-    if (sel && sel.options.length > 1) {
-      sel.value = sel.options[1].value;
-      sel.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-    snap('bench', '§4 · THE BENCH — grade drawing A',
-      'The single bench: rail, pinned exhibit with REPLAY, the axis selects (first row answered, showing the gauge), the report path, and next.');
+    /* ONE QUESTION A CARD (0.18.0): one row pressed, so the chosen row's
+       pencil shows in the layout (after the card's double-tap guard, and
+       snapped inside the beat before the card goes on by itself) */
+    await sleep(450);
+    click('.jd-q-opt:nth-child(2)');
+    snap('bench', '§4 · ONE QUESTION A CARD — drawing A, its first question',
+      'A drawing is rated on six cards, one question each: the drawing on top, the progress line, the prompt, the question and its options as radio rows (the second row just pressed, in its pencil); a press goes on to the next card by itself.');
     click('[data-act="next"]'); await sleep(150);
     click('[data-act="next"]'); await sleep(150);
     click('[data-act="next"]'); await sleep(150);

@@ -626,6 +626,13 @@
       var b = e.target.closest ? e.target.closest('[data-bench]') : null;
       if (b) act(b.getAttribute('data-bench'));
     });
+    /* the strip's height also changes without a repaint: on a phone it folds
+       to one row while a rating card's question is up (0.18.0, the turn
+       card's html.jd-turn-q) and unfolds when the card closes — re-measure
+       whenever its box does */
+    if (window.ResizeObserver) {
+      try { new ResizeObserver(barHeight).observe(bar); } catch (e) {}
+    }
   }
   function hideSheet() { if (sheet) { sheet.hidden = true; sheet.removeAttribute('data-sheet'); } }
   /* the sheet's toggles share their first half: a sheet that is up goes

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 36,
+  "version": 37,
   "updated": "2026-10-03",
   "instrument": "v2.0",
   "instrumentNote": "The dataset v2 instrument: this rubric plus the comparison and gaps scales below and the rules of a sitting; every v2 session stamps it beside the taxonomy version. v1 instruments ignore it.",
@@ -52,8 +52,18 @@
       "description": "Barely recognizable. Not just unusable but unsalvageable: you wouldn’t know where to begin fixing it."
     }
   ],
+  "gradeQuestion": {
+    "label": "Overall grade",
+    "summary": "Judge the drawing as a whole: could you use it, and how much work would it take to get there?",
+    "note": "The overall grade as a question: `label` names it wherever it is asked or shown (the rating card's grade card, the report card's total row, the analytics folder's grade chart) and `summary` is the question the rating card asks under it. Display only; grades are filed by rank."
+  },
   "houseRule": "Every model was told: draw the subject alone on a transparent background — no setting (ground, sky, water, frame) and no shadow beneath it, unless the prompt asks for one — and fill the canvas edge to edge.",
-  "houseRuleNote": "The drawing system prompt's house rules in one rater-facing sentence (the system prompt itself, JD_SYSTEM_PROMPT in api/jd-config.php, is never shown). The rating card prints it above the axes, for visitors and the bench alike, and the report card above its grades table; it is display only — no axis reads it, and the intake prompt does not render it.",
+  "houseRuleNote": "The drawing system prompt's house rules in one rater-facing sentence (the system prompt itself, JD_SYSTEM_PROMPT in api/jd-config.php, is never shown). The rating card prints it ONCE per sitting, on the preview card (owner, 2026-10-03, 0.18.0), and again inside the \"more\" definition of each axis named in houseRuleAxes — the axes judged against it; the report card prints it above its grades table. It is display only — no axis reads it, and the intake prompt does not render it.",
+  "houseRuleAxes": [
+    "structural-coherence-2",
+    "layering-2",
+    "paintwork"
+  ],
   "axes": [
     {
       "id": "prompt-fidelity",
@@ -1134,6 +1144,11 @@
       "date": "2026-10-03",
       "version": 36,
       "note": "Owner call (2026-10-03, mid-campaign): \"start using a 4-point axis for layering. Any ratings left where it was rated 'Small Problem' can be adjusted to be minor problems.\" RESCALED UNDER A NEW ID, as v35 did for Structural Coherence: `layering` (3-point) is defunct, kept for the responses graded under it, and `layering-2` \"Layering\" is 4-point (No / Minor / Moderate / Major problems, the house wording of the other 4-point issue axes), its summary and description `layering`'s unchanged — the owner's boundary rulings stand (an unrequested setting is Layering's, framing is Structural Coherence's, every cast shadow is Paintwork's). Values: No problems (the old No problems' text), Minor problems (the old Small problems' text: a slip you find on inspection, one wrong overlap), Moderate problems (new: visible at a glance, a stacking or opacity error that needs real restacking or a setting to erase), Major problems (the old Big problems' reach: the picture loses to its own stacking, or a backdrop or setting dominates the read). One id, one scale. NEW FIELD `successor` on a defunct axis: {id, map}, the owner's \"adjust\" stated as data — `layering`'s is {\"id\": \"layering-2\", \"map\": {\"3\": 4, \"2\": 3, \"1\": 1}}: No → No problems, Small → Minor problems, Big → Major problems; nothing maps to Moderate. The map is applied at READ time only — the bench prefill carries a `layering` answer onto `layering-2` (`prefill_mapped`), the analytics' Layering panel folds the `layering` judgments in (`mapped`), the export adds the mapped id and value beside the filed ones, and the report card shows a `layering` value under Layering at the mapped value, marked — and no filed judgment is edited: the 40 `layering` judgments of the campaign's first ten v35 sittings stay `layering` at their filed ranks. Those sittings stay complete under their own `required_cells`; a sitting filed now requires `layering-2`. Order (display order): understanding-assignment, structural-coherence-2, layering-2, paintwork, jnsq; scales 4, 4, 4, 4, 3. `instrument` stays v2.0 (the rules of a sitting are unchanged). The intake prompt renders no axis, so intakeVersion stays intake-v4. No grade, comparison, gaps, facets or pool change."
+    },
+    {
+      "date": "2026-10-03",
+      "version": 37,
+      "note": "Display data for ONE QUESTION A CARD (0.18.0, owner 2026-10-03), no scale or id changes: `gradeQuestion` {label, summary, note} — the overall grade's name (\"Overall grade\") and the question its card asks, read by the rating card, the report card and the analytics folder instead of a string in each; `houseRuleAxes` — the three live axes judged against the house rule (structural-coherence-2: framing; layering-2: setting; paintwork: the shadow beneath), whose \"more\" definition on the rating card repeats the house rule; the house rule itself moves to the preview card, once per sitting (houseRuleNote reworded)."
     }
   ]
 }

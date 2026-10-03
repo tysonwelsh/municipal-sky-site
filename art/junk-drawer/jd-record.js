@@ -143,16 +143,15 @@
      filter so no two sit identically. `cls` picks the pencil (the
      rating-colour classes rc-r1..3, rc-q1..4 and rc-g1..5 in the
      stylesheet — owner request, 2026-08-11); no class = the original red. Labels'
-     _emphasis_ pairs render in italics here (escape first, so nothing
-     can smuggle markup). */
+     _emphasis_ pairs render in italics here (JD_labelHTML, jd-core.js:
+     escape first, so nothing can smuggle markup). */
   function mark(word, cls) {
     markSeq++;
     var jit = JITTER[markSeq % JITTER.length];
     return '<span class="rc-mark sm' + (cls ? ' ' + cls : '') +
       '" style="--jit:' + jit +
       'deg; filter:url(#jdRcWv' + (markSeq % 4) + ')">' +
-      '<span class="rc-mark-word">' +
-      esc(word).replace(/_([^_]+)_/g, '<i>$1</i>') + '</span></span>';
+      '<span class="rc-mark-word">' + window.JD_labelHTML(word) + '</span></span>';
   }
   /* the grade gauge (owner pick, mockup 11 option C, 2026-08-11 —
      replacing the dot sparkline): ONE segmented bar per grade, every
@@ -456,6 +455,8 @@
         descRow(descId, axis.description || '');
     });
     var g = gradeOf(resp.grade);
+    /* the total row's name is the taxonomy's (v37 gradeQuestion) */
+    var gq = window.JD_gradeQuestion(payload.taxonomy);
     var gCls = g.rank ? 'rc-g' + Math.round(g.rank) : '';
     /* the overall row unfolds the scale itself, plus the earned tier's own
        description when the taxonomy carries one */
@@ -478,13 +479,13 @@
       '<th style="width:47%">Subject</th><th style="width:53%">Grade</th>' +
       '</tr></thead><tbody>' + rows + '</tbody>' +
       '<tfoot><tr><td>' +
-      axisBtn('<span class="rc-avg-l">Overall grade</span>', 'rc-axd-g') +
+      axisBtn('<span class="rc-avg-l">' + esc(gq.label) + '</span>', 'rc-axd-g') +
       '</td><td>' +
       (edit
         ? '<span class="rc-grade-cell rc-editcell">' +
           barHTML(g.rank ? Math.round(g.rank) : 0, 5, gCls) +
           scaleSelect((payload.taxonomy || {}).grades, resp.grade,
-            'data-grade aria-label="Overall grade"', '— ungraded') + '</span>'
+            'data-grade aria-label="' + esc(gq.label) + '"', '— ungraded') + '</span>'
         : '<span class="rc-grade-cell">' +
           (g.rank ? barHTML(Math.round(g.rank), 5, gCls) : '') +
           mark(g.label, gCls) + '</span>') +

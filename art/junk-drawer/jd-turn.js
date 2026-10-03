@@ -213,6 +213,8 @@
     });
     scrim.querySelector('.jd-turn-close').addEventListener('click', requestClose);
     bodyEl.addEventListener('click', onClick);
+    /* a question card's radio group: the arrows move between its rows */
+    bodyEl.addEventListener('keydown', onQKey);
     bodyEl.addEventListener('change', onChange);
     bodyEl.addEventListener('input', onInput);
     /* the catalogue entry's scope notes: pointed at, focused, or held */
@@ -282,7 +284,10 @@
     var f = focusables(scope);
     var pref = scope.querySelector('[data-autofocus]');
     var target = pref || f[0];
-    if (target) { try { target.focus(); } catch (e) {} }
+    /* a question card's radio sits under the drawing: focusing it must not
+       scroll the drawing away (render() has just put the card at its top) */
+    var still = !!(target && target.classList && target.classList.contains('jd-q-opt'));
+    if (target) { try { target.focus(still ? { preventScroll: true } : undefined); } catch (e) {} }
   }
 
   /* ---------- open / close ------------------------------------------------ */
@@ -326,6 +331,7 @@
     stopSlowTimer();
     scrim.classList.remove('is-on');
     document.documentElement.classList.remove('jd-turn-open');
+    document.documentElement.classList.remove('jd-turn-q');
     /* the bar goes with the innerHTML below; its parked animations do not */
     if (filmstrip) { try { filmstrip.destroy(); } catch (e) {} filmstrip = null; }
     /* …and neither do the darkroom's word drifts: their metronomes live on
@@ -418,8 +424,9 @@
 
   /* (the definition layer — OVERRIDE 1's fixed singleton tooltip, shown on
      hover and on keyboard focus over a [data-tt-t] anchor — retired when
-     the press-to-open disclosure replaced it, owner 2026-08-28; see
-     scaleRow. Its last code, which nothing could trigger any more, went
+     the press-to-open disclosure replaced it, owner 2026-08-28 — itself
+     gone with the selects in 0.18.0, a question card's "more" in its
+     place. Its last code, which nothing could trigger any more, went
      2026-10-01.) */
 
   /* Escape peels ONE layer per press: an open enlargement first, the abandon
@@ -464,11 +471,8 @@
        it: measured here, on the painted DOM (the record card's discipline —
        its render strips rc-can-fold the same way). is-fit lifts the mask
        and hides the expander in one class. */
-    var asn = bodyEl.querySelector('.jd-turn-assign');
-    if (asn) {
-      var ap = asn.querySelector('p');
-      if (ap && ap.scrollHeight <= ap.clientHeight + 2) asn.classList.add('is-fit');
-    }
+    fitBrief();
+    if (state === 'rate' && bodyEl.querySelector('.jd-q')) qPainted();
     /* the fresh drawings' first appearance draws itself on (owner,
        2026-08-16 — "it should feel magical"): all surviving plates at
        once, via the shared engine, and ONLY on the arrival from the
@@ -482,6 +486,22 @@
         var fresh = bodyEl.querySelectorAll('.jd-turn-plates svg');
         for (var fi = 0; fi < fresh.length; fi++) window.JD_drawOn(fresh[fi]);
       }
+    }
+  }
+  function fitBrief() {
+    var asn = bodyEl && bodyEl.querySelector('.jd-turn-assign');
+    if (asn) {
+      /* measured folded: a prompt the rater left open (work.briefOpen)
+         keeps its "hide" only if folding would actually cut it */
+      var wasOpen = asn.classList.contains('is-open');
+      if (wasOpen) asn.classList.remove('is-open');
+      var ap = asn.querySelector('p');
+      /* fits both ways: the seven-line fold (height) and the phone's
+         one-line fold (width) */
+      if (ap && ap.scrollHeight <= ap.clientHeight + 2 && ap.scrollWidth <= ap.clientWidth + 2) {
+        asn.classList.add('is-fit');
+      }
+      if (wasOpen) asn.classList.add('is-open');
     }
   }
   /* every write to the card goes through here: the masthead head() just
@@ -544,6 +564,9 @@
     mountFilmstrip();
     card.setAttribute('aria-label', (pendingHead && pendingHead.title) || 'take a turn');
     card.setAttribute('data-view', (pendingHead && pendingHead.view) || 'form');
+    /* a question card is up: the bench strip folds to one row on a phone
+       (junk-drawer.css, "the strip while a question card is up") */
+    document.documentElement.classList.toggle('jd-turn-q', !!bodyEl.querySelector('.jd-q'));
   }
   /* the masthead: just the heading (the FORM JD-1 §n badge that used to
      lead this row was retired 2026-08-16, owner call — head() still takes
@@ -855,7 +878,7 @@
       window.JD_paper.icon() + '</button>';
   }
   /* `figEl` is the currently rendered plate (there is only ever one on the
-     bench — see benchPanel); the enlargement, if standing, wears the same
+     bench — see questionPanel); the enlargement, if standing, wears the same
      paper as the report card's does (see zoomHTML). */
   function togglePaper(figEl) {
     var next = window.JD_paper.get() === 'blueprint' ? 'graph' : 'blueprint';
@@ -879,7 +902,7 @@
        whole figure the enlarge control, the record card's plate idiom
        (role/tabindex on the photograph, handlers at onClick and the
        anonymous plate keydown wired in build()); `paper` mounts its
-       graph/blueprint swap (bench only — see benchPanel). (A third,
+       graph/blueprint swap (bench only — see questionPanel). (A third,
        `replay` — the report photograph's REPLAY button on the print's own
        corner — retired 2026-09-16, when the bench's filmstrip took the
        replay over.) The figure's data-slot is how the delegated handlers
@@ -1075,8 +1098,9 @@
      skip is the honest default), and ONE definition system: a hover/focus
      tooltip anchored to a plain-text label (OVERRIDE 1, round-16 — the
      click-to-unfold ⓘ popover it used to pair with is retired outright;
-     the tooltip itself gave way to the press-to-open disclosure, 2026-08-28
-     — see scaleRow).
+     the tooltip itself gave way to the press-to-open disclosure, 2026-08-28).
+     The selects and the disclosure retired in 0.18.0 for ONE QUESTION A
+     CARD (see there): each scale its own card of large radio rows.
      The two-panel pill survey and the separate compare state are retired;
      the call is THE PODIUM (below) and closes the same state. */
 
@@ -1481,59 +1505,20 @@
     }
   }, true);
 
-  /* one question row: the label (a plain, non-interactive gloss — OVERRIDE
-     1, round-16), a permanently-present hidden definition wired to the
-     select via aria-describedby, and the select itself. (The folded
-     per-axis note was removed at the owner's request, 2026-08-12 — the
-     survey files values only. The report path's flag note below is
-     separate and stays.) Re-rendering is safe: every answer lives in `work`
-     and is written back as selected state here.
-
-     THE DEFINITION IS ONE LINE (round-15 design, still true post-OVERRIDE-1):
-     the axis's own definition and nothing else. The level-by-level schedule
-     it used to unfold was twelve lines explaining a four-option select whose
-     options are already words — and those words are in the select, which is
-     where a person reads them. It used to reach the visitor through a
-     click-to-unfold popover (owner: "an awkward little eye"); now it reaches
-     keyboard and screen-reader users the moment they focus the select, and
-     mouse users on hover over the label, and needs no toggle state at all.
-     (The hover half retired 2026-08-28: sighted visitors open it by
-     pressing the row's head — see THE DISCLOSURE below.) */
-  /* The chosen-value gauge, built in ONE place because two callers need the
-     identical mark: scaleRow() paints it with whatever was already answered,
-     and onChange() re-paints it the instant the visitor picks (below). Owner
-     directive r4: once a row has an actual answer it grows the SAME
-     segmented bar the report card shows for that same value — window.
-     JD_barHTML and the report card's own rc-r… / rc-q… / rc-g… rank classes,
-     not a parallel set. (Those prefixes are written out rather than starred: a
-     literal asterisk-slash inside a block comment closes it, and that broke
-     the whole file once already.) `total` is the scale's own step count (3
-     or 4 for an axis since v17, 5 for the grade), so the bar always fills against the
-     total it's segmented into. Keeping this a function is the fix for a bug
-     worth remembering: the gauge used to be inlined in scaleRow() alone, so
-     it only ever appeared if you left the step and came back — in the flow
-     a visitor actually walks, the select fires change, work.ratings is
-     written, and the row itself never re-renders, so the gauge was
-     invisible the whole way through a live turn. A mark that reports state
-     has to be written wherever the state is written. */
-  /* `empty` (owner, 2026-08-29): the bench's rows keep their gauge on show
-     even before an answer — the same rc-bar shell at the same size, grayed,
-     no fill, its segment ticks drawn in the gray so the scale's step count
-     still reads. An answer swaps it for the real filled bar in place
-     (paintGauge finds either by the shared .rc-bar class); clearing back to
-     skip swaps the empty one back in. Callers that DON'T pass empty keep
-     the old contract — the podium's grade spark still sparks nothing for a
-     skipped grade (owner call, 2026-08-26). */
-  function gaugeFor(ax, total, chosen, empty) {
-    if (chosen == null) {
-      if (!empty) return '';
-      var eh = '<span class="rc-bar jd-bar--empty" aria-hidden="true">';
-      for (var t = 1; t < total; t++) {
-        eh += '<span class="rc-bar-tick" style="left:' +
-          (100 * t / total).toFixed(1) + '%"></span>';
-      }
-      return eh + '</span>';
-    }
+  /* The chosen-value gauge (owner directive r4): once a drawing has an
+     answer it wears the SAME segmented bar the report card shows for that
+     value — window.JD_barHTML and the report card's own rc-r… / rc-q… /
+     rc-g… rank classes, not a parallel set. (Those prefixes are written out
+     rather than starred: a literal asterisk-slash inside a block comment
+     closes it, and that broke the whole file once already.) `total` is the
+     scale's own step count (3 or 4 for an axis, 5 for the grade), so the bar
+     fills against the total it is segmented into. The podium's prints carry
+     the overall grade's spark with it; a skipped grade sparks nothing (owner
+     call, 2026-08-26). (The select panel that also used it, with a grayed
+     `empty` track, retired with the selects in 0.18.0 — see ONE QUESTION A
+     CARD below; each option row now carries its own bar.) */
+  function gaugeFor(ax, total, chosen) {
+    if (chosen == null) return '';
     var picked = ax ? window.JD_byRank(ax.values, chosen)
       : window.JD_gradeOf(tax(), chosen);
     var rank = picked ? Math.round(picked.rank) : 0;
@@ -1541,97 +1526,15 @@
     return window.JD_barHTML(rank, total,
       ax ? window.JD_axisCls(ax, rank) : 'rc-g' + rank);
   }
-  function scaleRow(slot, ax, chosen) {
-    var axisId = ax ? ax.id : null;
-    var label = ax ? (ax.label || ax.id) : 'overall grade';
-    var levels = JD_byRankDesc(ax ? ax.values : tax().grades);
-    /* THE OVERALL GRADE'S GUIDANCE (owner, 2026-09-29): unfolding the row
-       gives the rater the question the grade answers, then every tier's own
-       description from taxonomy.json, best to worst — one tier a line.
-       descHTML is the sighted disclosure; desc (plain text) is what a screen
-       reader hears at the select. */
-    var GRADE_LEAD = 'Judge the drawing as a whole: could you use it, and ' +
-      'how much work would it take to get there?';
-    var desc = ax ? (ax.description || '') : GRADE_LEAD + ' ' +
-      levels.map(function (l) {
-        return window.JD_labelText(l.label || l.id) + ': ' + (l.description || '');
-      }).join(' ');
-    var descHTML = ax ? esc(desc) : esc(GRADE_LEAD) +
-      levels.map(function (l) {
-        return '<br><b>' + esc(window.JD_labelText(l.label || l.id)) + '</b> &mdash; ' +
-          esc(l.description || '');
-      }).join('');
-    var descId = 'jd-d-' + slot + '-' + (axisId || 'grade');
-    /* THE DISCLOSURE (owner, 2026-08-28, replacing OVERRIDE 1's hover/focus
-       tooltip): the definition now opens by PRESS, not hover — a caret
-       beside the label toggles the row's explanation open under the whole
-       row (see .jd-row-exp: last child, so the collapsed grid is untouched
-       and the open text spans both columns). One behavior on desktop and
-       phone alike, which also closes the touch gap the tooltip always had.
-       The label goes back to plain print: no data-tt anchor, no dotted
-       rule. aria-describedby on the select stays — a screen reader hears
-       the definition at the control whether or not the sighted disclosure
-       is open. */
-    /* the WHOLE head is the toggle (owner, round 5): data-act rides the
-       rowhead, so the label text and the air around it all answer the
-       press — the caret (now LEADING the label, and grown to be seen) is
-       kept as the tab stop and the state-bearer, its own click simply
-       bubbling into the rowhead's. */
-    var h = '<div class="jd-row' + (ax ? '' : ' jd-row--grade') + '">' +
-      '<div class="jd-rowhead" data-act="def">' +
-      '<button type="button" class="jd-defx" aria-expanded="false" ' +
-      'aria-label="what ' + esc(window.JD_labelText(label)) +
-      ' means"></button>' +
-      '<span class="jd-def"><span>' + esc(label) + '</span></span>' +
-      '</div>' +
-      '<span class="jd-vh" id="' + descId + '">' + esc(desc) + '</span>' +
-      /* the gauge (if any) is the FIRST CHILD of .jd-row-ctrl, not wrapped
-         in its own span — paintGauge (below, in the input plumbing) finds
-         it with ctrl.querySelector('.rc-bar') and removes/inserts it as a
-         direct child on every change, so first paint has to hand it the
-         identical shape or the live update's removeChild throws on a node
-         that isn't actually its child. */
-      '<div class="jd-row-ctrl">' + gaugeFor(ax, levels.length, chosen, true) +
-      '<select class="jd-turn-select' + (chosen != null ? ' is-set' : '') + '" ' +
-      'data-role="' + (ax ? 'axis' : 'grade') + '" data-slot="' + slot + '"' +
-      (axisId ? ' data-axis="' + esc(axisId) + '"' : '') +
-      ' aria-label="' + esc(label) + ' for response ' + slot.toUpperCase() +
-      '" aria-describedby="' + descId + '">' +
-      '<option value=""' + (chosen == null ? ' selected' : '') + '>skip</option>';
-    levels.forEach(function (l) {
-      var on = chosen != null && String(chosen) === String(l.rank);
-      /* native option text cannot carry markup — the emphasis strips */
-      h += '<option value="' + l.rank + '"' + (on ? ' selected' : '') + '>' +
-        esc(window.JD_labelText(l.label || l.id)) + '</option>';
-    });
-    h += '</select></div>' +
-      /* LAST child, deliberately: hidden it leaves the grid exactly as it
-         was; open it auto-places on the next grid row spanning both
-         columns — and the stacked narrow-band folds inherit it with no
-         extra rules */
-      '<div class="jd-row-exp" hidden>' + descHTML + '</div>';
-    return h + '</div>';
-  }
-  /* the column head above the rows, mirroring the report card's <thead>
-     (owner directive r4 — see .rc-subj th): same two-column split, but the
-     left word is SUBJECT (owner, 2026-08-27 — a school report card's word;
-     "Axis" is the taxonomy's word, and the visitor isn't reading the
-     taxonomy), and the right column is worded to ASK rather than report —
-     the report card's "Verdict" names a fact already filed, this one names
-     a blank still waiting to be filled. A plain grid row, not a table head,
-     so it carries nothing assistive tech needs; each select's own
-     aria-label/aria-describedby already says what it is. */
-  function benchHeadHTML() {
-    return '<div class="jd-row jd-row--head" aria-hidden="true">' +
-      '<span>Subject</span><span>Your rating</span></div>';
-  }
   /* THE HOUSE RULE (owner, 2026-10-02, taxonomy v35): what every model was
      told, in one sentence from taxonomy.json `houseRule`, above the rating
      panel — visitors and the bench alike — because three axes (Structural
      Coherence's framing, Layering's setting, Paintwork's shadow beneath)
      are judged against a system prompt no rater otherwise sees. Small
-     print under the rail, across the whole card: one line on the desktop
-     bench, two on a phone. A taxonomy without the key prints nothing. */
+     print, ONCE per sitting: on the preview card (owner, 2026-10-03,
+     0.18.0), and again inside the "more" of each axis it governs
+     (`houseRuleAxes`, see questionHTML). A taxonomy without the key prints
+     nothing. */
   function houseRuleHTML() {
     var t = String(tax().houseRule || '').trim();
     return t ? '<p class="jd-turn-rule">' + esc(t) + '</p>' : '';
@@ -1639,7 +1542,8 @@
   /* THE PRUNED PREFILL (taxonomy v35): a bench reopen whose earlier sitting
      carried a value on a retired axis, or off an axis's current scale,
      starts without it (jd2-queue's prefill_pruned, and curateOpen's own
-     check) — say so once, above the rows, so a blank row is not a mystery */
+     check) — say so on the drawing's question cards, above the question, so
+     a blank answer is not a mystery */
   function prunedHTML() {
     return (work && work.prefillPruned
       ? '<p class="jd-turn-pruned" role="note">earlier answers on a retired or ' +
@@ -1666,12 +1570,12 @@
       : 'earlier answers on a rescaled axis were carried onto its new scale';
     return '<p class="jd-turn-pruned jd-turn-mapped" role="note">' + what + '</p>';
   }
-  /* the bench gate (owner, 2026-08-27): a drawing's panel doesn't hand off
-     — to the next drawing or to the ranking — until every scale on it is
-     answered, the overall grade included. Same disabled-until-done contract
-     the podium's FILE THE GRADES button already keeps; "skip" stays in the
-     list as the unanswered state's own name, but it no longer walks through
-     the gate. */
+  /* the bench gate (owner, 2026-08-27): a drawing doesn't hand off — to the
+     next drawing or to the ranking — until every scale on it is answered,
+     the overall grade included. Same disabled-until-done contract the
+     podium's FILE THE GRADES button already keeps. Since 0.18.0 the scales
+     are asked one a card (ONE QUESTION A CARD, below); this is still the
+     whole drawing's gate, and the rail's mark for a finished drawing. */
   function benchRated(slot) {
     var r = work.ratings[slot];
     if (!r || r.grade == null) return false;
@@ -1824,6 +1728,10 @@
       var reached = pairsNode
         ? deck.some(function (p) { return !!work.reached[PAIR_PFX + p.key]; })
         : !!work.reached[st.id];
+      /* a drawing's ring fills only once every question on it is answered
+         (0.18.0: its six cards can be left part-way through the rail);
+         reached but unfinished, it stays pressable and open */
+      var done = reached && (ok.indexOf(st.id) === -1 || benchRated(st.id));
       /* the link INTO a node is walked once that node has been reached —
          so the rule runs solid up to wherever the visitor has stood */
       if (i > 0) {
@@ -1839,7 +1747,7 @@
         (st.id === 'gaps' ? ' jd-rail-step--gaps' : '') +
         (st.id === 'preview' ? ' jd-rail-step--preview' : '') +
         (pairsNode ? ' jd-rail-step--pairs' : '') +
-        (current ? ' is-current' : reached ? ' is-done' : '') +
+        (current ? ' is-current' : done ? ' is-done' : '') +
         '" data-act="step" data-step="' + st.id +
         '"' + (reached ? '' : ' disabled') +
         (current ? ' aria-current="step"' : '') +
@@ -1864,21 +1772,26 @@
      fade over the last, SHOW FULL PROMPT to unfold) — render() measures
      after paint and marks is-fit when the words never overflowed, which
      hides the expander. The toggle flips classes in place
-     (data-act="brief"), never a re-render, so the native selects and
-     scroll position stay put. */
+     (data-act="brief"), never a re-render, so the card and its scroll
+     position stay put. */
   /* The header returned by owner call (2026-08-28, round 3): unlabelled, the
      words floated with nothing saying what they were. It reads PROMPT — the
      plain word, not the retired THE ASSIGNMENT flourish. The fold now trips
      only on genuinely long prompts (seven lines — see the CSS), so most
      cards show every word with no control at all; when it does fold, the
      pair is SHOW FULL PROMPT / HIDE. */
+  /* (0.18.0: the open state lives in work.briefOpen, so a question card
+     repainted by qShow keeps the prompt as the rater left it; on a phone
+     the fold is ONE line — see the question card's CSS) */
   function briefHTML() {
     var words = (work && work.prompt) || '';
     if (!words.trim()) return '';
-    return '<div class="jd-turn-assign">' +
+    var open = !!(work && work.briefOpen);
+    return '<div class="jd-turn-assign' + (open ? ' is-open' : '') + '">' +
       '<span class="jd-turn-assign-tag" aria-hidden="true">prompt</span>' +
       '<p>' + esc(words) + '</p>' +
-      '<button type="button" class="jd-turn-pv" data-act="brief">show full prompt</button>' +
+      '<button type="button" class="jd-turn-pv" data-act="brief" aria-expanded="' +
+      (open ? 'true' : 'false') + '">' + (open ? 'hide' : 'show full prompt') + '</button>' +
       '</div>';
   }
 
@@ -1945,6 +1858,10 @@
         ? ' <span class="jd-preview-rerate">Your last sitting’s answers are on the card; ' +
           'change what you like — filing adds a new sitting.</span>'
         : '') + '</p>' +
+      /* THE HOUSE RULE, once per sitting (owner, 2026-10-03): here, before
+         the first question — and again in the "more" of each axis judged
+         against it (houseRuleAxes) */
+      houseRuleHTML() +
       '<div class="jd-preview" role="list">';
     ok.forEach(function (s) {
       h += '<div class="jd-preview-cell" role="listitem" data-cell="' + s + '">' +
@@ -1960,80 +1877,309 @@
       esc(stepWord(previewDest())) + ' &rarr;</button>');
   }
 
-  function benchPanel(slot, ok, tiers) {
+  /* ONE QUESTION A CARD (0.18.0, owner 2026-10-03: "instead of having a
+     series of dropdowns for all of the issue categories on just one card,
+     let's have one question at a time … optimized for mobile"). A drawing's
+     station is a SEQUENCE of question cards: the live axes in taxonomy
+     order, then THE OVERALL GRADE last — it is holistic, and the axes inform
+     it (its name and question are the taxonomy's `gradeQuestion`). One
+     question per card: the drawing at the top (the plate, its blind letter
+     pencilled on, press to enlarge — openZoom), a progress line, the prompt
+     (one line on a phone, "show full prompt" keeps it open for the sitting),
+     the axis `label` as the heading and its `summary` as the question (its
+     long `description` behind "more", the house rule added there for the
+     axes judged against it — `houseRuleAxes`), and the axis's `values` best
+     first as a vertical list of radio rows (role="radio" buttons in a
+     role="radiogroup"). On a phone a row is its label and gauge; the chosen
+     row shows its description, and the progress line's "definitions" switch
+     (remembered on this device) shows them all.
+     Choosing records the answer in work.ratings at once, as the selects
+     did, lights the row on the axis's own rank pencil (JD_axisCls: the rc-q
+     ramp, rc-r on the 3-point axis, rc-g on the grade), and after a beat
+     (Q_BEAT; at once under prefers-reduced-motion) goes on to the next
+     question, the next drawing's first, or — after the last drawing's
+     grade — the ranking, where the old panel's next went; the next card's
+     progress line echoes the answer. A press within Q_GUARD of a card's
+     painting is ignored (a double tap must not answer the card it lands
+     on). Back walks the questions (across drawings too); next stands on an
+     answered card. A re-rate's prefilled answer says "last time: … — tap to
+     keep". Same card for visitors and the bench.
+
+     How it rides the step machine: the rail's stations and stepSeq() are
+     untouched — a drawing is still ONE step (its slot letter) and
+     stepAnswered(slot) is still benchRated, every question answered. Which
+     card of the drawing stands is work.qAt (an index into qList()). nav()
+     walks the cards inside a slot step before it moves the step; a card
+     change inside one drawing repaints only the question column (qShow), so
+     the plate, its filmstrip and the rail are not rebuilt. Entering a
+     drawing: forward lands on its first card, back on its grade, the rail
+     (or a bench resume, through the preview) on its first unanswered one.
+     The filing payload and work.ratings are exactly what they were. */
+  var Q_GRADE = 'grade';
+  var Q_BEAT = 350;
+  /* a press this soon after a question column was painted is ignored: the
+     second tap of a double tap lands on the card the first one advanced to
+     (critic, round 2: at 320 ms it answered the next card's first row) */
+  var Q_GUARD = 400;
+  var qTimer = 0, qPaintedAt = 0;
+  /* the "definitions" switch: every row's description on a phone, or only
+     the chosen row's — remembered on this device (a viewer's convenience) */
+  var K_QDEFS = 'jd2-q-defs';
+  var qDefs = false;
+  try { qDefs = window.localStorage.getItem(K_QDEFS) === '1'; } catch (e) { qDefs = false; }
+  function qList() {
+    return JD_liveAxes(tax()).map(function (ax) { return ax.id; }).concat([Q_GRADE]);
+  }
+  function qAxis(qid) { return qid === Q_GRADE ? null : byId(JD_liveAxes(tax()), qid); }
+  function qValue(slot, qid) {
     var r = work.ratings[slot];
-    var idx = ok.indexOf(slot);
-    var two = ok.length > 1;
-    var h = houseRuleHTML() + '<div class="jd-bench">' +
+    if (!r) return null;
+    var v = qid === Q_GRADE ? r.grade : r.axes[qid];
+    return v == null ? null : v;
+  }
+  function qAnswered(slot, i) {
+    var qid = qList()[i];
+    return qid != null && qValue(slot, qid) != null;
+  }
+  /* the first card on a drawing still waiting for its answer; a finished
+     drawing opens on its first card */
+  function firstOpenQ(slot) {
+    var qs = qList();
+    for (var i = 0; i < qs.length; i++) if (qValue(slot, qs[i]) == null) return i;
+    return 0;
+  }
+  function isSlotStep(id) { return !!work && okSlots().indexOf(id) !== -1; }
+  /* a value of a question's scale, by rank (an axis's values, or the grades) */
+  function qLevel(qid, v) {
+    var ax = qAxis(qid);
+    return v == null ? null : ax ? window.JD_byRank(ax.values, v) : window.JD_gradeOf(tax(), v);
+  }
+
+  function questionPanel(slot, ok, tiers) {
+    return '<div class="jd-bench jd-bench--q">' +
       '<div class="jd-bench-l"><div class="jd-turn-pin">' +
       /* no REPLAY pencil since 2026-09-16 — the filmstrip mounted under
-         this plate by paint() carries the replay now, and the pencil beside
-         it would be a second button doing the same thing */
-      plate(slot, { pin: true, zoom: true, paper: true }) + '</div></div>' +
-      '<div class="jd-bench-r">' +
-      /* the prompt OPENS the paperwork column, above the rows (owner,
-         2026-08-28) — and, the wrappers being display:contents in the
-         portrait stack, sits between the sticky plate and the rows there */
-      briefHTML() +
-      prunedHTML() +
-      benchHeadHTML();
-    /* axes first, in taxonomy order, THEN the overall grade (owner
-       directive r4): the report card files axes in <tbody> and the overall
-       grade alone in <tfoot> below a rule — the SAME rubric was reading in
-       the opposite order here, one click away. .jd-row--grade already
-       carries the 2px top rule that reads as a tfoot break; it just needed
-       the grade row to actually be last for that rule to mean what it looks
-       like it means. */
-    JD_liveAxes(tax()).forEach(function (ax) {
-      h += scaleRow(slot, ax, r.axes[ax.id]);
+         this plate by paint() carries the replay; the blind letter is
+         pencilled over the art, as on the preview */
+      plate(slot, { pin: true, zoom: true, paper: true, label: 'Drawing ' + slot.toUpperCase() }) +
+      '</div></div>' +
+      '<div class="jd-bench-r jd-q' + (qDefs ? ' is-defs' : '') + '" data-slot="' + slot + '">' +
+      questionHTML(slot, ok, tiers) + '</div></div>';
+  }
+  /* the question column: everything on the card but the plate, so a step
+     between two questions of one drawing repaints only this (qShow) */
+  function questionHTML(slot, ok, tiers) {
+    var qs = qList();
+    if (!(work.qAt >= 0 && work.qAt < qs.length)) work.qAt = 0;
+    var i = work.qAt, qid = qs[i], ax = qAxis(qid);
+    var chosen = qValue(slot, qid);
+    var levels = JD_byRankDesc(ax ? ax.values : tax().grades);
+    var gq = JD_gradeQuestion(tax());
+    var label = ax ? (ax.label || ax.id) : gq.label;
+    var sum = ax ? String(ax.summary || '') : gq.summary;
+    var desc = ax ? String(ax.description || '') : '';
+    /* THE HOUSE RULE, where it governs (owner, 2026-10-03): the axes judged
+       against it (`houseRuleAxes`) carry it inside their "more"; the card
+       itself shows it once per sitting, on the preview */
+    var rule = String(tax().houseRule || '').trim();
+    var ruled = !!(ax && rule && (tax().houseRuleAxes || []).indexOf(ax.id) !== -1);
+    var base = 'jdq-' + slot + '-' + i;
+    /* the answer just given, echoed on the card it advanced to */
+    var echo = work.qEcho;
+    work.qEcho = null;
+    /* a re-rate's prefill, not yet pressed this sitting */
+    var last = chosen != null && !!(work.qPrefilled && work.qPrefilled[slot + '|' + qid]) ? qLevel(qid, chosen) : null;
+    var h = '<p class="jd-q-step"><span id="' + base + '-p">Drawing ' + slot.toUpperCase() + ' · ' +
+      (i + 1) + ' of ' + qs.length + '</span>' +
+      (echo ? '<span class="jd-q-echo">✓ ' + JD_labelHTML(echo) + '</span>' : '') +
+      '<button type="button" class="jd-q-defs" data-act="qdefs" aria-pressed="' +
+      (qDefs ? 'true' : 'false') + '">definitions</button></p>' +
+      /* the prompt, verbatim, in reach on every card (THE PROMPT ON THE
+         BENCH, above) — one line on a phone until "show full prompt" */
+      briefHTML() + prunedHTML() +
+      '<div class="jd-q-ask">' +
+      '<h3 class="jd-q-label" id="' + base + '-h">' + JD_labelHTML(label) + '</h3>' +
+      (sum
+        ? '<p class="jd-q-sum"><span id="' + base + '-s">' + esc(sum) + '</span>' +
+          (desc ? ' <button type="button" class="jd-q-more" data-act="qmore" ' +
+            'aria-expanded="false" aria-controls="' + base + '-d">more</button>' : '') + '</p>'
+        : '') +
+      (desc ? '<div class="jd-q-desc" id="' + base + '-d" hidden><p>' + esc(desc) + '</p>' +
+        (ruled ? '<p class="jd-q-desc-rule">' + esc(rule) + '</p>' : '') + '</div>' : '') +
+      '</div>' +
+      /* named by the drawing-and-question line and the question itself;
+         described by the question line alone (not its "more") */
+      '<div class="jd-q-opts" role="radiogroup" data-q="' + esc(qid) + '" aria-labelledby="' +
+      base + '-p ' + base + '-h"' + (sum ? ' aria-describedby="' + base + '-s"' : '') + '>';
+    /* the roving tab stop: the chosen row, else the first */
+    var stop = chosen != null && levels.some(function (l) { return Number(l.rank) === Number(chosen); })
+      ? Number(chosen) : Number(levels[0] && levels[0].rank);
+    levels.forEach(function (l) {
+      var rank = Math.round(l.rank);
+      var on = chosen != null && Number(chosen) === Number(l.rank);
+      var cls = ax ? JD_axisCls(ax, rank) : 'rc-g' + rank;
+      var id = base + '-' + rank;
+      /* a re-rate's prefilled answer says so on its own row (in the row, so
+         the card is no taller for it on a phone) */
+      var lastRow = on && last;
+      h += '<button type="button" role="radio" class="jd-q-opt' + (on ? ' is-on ' + cls : '') +
+        (lastRow ? ' is-last' : '') +
+        '" data-act="qpick" data-v="' + l.rank + '" data-cls="' + cls + '" aria-checked="' +
+        (on ? 'true' : 'false') + '" tabindex="' + (Number(l.rank) === stop ? '0' : '-1') + '"' +
+        (Number(l.rank) === stop ? ' data-autofocus' : '') +
+        ' aria-labelledby="' + id + '-l"' + (l.description ? ' aria-describedby="' + id + '-d"' : '') + '>' +
+        '<span class="jd-q-dot" aria-hidden="true"></span>' +
+        '<span class="jd-q-txt"><span class="jd-q-head"><b id="' + id + '-l">' +
+        JD_labelHTML(l.label || l.id) + '</b>' + JD_barHTML(rank, levels.length, cls) + '</span>' +
+        (l.description ? '<small id="' + id + '-d">' + esc(l.description) + '</small>' : '') +
+        (lastRow ? '<em class="jd-q-last">last time: ' + JD_labelHTML(last.label || last.id) +
+          ' — tap to keep</em>' : '') +
+        '</span></button>';
     });
-    h += scaleRow(slot, null, r.grade);
-    /* the report path (APP §4.6) is BENCHED from the form (owner,
-       2026-08-26): the "broken or offensive" checkbox and its note took
-       bench space the owner would rather spend on the scales, and reports
-       weren't proving necessary. Deliberately NOT dismantled — the state
-       (r.flag / r.flagNote), the flag/flagnote handlers, the wire fields
-       and the .jd-turn-flag styles all stand, so restoring the instrument
-       is re-adding the markup below, not an excavation.
-       (The retired markup, for that day:
-       '<label class="jd-turn-check jd-turn-flag">' +
-         '<input type="checkbox" data-role="flag" data-slot="' + slot + '"' +
-         (r.flag ? ' checked' : '') + '><span>broken or offensive</span></label>' +
-       '<div data-flagnote="' + slot + '"' + (r.flag ? '' : ' hidden') + '>' +
-         '<input type="text" class="jd-turn-note" maxlength="' + MAX_NOTE +
-         '" placeholder="what is wrong with it?" aria-label="note on the report ' +
-         'for drawing ' + slot.toUpperCase() + '" data-role="flagnote" ' +
-         'data-slot="' + slot + '" value="' + esc(r.flagNote || '') + '"></div>') */
+    h += '</div>';
+    /* the report path (APP §4.6) stays BENCHED from the form (owner,
+       2026-08-26): the state (r.flag / r.flagNote), the flag/flagnote
+       handlers, the wire fields and the .jd-turn-flag styles all stand, so
+       restoring it is re-adding its checkbox and note to a card. */
+    var two = ok.length > 1, sized = tiers.length, lastQ = i === qs.length - 1;
     var acts = '';
-    /* (the first drawing's back is the preview's, when there is one) */
-    if (idx > 0 || previewOn()) {
+    /* back walks the questions, then into the drawing before (its grade)
+       or the preview; the first card of a one-drawing turn has none */
+    if (i > 0 || ok.indexOf(slot) > 0 || previewOn()) {
       acts += '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>';
     }
-    /* the gate: disabled until benchRated — onChange re-arms it live */
-    var gate = benchRated(slot) ? '' : ' disabled';
-    var sized = tiers.length;
-    if (!two) {
-      /* one drawing, no ranking — but a curation still closes on the size */
+    /* next stands armed on an answered card (a prefilled re-rate taps it,
+       or changes the answer); choosing goes on by itself */
+    var armed = chosen != null ? '' : ' disabled';
+    if (!lastQ) {
+      acts += '<button type="button" class="jd-turn-go" data-act="next"' + armed + '>next &rarr;</button>';
+    } else if (!two) {
+      /* one drawing, no ranking — but a curation still closes on the size;
+         filing is never automatic, so the grade's choice stops here */
       acts += sized
-        ? '<button type="button" class="jd-turn-go" data-act="next"' + gate +
+        ? '<button type="button" class="jd-turn-go" data-act="next"' + armed +
           '>next — size &rarr;</button>'
         : '<button type="button" class="jd-turn-go" data-act="file"' +
-          gate + '>file the grades</button>';
+          (benchRated(slot) ? '' : ' disabled') + '>file the grades</button>';
     } else {
-      /* the ranking step's button wears the one-word form (owner,
-         2026-08-27), like the docket ring's word — "best to worst" stays
-         the card's own title */
-      var next = idx + 1 < ok.length ? 'drawing ' + ok[idx + 1].toUpperCase() : 'ranking';
-      acts += '<button type="button" class="jd-turn-go" data-act="next"' +
-        gate + '>next — ' + esc(next) + ' &rarr;</button>';
+      /* the drawing's last card names where it goes, as the old panel's
+         next did (the ranking's one-word form, owner 2026-08-27) */
+      var idx = ok.indexOf(slot);
+      var to = idx + 1 < ok.length ? 'drawing ' + ok[idx + 1].toUpperCase() : 'ranking';
+      acts += '<button type="button" class="jd-turn-go" data-act="next"' + armed + '>next — ' +
+        esc(to) + ' &rarr;</button>';
     }
-    if (!two && !sized) { acts = suppressHTML() + acts; }   /* the last card */
-    /* the action row closes the PAPERWORK column, not the sheet: on the
-       landscape bench it settles against the foot of the exhibit beside it
-       (margin-top:auto), and in the portrait stack it is simply the last
-       thing on the card, exactly where it was */
-    return h + actions(acts) + '</div></div>';
+    if (!two && !sized && lastQ) acts = suppressHTML() + acts;   /* the last card */
+    return h + actions(acts);
   }
+  /* a question column was just painted: start the double-tap guard, and
+     bring a checked row into view (a re-rate's grade row sits low) */
+  function qPainted() {
+    qPaintedAt = Date.now();
+    var on = bodyEl && bodyEl.querySelector('.jd-q-opt.is-on');
+    if (on && on.scrollIntoView) { try { on.scrollIntoView({ block: 'nearest' }); } catch (e) {} }
+  }
+  /* a step between two questions of the drawing on the card: the question
+     column alone is repainted (the plate, its filmstrip and the rail stay),
+     the card scrolls back to its top and the keyboard lands on the radio
+     group's tab stop. Anything else is a full render. */
+  function qShow(i) {
+    clearTimeout(qTimer);
+    work.qAt = i;
+    var col = bodyEl && bodyEl.querySelector('.jd-q');
+    var tiers = sizeTiers();
+    /* the docket is not repainted here, so a size station the intake
+       clerk's late answer has since taken off the turn (sizeTiers) asks
+       for the full render that redraws it */
+    var railSize = !!(bodyEl && bodyEl.querySelector('.jd-rail-step[data-step="size"]'));
+    if (!col || state !== 'rate' || col.getAttribute('data-slot') !== work.step ||
+        railSize !== !!tiers.length) { render(); return; }
+    col.innerHTML = questionHTML(work.step, okSlots(), tiers);
+    fitBrief();
+    bodyEl.scrollTop = 0;
+    var f = col.querySelector('.jd-q-opt[data-autofocus]');
+    if (f) { try { f.focus({ preventScroll: true }); } catch (e) {} }
+    qPainted();
+  }
+  /* a choice: recorded now, shown in place, and the card goes on after the
+     beat — unless something else moved the card first */
+  function qPick(b) {
+    var col = b.closest('.jd-q');
+    var slot = work && work.step;
+    if (!col || !isSlotStep(slot) || col.getAttribute('data-slot') !== slot) return;
+    /* the double-tap guard (reduced motion included: there the first tap
+       advances at once, so the second lands on a card painted just now) */
+    if (Date.now() - qPaintedAt < Q_GUARD) return;
+    var qid = qList()[work.qAt], v = Number(b.getAttribute('data-v'));
+    if (qid == null || !isFinite(v)) return;
+    if (qid === Q_GRADE) work.ratings[slot].grade = v;
+    else work.ratings[slot].axes[qid] = v;
+    /* pressed this sitting: no longer "last time" */
+    if (work.qPrefilled) delete work.qPrefilled[slot + '|' + qid];
+    Array.prototype.forEach.call(col.querySelectorAll('.jd-q-last'), function (lt) {
+      if (lt.parentNode) lt.parentNode.removeChild(lt);
+    });
+    Array.prototype.forEach.call(col.querySelectorAll('.jd-q-opt'), function (o) {
+      var on = o === b, cls = o.getAttribute('data-cls');
+      o.setAttribute('aria-checked', on ? 'true' : 'false');
+      o.tabIndex = on ? 0 : -1;
+      o.classList.toggle('is-on', on);
+      o.classList.remove('is-last');
+      if (cls) o.classList.toggle(cls, on);
+    });
+    setDisabled('.jd-turn-actions [data-act="next"]', false);
+    setDisabled('.jd-turn-actions [data-act="file"]', !benchRated(slot));
+    clearTimeout(qTimer);
+    var at = work.qAt;
+    /* the one-drawing turn's last card files by its button, never by
+       itself: bring the button into view instead */
+    if (!col.querySelector('.jd-turn-actions [data-act="next"]')) {
+      var fileBtn = col.querySelector('.jd-turn-actions');
+      if (fileBtn && fileBtn.scrollIntoView) { try { fileBtn.scrollIntoView({ block: 'nearest' }); } catch (e) {} }
+      return;
+    }
+    var lv = qLevel(qid, v);
+    var go = function () {
+      qTimer = 0;
+      if (!isOpen || state !== 'rate' || !work || work.step !== slot || work.qAt !== at) return;
+      work.qEcho = lv ? (lv.label || lv.id) : null;
+      nav('next');
+      /* the echo belongs to the card the press advanced to, nowhere else */
+      work.qEcho = null;
+    };
+    if (window.JD_reduced && JD_reduced()) go();
+    else qTimer = setTimeout(go, Q_BEAT);
+  }
+  /* the "definitions" switch, in place: every row's description, or the
+     chosen row's alone (phone; the desk shows them all) */
+  function qToggleDefs(b) {
+    qDefs = !qDefs;
+    try { window.localStorage.setItem(K_QDEFS, qDefs ? '1' : '0'); } catch (e) {}
+    var col = b.closest('.jd-q');
+    if (col) col.classList.toggle('is-defs', qDefs);
+    b.setAttribute('aria-pressed', qDefs ? 'true' : 'false');
+  }
+  /* the radio group's keys: the arrows (and Home/End) move between the
+     rows; Enter/Space press the row (a native button). This departs from
+     the standard radio pattern (where an arrow also selects) on purpose:
+     here a choice advances the card, so moving must not choose. */
+  function onQKey(e) {
+    var t = e.target;
+    if (!t || !t.classList || !t.classList.contains('jd-q-opt')) return;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    var k = e.key;
+    var d = (k === 'ArrowDown' || k === 'ArrowRight') ? 1 : (k === 'ArrowUp' || k === 'ArrowLeft') ? -1 : 0;
+    var opts = Array.prototype.slice.call(t.parentNode.querySelectorAll('.jd-q-opt'));
+    var i = opts.indexOf(t), j = -1;
+    if (d) j = (i + d + opts.length) % opts.length;
+    else if (k === 'Home') j = 0;
+    else if (k === 'End') j = opts.length - 1;
+    if (j < 0) return;
+    e.preventDefault();
+    opts.forEach(function (o, n) { o.tabIndex = n === j ? 0 : -1; });
+    opts[j].focus();
+  }
+
 
   /* KEEP IT OUT OF THE DRAWER (owner, 2026-08-30). A finished turn now takes
      a real place in the drawer rather than living in one browser's storage,
@@ -3349,12 +3495,15 @@
         : 'Grade drawing ' + work.step.toUpperCase(),
       size ? 6 : (call || gaps || pair) ? 5 : 4,
       { view: entry ? 'entry' : size ? 'size' : call ? 'call' : gaps ? 'gaps' : preview ? 'preview'
-        : pair ? 'pair' : 'bench' }) +
+        : pair ? 'pair' : 'bench',
+        /* a question card hands the keyboard to its radio group's tab
+           stop (the radiogroup is named by the question) */
+        noFocus: !(entry || size || call || gaps || preview || pair) }) +
       (two || sizes ? railHTML(ok, tiers) : '') +
       (entry ? entryPanel(tiers) : size ? sizePanel(tiers) : call ? callPanel(ok, tiers)
         : gaps ? pedPanel(ok, tiers)
         : preview ? previewPanel(ok)
-        : pair ? pairPanel(work.step, ok, tiers) : benchPanel(work.step, ok, tiers));
+        : pair ? pairPanel(work.step, ok, tiers) : questionPanel(work.step, ok, tiers));
   }
 
   /* ---------- 7. unveil ---------------------------------------------------- */
@@ -3508,47 +3657,19 @@
   function actions(inner) { return '<div class="jd-turn-actions">' + inner + '</div>'; }
 
   /* ---------- input plumbing ---------------------------------------------- */
-  /* swap the row's gauge for the value just chosen — in place, because a
-     full repaint here would close the native picker's own row under the
-     visitor's finger and lose the scroll position mid-survey. Clearing back
-     to "skip" removes the mark, the same as the report card showing nothing
-     for an axis that was never assessed. */
-  function paintGauge(select, ax, val) {
-    var ctrl = select.parentNode;
-    if (!ctrl || !ctrl.classList || !ctrl.classList.contains('jd-row-ctrl')) return;
-    var old = ctrl.querySelector('.rc-bar');
-    if (old) ctrl.removeChild(old);
-    var levels = JD_byRankDesc(ax ? ax.values : tax().grades);
-    var html = gaugeFor(ax, levels.length, val == null ? null : Number(val), true);
-    if (html) ctrl.insertAdjacentHTML('afterbegin', html);
-  }
+  /* (the grade and axis selects' branch left with the selects in 0.18.0: a
+     question card's answer is a press — qPick, through onClick) */
   function onChange(e) {
     var t = e.target, role = t.getAttribute && t.getAttribute('data-role');
     if (!role) return;
     var slot = t.getAttribute('data-slot');
-    var val = t.value === '' ? null : t.value;
-    if (role === 'grade') {
-      work.ratings[slot].grade = val == null ? null : Number(val);
-      t.classList.toggle('is-set', val != null);
-      paintGauge(t, null, val);
-    } else if (role === 'axis') {
-      work.ratings[slot].axes[t.getAttribute('data-axis')] =
-        val == null ? null : Number(val);
-      t.classList.toggle('is-set', val != null);
-      paintGauge(t, byId(JD_liveAxes(tax()), t.getAttribute('data-axis')), val);
-    }
-    if (role === 'grade' || role === 'axis') {
-      /* the bench gate re-arms (or re-locks — a scale set back to skip
-         closes it) on every answer; back is never gated */
-      setDisabled('[data-act="next"], [data-act="file"]', !benchRated(slot));
-    }
     if (role === 'suppress') {
       work.suppress = !!t.checked;
       return;
     }
     if (role === 'flag') {
       work.ratings[slot].flag = t.checked;
-      /* mutate in place — see benchPanel */
+      /* mutate in place — see questionPanel */
       var fn = bodyEl.querySelector('[data-flagnote="' + slot + '"]');
       if (fn) fn.hidden = !t.checked;
       /* (the call has no <input> of its own any more — the podium files its
@@ -3645,27 +3766,18 @@
     } else if (act === 'gapback') {
       if (work && work.step === 'gaps' && work.gapAt > 0) pedSetActive(work.gapAt - 1);
     } else if (act === 'step' || act === 'next' || act === 'back') {
-      /* bench navigation. The whole panel re-renders (state lives in `work`,
-         so nothing is lost) and focus lands back on the heading. */
-      var seq = stepSeq();
-      var at = seq.indexOf(work.step);
-      /* the gate, held at the door as well as on the button (the disabled
-         attribute is state the DOM could lose; this check can't) */
-      if (act === 'next' && !stepAnswered(work.step)) return;
-      var dest = act === 'step' ? b.getAttribute('data-step')
-        : seq[at + (act === 'next' ? 1 : -1)];
-      /* the preview's next goes where a bench resume would have opened, once
-         (see ALL FOUR); afterwards it is the first drawing like any turn's */
-      if (act === 'next' && work.step === 'preview') {
-        dest = previewDest(seq);
-        work.resume = null;
-      }
-      /* the docket's one head-to-head node stands for every pair card */
-      if (dest === 'pairs') dest = pairsEntry();
-      if (dest && seq.indexOf(dest) !== -1) {
-        work.step = dest;
-        work.reached[dest] = true;
-        render();
+      nav(act, b.getAttribute('data-step'));
+    } else if (act === 'qpick') {
+      /* a question card's answer — see ONE QUESTION A CARD */
+      qPick(b);
+    } else if (act === 'qdefs') {
+      qToggleDefs(b);
+    } else if (act === 'qmore') {
+      /* the question's long definition, unfolded in place */
+      var dsc = bodyEl.querySelector('#' + b.getAttribute('aria-controls'));
+      if (dsc) {
+        dsc.hidden = !dsc.hidden;
+        b.setAttribute('aria-expanded', dsc.hidden ? 'false' : 'true');
       }
     } else if (act === 'size') {
       /* the closing card's answer — in place, so the chosen tier lights and
@@ -3733,32 +3845,64 @@
     } else if (act === 'retry-file') {
       fileNow();
     } else if (act === 'brief') {
-      /* in place, no re-render — a repaint here would close the native
-         picker under a finger mid-survey and lose the scroll position */
+      /* in place, no re-render — a repaint would lose the scroll position */
       var asn2 = b.closest('.jd-turn-assign');
       if (asn2) {
         var on = asn2.classList.toggle('is-open');
+        if (work) work.briefOpen = on;
         b.textContent = on ? 'hide' : 'show full prompt';
-      }
-    } else if (act === 'def') {
-      /* the subject's disclosure — in place, like the prompt's fold: a
-         repaint would close a native picker and lose the scroll. `b` may be
-         the rowhead or the caret inside it; the caret is always the element
-         that wears the state. */
-      var row = b.closest('.jd-row');
-      var exp = row && row.querySelector('.jd-row-exp');
-      var caret = row && row.querySelector('.jd-defx');
-      if (exp && caret) {
-        exp.hidden = !exp.hidden;
-        caret.setAttribute('aria-expanded', exp.hidden ? 'false' : 'true');
-        caret.classList.toggle('is-open', !exp.hidden);
-        /* the boxed mark reads + closed, − open — drawn in CSS off
-           aria-expanded (junk-drawer.css .jd-defx), so there's no glyph
-           to write here any more */
+        b.setAttribute('aria-expanded', on ? 'true' : 'false');
       }
     } else if (act === 'paper') {
       /* the plate's own graph/blueprint swap — see togglePaper() above */
       togglePaper(b.closest('.jd-turn-plate'));
+    }
+  }
+
+  /* the card's navigation: the docket's press (`step`, to `target`), next
+     and back. The whole card re-renders on a step change (state lives in
+     `work`, so nothing is lost). Inside a drawing, next and back walk its
+     question cards first (ONE QUESTION A CARD): next only from an answered
+     card, and off the last card only once the whole drawing is answered —
+     else to its first unanswered card. Entering a drawing, forward lands on
+     its first card, back on its grade, the docket or a resume (the
+     preview's next) on its first unanswered card. */
+  function nav(act, target) {
+    clearTimeout(qTimer);
+    var seq = stepSeq();
+    var at = seq.indexOf(work.step);
+    if (state === 'rate' && isSlotStep(work.step) && act !== 'step') {
+      var n = qList().length;
+      if (act === 'next') {
+        if (!qAnswered(work.step, work.qAt)) return;
+        if (work.qAt < n - 1) { qShow(work.qAt + 1); return; }
+        if (!benchRated(work.step)) { qShow(firstOpenQ(work.step)); return; }
+      } else if (work.qAt > 0) {
+        qShow(work.qAt - 1);
+        return;
+      }
+    }
+    /* the gate, held at the door as well as on the button (the disabled
+       attribute is state the DOM could lose; this check can't) */
+    if (act === 'next' && !stepAnswered(work.step)) return;
+    var from = work.step;
+    var dest = act === 'step' ? target : seq[at + (act === 'next' ? 1 : -1)];
+    /* the preview's next goes where a bench resume would have opened, once
+       (see ALL FOUR); afterwards it is the first drawing like any turn's */
+    if (act === 'next' && from === 'preview') {
+      dest = previewDest(seq);
+      work.resume = null;
+    }
+    /* the docket's one head-to-head node stands for every pair card */
+    if (dest === 'pairs') dest = pairsEntry();
+    if (dest && seq.indexOf(dest) !== -1) {
+      if (isSlotStep(dest) && dest !== from) {
+        work.qAt = act === 'back' ? qList().length - 1
+          : (act === 'next' && from !== 'preview') ? 0 : firstOpenQ(dest);
+      }
+      work.step = dest;
+      work.reached[dest] = true;
+      render();
     }
   }
 
@@ -3789,6 +3933,11 @@
          pile, the tracking beacon — was built to read a winner; `strength`
          survives as a permanent null, the podium having no margin. */
       step: 'preview', reached: reached, resume: null,
+      /* which question card of the drawing on the card stands (an index
+         into qList() — ONE QUESTION A CARD, 0.18.0); the answers a re-rate
+         prefilled and this sitting has not pressed ('slot|qid'); the answer
+         the next card echoes; whether the prompt stands unfolded */
+      qAt: 0, qPrefilled: {}, qEcho: null, briefOpen: false,
       /* a bench re-rating (0.17.0): the job's `rerating` — the owner's last
          sitting on this run was complete and is the prefill */
       rerating: false,
@@ -4591,7 +4740,7 @@
   /* ---------- CURATE MODE — the re-rating bench (owner, 2026-08-28) --------
      The backlog instrument IS this card. JD_bench (the ?bench driver,
      jd-bench.js) hands over one curated item at a time and the card
-     runs its ordinary rate machinery on it — the same benchPanel, rail and
+     runs its ordinary rate machinery on it — the same question cards, rail and
      podium a visitor gets, so every hour spent re-rating is spent inside the
      real instrument, and every refinement made to it ships to visitors.
 
@@ -4642,6 +4791,9 @@
          prunes first and says so (job.prefillPruned); this is the card's
          own check of the same rule against the taxonomy it renders. */
       var liveAx = {}, pruned = !!job.prefillPruned, mapped = !!job.prefillMapped;
+      /* (a prefilled answer is "last time" on its card — not on the /about/
+         walkthrough's demo, the one fixedOrder caller, whose answers are a
+         specimen's, not the viewer's) */
       JD_liveAxes(tax()).forEach(function (ax) { liveAx[ax.id] = ax; });
       function onGradeScale(v) { return v != null && !!window.JD_gradeOf(tax(), v); }
       order.forEach(function (resp, k) {
@@ -4656,6 +4808,7 @@
         r.grade = resp.grade != null ? resp.grade
           : (resp.grade_seed != null ? resp.grade_seed : null);
         if (r.grade != null && !onGradeScale(r.grade)) { r.grade = null; pruned = true; }
+        if (r.grade != null && !job.fixedOrder) work.qPrefilled[slot + '|' + Q_GRADE] = true;
         Object.keys(resp.axes || {}).forEach(function (a) {
           var v = resp.axes[a];
           /* a report-card annotation ({value, note}, or {value,
@@ -4667,6 +4820,7 @@
           if (v == null) return;
           if (!liveAx[a] || !window.JD_byRank(liveAx[a].values, v)) { pruned = true; return; }
           r.axes[a] = v;
+          if (!job.fixedOrder) work.qPrefilled[slot + '|' + a] = true;
         });
         /* a filed rank resumes only while it fits this podium — a stale row
            from a different response count would seat a print on a step that
@@ -4737,6 +4891,7 @@
       if (ranked && gapsOn() && pedAllSet()) work.reached.gaps = true;
       if (firstOpenSlot) {
         work.step = firstOpenSlot;
+        work.qAt = firstOpenQ(firstOpenSlot);
       } else if (openPair) {
         work.step = PAIR_PFX + openPair.key;
         work.reached.call = true;
@@ -4762,6 +4917,15 @@
       /* …but every sitting, a resume included, OPENS on the preview (0.15.0:
          a glance, not a question); the step worked out above is where its
          next goes (previewDest), and every station it reached stays open */
+      /* A COMPLETE RE-RATE starts over at the top (owner, 2026-10-03):
+         the preview's next opens drawing A's first card, every answer
+         pre-selected, not the ranking; a partial resume still goes to the
+         first unanswered card (above) */
+      if (job.rerating && !firstOpenSlot && ok.length) {
+        ok.forEach(function (s2) { work.reached[s2] = true; });
+        work.step = ok[0];
+        work.qAt = 0;
+      }
       if (previewOn()) {
         work.resume = work.step;
         work.step = 'preview';

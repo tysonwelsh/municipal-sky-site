@@ -1846,7 +1846,7 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
   text-align: left; cursor: pointer;
 }
 /* the boxed +/− ahead of the name (owner rev, 2026-08-13; redrawn 2026-09-14
-   to match .jd-defx in the survey instrument — see the note there). − is a
+   to match the survey's old boxed mark, retired with the selects in 0.18.0). − is a
    pair of bars drawn with ::before/::after rather than a "+"/"−" text
    glyph: a font's own metrics rarely center a "+" glyph on its true visual
    middle (the discrepancy varies by font AND by device, which is exactly
@@ -1864,21 +1864,19 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
   background: rgba(255, 250, 232, 0.5);
   color: var(--form-ink-2);
 }
-/* the two bars, shared with the survey's .jd-defx (one drawing method, one
-   rule — only the boxes differ) */
-.rc-axcaret::before, .rc-axcaret::after,
-.jd-defx::before, .jd-defx::after {
+/* the two bars (the survey's .jd-defx shared them until 0.18.0) */
+.rc-axcaret::before, .rc-axcaret::after {
   content: ""; position: absolute; top: 50%; left: 50%;
   background: currentColor;
   transition: transform 0.12s ease, opacity 0.12s ease;
 }
-.rc-axcaret::before, .jd-defx::before { width: 9px; height: 1.5px; transform: translate(-50%, -50%); }
-.rc-axcaret::after, .jd-defx::after { width: 1.5px; height: 9px; transform: translate(-50%, -50%); }
+.rc-axcaret::before { width: 9px; height: 1.5px; transform: translate(-50%, -50%); }
+.rc-axcaret::after { width: 1.5px; height: 9px; transform: translate(-50%, -50%); }
 .rc-axbtn[aria-expanded="true"] .rc-axcaret::after { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
 /* reduced motion: the bars swap without the morph. This must come AFTER the
    base rule above (same specificity, so source order decides) — it used to
    sit in the enlargement's reduce block further up, where it never applied
-   (moved 2026-10-01, the .jd-defx rule's pattern). */
+   (moved 2026-10-01). */
 @media (prefers-reduced-motion: reduce) {
   .rc-axcaret::before, .rc-axcaret::after { transition: none; }
 }
@@ -2502,7 +2500,7 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn-go:focus-visible, .jd-turn-alt:focus-visible,
 .jd-turn-paper:focus-visible, .jd-turn-plate[role="button"]:focus-visible,
 .jd-rail-step:focus-visible,
-.jd-turn-pv:focus-visible, .jd-turn-select:focus-visible,
+.jd-turn-pv:focus-visible,
 .jd-pod-tier:focus-visible, .jd-size-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* ---- BOX 1: the requester's own field ------------------------------------ */
@@ -2548,7 +2546,7 @@ html.jd-turn-open { overflow: hidden; }
 }
 .jd-turn-go, .jd-turn-alt {
   /* OVERRIDE 2: touch floor, not a universal one — see the coarse-pointer
-     query near .jd-row below, which restores 44px wherever it's needed. */
+     query near the report path below, which restores 44px wherever it's needed. */
   min-height: 34px; padding: 0 1.1rem;
   font-family: var(--tmono); font-size: var(--t-body);
   letter-spacing: 0.16em; text-transform: uppercase;
@@ -3424,8 +3422,7 @@ html.jd-bench-on .jd-turn[data-view="preview"] {
    .rc-paper / .rc-plate.is-blueprint pair (2026-09-10), reused at the
    drawing measure — same corner, same geometry, same swatch icon
    (window.JD_paper.icon(), jd-core.js) — only the tokens are this card's
-   own (--trule/--tred in place of --form-rule/--red), the same split
-   .jd-defx already draws from .rc-axcaret. The shared cut, the icon and the
+   own (--trule/--tred in place of --form-rule/--red). The shared cut, the icon and the
    blueprint are one rule each with the report card's (its section); the
    rule colour and the hover are this card's. */
 .jd-turn-paper { border: 1px solid var(--trule); }
@@ -3472,7 +3469,7 @@ html.jd-bench-on .jd-turn[data-view="preview"] {
 }
 .jd-rail-ring {
   /* OVERRIDE 2 (round-16): 44px is a TOUCH floor, not a universal one — see
-     the same note on .jd-row below. Compressed by default; the coarse-
+     the coarse-pointer note below. Compressed by default; the coarse-
      pointer/mobile media queries at the foot of this file grow the rings
      wherever a finger, not a cursor, has to land on them. */
   width: 26px; height: 26px;
@@ -3612,76 +3609,74 @@ html.jd-bench-on .jd-turn[data-view="preview"] {
 .jd-rail-lnk { flex: 0 0 16px; height: 0; border-top: 1px dashed var(--trule-2); }
 .jd-rail-lnk.is-walked { border-top-style: solid; border-top-color: var(--trule); }
 
-/* ---- the landscape bench (owner modification, 2026-08-13) -----------------
-   The bench borrows the REPORT CARD's two-column pattern (see .jd-record /
-   .rc-col-l / .rc-col-r above — that card itself is untouched): the pinned
-   exhibit on the LEFT at a square, VIEWPORT-HEIGHT-clamped plate, the grade
-   and axis selects and the flag on the RIGHT. The turn card widens to carry
-   it, and only while it carries it — data-view is written by the JS on every
-   paint, so the Brief and the Unveil keep the form's narrow 680px measure.
-   Under 700px the wrappers go display:contents and the DOM's source order IS
-   the portrait flow: rail, plate (sticky again), scales, flag, actions. */
-/* the exhibit is sized on the REPORT CARD'S OWN RULER (owner, 2026-08-15:
-   "I would like these to be larger, more like the main display in the report
-   card"). The bench used to run a stop below the card on every term —
-   46dvh/34vw/380px against the card's 52dvh/42vw/420px — for no reason that
-   survives stating: the drawing being GRADED is at least as important as the
-   drawing being read about, and it is the same square window either way. The
-   card widens to carry it, exactly as .jd-record's width follows its own
-   --plate, so the paperwork column keeps the room it had. */
+/* ---- the question card's sheet (ONE QUESTION A CARD, 0.18.0) ---------------
+   A drawing's station is a run of question cards (jd-turn.js, ONE QUESTION
+   A CARD): the drawing on top, then one question and its options as a
+   vertical list of radio rows. PHONE FIRST: by default the card is the
+   form's own 680px measure, takes the whole padded viewport, and the DOM's
+   order is the flow — the plate, centred, then the progress line, the
+   prompt, the question and its rows, then back/next in a bar that sticks to
+   the foot of the scroller. The plate's size (--qplate) is the window's
+   height less everything else the fullest card carries (the grade's five
+   rows and two-line question), so on a 390×844 phone — the bench strip
+   folded to one row — every row of every card and the buttons stand on the
+   first screen, and the drawing is the same size on all six cards. From
+   900px wide (and on a phone held landscape, where height is what is short)
+   it lays out like the report card: the drawing LEFT at the report card's
+   own ruler (--plate), the question RIGHT, the sheet anchored to the top of
+   the window so the drawing stays put from card to card. */
 .jd-turn[data-view="bench"] {
+  /* the fullest card's furniture, measured at 390×844 (head, rail, the
+     progress line, the one-line prompt, a two-line question, five rows,
+     the button bar and the paddings); a bench strip adds its own height */
+  --q-budget: 614px;
+  --q-strip: 0px;
+  --qplate: clamp(120px, calc(100vh - var(--q-budget) - var(--q-strip)), 330px);
+  --qplate: clamp(120px, calc(100dvh - var(--q-budget) - var(--q-strip)), 330px);
   --plate: clamp(240px, min(52dvh, 42vw), 420px);
-  width: min(960px, 100%);
+  width: min(680px, 100%);
+  height: 100%;
 }
-.jd-bench {
-  display: grid;
-  grid-template-columns: var(--plate) minmax(280px, 1fr);
-  column-gap: 20px; align-items: start;
+html.jd-bench-on .jd-turn[data-view="bench"] { --q-strip: calc(var(--jd-bench-bar-h, 40px) - 4px); }
+.jd-turn[data-view="bench"] .jd-turn-scroll { display: flex; flex-direction: column; }
+.jd-bench--q { display: flex; flex-direction: column; flex: 0 0 auto; }
+.jd-bench--q .jd-bench-l { display: flex; justify-content: center; }
+.jd-bench--q .jd-bench-r { min-width: 0; display: flex; flex-direction: column; }
+.jd-turn-pin { display: flex; justify-content: center; flex: 0 0 auto; }
+.jd-turn-pin .jd-turn-plate { flex: 0 0 auto; width: var(--qplate); max-width: 100%; }
+.jd-bench--q .jd-turn-pin { margin: 0 0 var(--sp-2); }
+.jd-bench--q .jd-turn-actions { margin-top: var(--sp-3); }
+@media (min-width: 900px), (min-width: 600px) and (max-height: 500px) and (orientation: landscape) {
+  /* anchored to the top of the window (critic, round 2: centred, the sheet
+     re-centred as each card's height changed and the drawing jumped) */
+  .jd-turn[data-view="bench"] { width: min(960px, 100%); height: auto; align-self: flex-start; }
+  .jd-turn[data-view="bench"] .jd-turn-scroll { display: block; }
+  /* the report card's two-column pattern: the exhibit LEFT on its ruler,
+     the question RIGHT behind a hairline, top-anchored under the rail */
+  .jd-bench--q {
+    display: grid;
+    grid-template-columns: var(--plate) minmax(300px, 1fr);
+    column-gap: 20px; align-items: start;
+  }
+  .jd-bench--q .jd-bench-l { display: block; min-width: 0; align-self: start; }
+  .jd-bench--q .jd-bench-r {
+    align-self: stretch;
+    border-left: 1px solid var(--trule-2); padding-left: 20px;
+  }
+  .jd-turn-pin .jd-turn-plate { width: 100%; }
+  .jd-bench--q .jd-turn-pin { margin: 0; width: 100%; }
+  /* the buttons settle at the column's foot when the drawing runs taller */
+  .jd-bench--q .jd-turn-actions { margin-top: auto; padding-top: var(--sp-3); }
 }
-/* the exhibit rides the vertical CENTRE of its column (owner, 2026-08-28):
-   with the prompt now opening the paperwork, the right column usually runs
-   taller than the plate, and a top-pinned drawing left dead paper under
-   itself. Stretch the column and centre the pin in it — the same composition
-   move the paperwork column makes below. (Portrait is untouched: both
-   wrappers go display:contents in the ≤700px block, which overrides this.) */
-.jd-bench-l {
-  min-width: 0;
-  align-self: stretch;
-  display: flex; flex-direction: column; justify-content: center;
+/* a phone held landscape: the drawing is sized from the card's real height
+   — the window less the banner band, the card's head and rail and its
+   paddings — so the whole of it, filmstrip and all, is on the short screen */
+@media (max-width: 1000px) and (max-height: 500px) and (orientation: landscape) {
+  .jd-turn[data-view="bench"] {
+    --plate: clamp(120px, calc(100vh - var(--banner-h, 56px) - 186px), 420px);
+    --plate: clamp(120px, calc(100dvh - var(--banner-h, 56px) - 186px), 420px);
+  }
 }
-/* R2-F1/F2 (round-17, owner override): the "let them differ" approach from
-   round 16 fixed the auto-margin bug but relocated the dead space instead of
-   removing it — the exhibit (up to 380px) and the paperwork (~246px) are
-   structurally mismatched by design, so the outer card was always going to
-   be exhibit-height, and whatever the paperwork column didn't use just sat
-   there as a blank rectangle under the button. The plate stays full size —
-   it's the thing being judged, not a bug to paper over by shrinking it.
-   Instead the column SPANS the exhibit's height (stretch + min-height: 100%,
-   so the border-left rule reaches all the way down) and CENTRES its content
-   inside that span — the leftover space splits above and below the block of
-   rows instead of collecting under it, which reads as composition rather
-   than as a column that ran out of content. */
-.jd-bench-r {
-  min-width: 0;
-  display: flex; flex-direction: column;
-  /* TOP-ANCHORED since round 4 (owner, 2026-08-28, reversing the round-17
-     centring): with the prompt opening the column, its header has to start
-     at the container's top — right under the rail — not float mid-column
-     wherever the centring left it. Slack, when the exhibit runs taller,
-     now collects between the grade row and the action button (the button
-     keeps the column's foot via margin-top: auto below), never under the
-     button — which was the dead rectangle round 17 was killing. */
-  align-self: stretch; min-height: 100%; justify-content: flex-start;
-  border-left: 1px solid var(--trule-2); padding-left: 20px;
-}
-.jd-bench-r .jd-turn-actions { margin-top: auto; padding-top: var(--sp-4); }
-/* the pinned exhibit: the artwork under examination stays in view for the
-   whole panel. On the landscape bench it simply sits in its column; in the
-   portrait stack (≤700px) it goes sticky and repaints the sheet's own paper
-   so the rows slide under it. No caption — the heading already says which
-   drawing this is. */
-.jd-turn-pin { display: flex; justify-content: center; }
-.jd-turn-pin .jd-turn-plate { flex: 0 0 auto; width: 100%; }
 
 /* ---- the prompt (owner, 2026-08-28; reseated to the paperwork column the
    same day) -----------------------------------------------------------------
@@ -3769,213 +3764,180 @@ html.jd-bench-on .jd-turn[data-view="preview"] {
   .jd-turn[data-view="bench"] .jd-turn-assign { flex: 0 0 auto; }
 }
 
-/* ---- the examination rows -------------------------------------------------
-   F4/OVERRIDE 2 (round-16): a row's height used to be its 44px control PLUS
-   its own 0.15rem top/bottom padding — the row and the control were both
-   spending space on the same "give this a touch target" job. The padding is
-   gone; the control's own min-height carries the row entirely, and that
-   min-height is now a TOUCH floor, not a universal one (below). */
-/* the column split (owner directive r4): brought toward the report card's
-   own 47/53 (.rc-subj th, above) — 1fr against 1.13fr lands there while
-   staying fluid, and the 170px floor keeps a select legible once the
-   ≤700px fold has room to give it. */
-.jd-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(170px, 1.13fr);
-  /* STYLED AFTER THE REPORT CARD'S TABLE (owner, 2026-09-16): the two
-     instruments are meant to read as one system, and the record's
-     annotations table (table.rc-subj) is the reference — a ruled column
-     divider running the height of every row, a tinted column head ruled
-     top and bottom, serif title-case subject names, and the overall grade
-     as a tinted footer row under a heavy rule. The column gap goes to
-     zero so the divider is a cell edge, as it is in a table; each side
-     carries its own inset instead. */
-  gap: 2px 0; align-items: stretch;
-  border-bottom: 1px solid var(--trule-2);
-  padding: 3px 0;
+/* ---- the question and its options (ONE QUESTION A CARD, 0.18.0) -----------
+   The selects' row table retired with them. A card asks one thing: the
+   progress line (which drawing, which question of how many; the answer just
+   given echoed; on a phone the "definitions" switch), the question — the
+   axis label as the heading, its summary as the line under it, the long
+   description (and, for the axes judged against it, the house rule) folded
+   behind "more" — and the options, best first, as a vertical list of radio
+   rows. Each row is one press target the sheet's full width and at least
+   48px tall: a ring, the value's label and the report card's own gauge for
+   that value, and the value's description under them (on a phone only the
+   chosen row's, or every row's with "definitions" on). The chosen row fills
+   its ring and edges itself in the axis's rank pencil (the rc-q / rc-r /
+   rc-g classes on the row, the same inks the record card's marks and bars
+   wear — see the rank rules above); a choice is never colour alone: the
+   ring fills, the row's ground lifts and its border thickens. */
+.jd-q-step {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px;
+  margin: 0 0 var(--sp-2);
+  font-family: var(--tform); font-size: var(--t-label);
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--tink-2);
 }
-/* the last axis row rules off harder above the total, as the record's
-   last tbody row does above its tfoot */
-.jd-row:has(+ .jd-row--grade) { border-bottom-color: var(--trule); }
-/* OVERALL GRADE outranks the axes, the way the report card's tfoot grade
-   row outranks the axis rows above it: a 2px rule (not the row's usual
-   1px) sets it off from whatever came before it. It now sits LAST (owner
-   directive r4, matching the report card's own axes-then-tfoot order —
-   see benchPanel), so this rule finally separates what it looks like it
-   separates, rather than sitting above the very first row. */
-.jd-row--grade {
-  /* the record's tfoot: a 2px rule above, a full rule below, the row
-     tinted — hard against the last axis row's own hairline, so the two
-     rules read as the accountant's double rule over a total (the 6px
-     stand-off of 2026-08-27 went with the standardisation of 2026-09-16) */
-  border-top: 2px solid var(--trule);
-  border-bottom: 1px solid var(--trule);
-  background: rgba(51, 36, 15, 0.03);
-  margin-top: 0;
+/* the answer just given, on the card it advanced to: the pencil's tick */
+.jd-q-echo { letter-spacing: 0.04em; text-transform: none; font-style: italic; color: var(--tink-2); }
+/* "definitions": a phone's switch (the desk shows every description) */
+.jd-q-defs { display: none; }
+.jd-q .jd-turn-assign { margin: 0 0 var(--sp-2); }
+.jd-q .jd-turn-pruned { margin: 0 0 var(--sp-2); }
+.jd-q-ask { margin: 0 0 16px; }
+.jd-q-label {
+  margin: 0 0 3px;
+  font-family: var(--tform); font-weight: 700; font-size: 0.95rem;
+  letter-spacing: 0.04em; line-height: 1.25; color: var(--tink);
 }
-/* the column head above the rows (owner directive r4): same grid as the
-   rows below it so the two labels land over their columns, set in the
-   report card's own <th> voice — small form caps, not the row's mono. */
-.jd-row--head {
-  padding: 0; margin-top: 2px;
-  border-top: 1px solid var(--trule);
-  border-bottom: 1px solid var(--trule);
-  background: rgba(51, 36, 15, 0.055);
-  font-family: var(--tform); font-size: 0.5rem; font-weight: 400;
-  letter-spacing: 0.19em; text-transform: uppercase; color: var(--tink-2);
+.jd-q-sum {
+  margin: 0;
+  font-size: 0.74rem; line-height: 1.5; color: var(--tink-2);
 }
-.jd-row--head > span { display: block; padding: 0.3em 0.5em; min-width: 0; }
-.jd-row--head > span + span { border-left: 1px solid var(--trule-2); }
-/* the row's two cells: the subject inset from the left edge, the control
-   column divided off and inset — the divider runs the row's full height
-   because the row's items stretch. The control cell is a flex row: the
-   picked-value gauge ahead of the select (see .jd-row-ctrl .rc-bar, below). */
-.jd-row-ctrl {
-  border-left: 1px solid var(--trule-2); padding-left: 10px;
-  display: flex; align-items: center; gap: 0.5rem; min-width: 0;
+/* "more" and "definitions": pencilled words with a finger's band — a 48px
+   box around the word, its vertical overhang given back by negative
+   margins so the line it sits on keeps its own height */
+.jd-q-more, .jd-q-defs {
+  align-items: center; justify-content: center;
+  min-height: 48px; min-width: 48px; margin: -16px 0; padding: 0 4px;
+  vertical-align: middle; cursor: pointer;
+  border: 0; background: none;
+  font-family: var(--tmono); font-size: var(--t-label); letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--tink-2);
+  text-decoration: underline dotted var(--trule); text-underline-offset: 3px;
 }
-/* the whole head is the disclosure's press target (owner, round 5): pointer
-   cursor, no text selection — a label you can press must not sprout an
-   I-beam and start selecting itself under the finger */
-.jd-rowhead {
-  padding: 0 0.5em 0 0.35em;
-  display: flex; align-items: center; gap: 5px; min-width: 0;
-  cursor: pointer;
-  -webkit-user-select: none; user-select: none;
+.jd-q-more { display: inline-flex; margin-left: 2px; }
+.jd-q-more:hover, .jd-q-defs:hover { color: var(--tred); text-decoration-color: var(--tred); }
+.jd-q-more[aria-expanded="true"], .jd-q-defs[aria-pressed="true"] { color: var(--tink); text-decoration-style: solid; }
+.jd-q-more:focus-visible, .jd-q-defs:focus-visible { outline: 2px solid var(--tred); outline-offset: -8px; }
+/* the definition: the body face, not the form's typewriter */
+.jd-q-desc {
+  margin: 6px 0 0; padding: 2px 0 2px 10px;
+  border-left: 2px solid var(--trule);
+  font-family: var(--tform); font-size: 0.74rem; line-height: 1.5; color: var(--tink-2);
 }
-.jd-rowhead:hover .jd-def { color: var(--tink); }
-.jd-rowhead:hover .jd-defx { color: var(--tred); }
-/* THE DISCLOSURE (owner, 2026-08-28 — the third life of this definition
-   system, replacing OVERRIDE 1's hover/focus tooltip, which had replaced
-   the ⓘ popover): the definition opens by PRESS. The label is plain print
-   again — no dotted rule, no hover shift, no data-tt anchor (ttInit stands
-   idle; it reads data-tt attributes off any element and now finds none) —
-   and the control is the caret beside it, which unfolds the row's
-   explanation (.jd-row-exp) under the whole row. Same gesture on desktop
-   and phone, which also closes the tooltip's standing touch gap. The
-   select's aria-describedby survives untouched — see .jd-vh below. */
-.jd-def {
-  display: inline-flex; align-items: center; min-width: 0;
-  /* the record's subject name (.rc-subj-name): serif, title case, lightly
-     tracked, in the full ink — not the tracked small caps the rail labels
-     wear (owner, 2026-09-16) */
-  font-family: var(--tform);
-  font-size: 0.62rem; letter-spacing: 0.05em; text-transform: none;
-  line-height: 1.26;
-  color: var(--tink); text-align: left;
+.jd-q-desc p { margin: 0; }
+.jd-q-desc p + p { margin-top: 6px; }
+.jd-q-desc-rule { font-style: italic; }
+/* a re-rate's prefilled answer, said on its own row: "last time: … — tap
+   to keep" (a press on it keeps it and goes on) */
+.jd-q-last {
+  font-family: var(--tform); font-size: 0.74rem; font-style: italic; color: var(--tink);
 }
-/* the total's label: the record's footer word (.rc-avg-l) — small caps,
-   tracked wide, in the quieter ink */
-.jd-row--grade .jd-def {
-  font-size: 0.5rem; letter-spacing: 0.19em; text-transform: uppercase;
-  color: var(--tink-2);
+.jd-q-opts { display: flex; flex-direction: column; gap: 6px; }
+.jd-q-opt {
+  position: relative;   /* above the "more" band where the two meet */
+  display: flex; align-items: flex-start; gap: 10px;
+  width: 100%; min-height: 48px; box-sizing: border-box;
+  margin: 0; padding: 8px 12px;
+  text-align: left; cursor: pointer;
+  font-family: var(--tmono); color: var(--tink-2);
+  background: rgba(255, 252, 240, 0.55);
+  border: 1px solid var(--trule); border-radius: 0;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
-.jd-def > span {
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.jd-q-opt:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
+.jd-q-dot {
+  position: relative; flex: 0 0 auto;
+  width: 18px; height: 18px; box-sizing: border-box; margin-top: 1px;
+  border: 1.5px solid var(--tink-2); border-radius: 50%;
+  background: rgba(255, 252, 240, 0.9);
 }
-/* the disclosure mark: LEADS the label since round 5 (owner: left of the
-   text); a PLUS since round 8, and since round 9 a small BOXED plus — a
-   printed form-control square in the selects' own chrome, quiet but
-   legibly pressable — whose mark swaps to a minus while the explanation
-   stands open. Its own press just bubbles into the rowhead's, which
-   carries data-act. Redrawn 2026-09-14 to match .rc-axcaret in the report
-   card (same owner complaint there: a "+" TEXT glyph never centers on its
-   true visual middle — the discrepancy rides on font metrics, which vary
-   by platform, which is why the boxed mark read off-center on some
-   screens and not others). Two bars pinned to the box's geometric center
-   via absolute positioning + translate(-50%, -50%) can't drift regardless
-   of font or device; the vertical bar scales away to leave the minus. The
-   two icons now share one size (15px) and drawing method — only the
-   paper-specific border/background tokens differ, same as every other
-   shared mark between the report card and the survey instrument. */
-.jd-defx {
-  position: relative;
-  flex: 0 0 auto; width: 15px; height: 15px; padding: 0;
-  border: 1px solid var(--trule); border-radius: 2px;
-  background: rgba(255, 250, 232, 0.7); cursor: pointer;
-  color: var(--tink-2);
+.jd-q-txt { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+/* the value's label, its gauge at the line's end */
+.jd-q-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 20px; }
+.jd-q-txt b {
+  font-family: var(--tform); font-weight: 700; font-size: 0.8rem;
+  letter-spacing: 0.03em; line-height: 1.3; color: var(--tink);
 }
-/* (the two bars are one rule with .rc-axcaret's, in the report card's section) */
-.jd-defx[aria-expanded="true"]::after { transform: translate(-50%, -50%) scaleY(0); opacity: 0; }
-@media (prefers-reduced-motion: reduce) {
-  .jd-defx::before, .jd-defx::after { transition: none; }
+.jd-q-txt small {
+  font-family: var(--tform); font-size: 0.74rem; line-height: 1.4; color: var(--tink-2);
 }
-.jd-defx:hover { color: var(--tred); }
-.jd-defx:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
-/* the unfolded explanation: the tooltip's words, now printed on the sheet —
-   last grid child, so it spans both columns on its own row (and simply
-   stacks last in the narrow one-column folds) */
-.jd-row-exp {
-  grid-column: 1 / -1;
-  padding: 1px 2px 5px;
-  /* off the --t-label rung (owner, 2026-09-14): the rung is sized for one-
-     or two-word rail and row labels, but this row carries whole sentences,
-     so it takes its own reading size rather than dragging the ladder up. */
-  font-size: 0.63rem; line-height: 1.6; color: var(--tink-2);
+/* each row's gauge: its value on its scale, quiet until chosen */
+.jd-q-opt .rc-bar { opacity: 0.38; }
+@media (hover: hover) {
+  .jd-q-opt:hover { background: rgba(255, 252, 240, 0.85); border-color: var(--tink-2); }
 }
-
-/* the picked-value gauge sits ahead of the select (owner directive r4):
-   .rc-bar is the report card's own gauge, unchanged — reused, not
-   reinvented, so a filled bench row and its report-card row draw the same
-   mark. width:auto overrides .jd-turn-select's own width:100%, which would
-   otherwise fight the gauge for the row; flex:1 lets the select take
-   whatever the gauge doesn't need. Empty (no value picked yet) collapses
-   to nothing, so an unanswered row looks exactly as it did before this
-   round. */
-.jd-row-ctrl .jd-turn-select { width: auto; flex: 1 1 auto; min-width: 0; }
-.jd-row-ctrl .rc-bar { flex: 0 0 auto; }
-/* THE ONE BAND THE GAUGE CANNOT HAVE (measured, 2026-08-14). Between 701px
-   and 768px three rules collide: the bench is still LANDSCAPE (its portrait
-   fold is ≤700px), inputs are already raised to 16px against iOS focus-zoom
-   (the ≤768px rule at the foot of this file), and the paperwork column is at
-   its narrowest. A 47px bar plus its gap then leaves ~107px for a word that
-   wants 148px, and the select truncates mid-word — "SMALL PROBLEMS" renders
-   "SMALL PROB". The gauge is decoration; the visitor's own answer is not, so
-   the gauge is what yields. Above 768px the type drops back and both fit;
-   below 701px the row folds to label-over-control and the select spans the
-   full width, so the gauge is welcome at both ends and only stands down in
-   between. Verified at 720/760/800/860/920/1440. */
-@media (min-width: 701px) and (max-width: 768px) {
-  .jd-row-ctrl .rc-bar { display: none; }
-  /* the row goes LABEL-OVER-SELECT in this band (critic round 3,
-     2026-08-27, replacing round 2's narrower-label-column attempt): the
-     16px anti-zoom type is already in force here while the paperwork
-     column is at its narrowest, and ~188px of select can never hold
-     "SOMEWHAT UNDERSTANDS" (198px of text) — splitting the row just made
-     BOTH halves clip. Stacked, the label gets the column's full width and
-     the select ~300px, and both truncations die at once. The two-pane
-     bench itself is untouched; this is the ≤600px row fold arriving two
-     stops early, with the same header-drop and label voice. */
-  .jd-row { grid-template-columns: minmax(0, 1fr); padding: 4px 0 2px; }
-  .jd-row--head { display: none; }
-  .jd-row .jd-def { font-size: 0.64rem; color: rgba(51, 36, 15, 0.82); }
+/* chosen: the row takes the rank's ink (its color property — the ring, the
+   edge and the bar read currentColor), the words keep the sheet's */
+.jd-q-opt.is-on {
+  background: rgba(255, 252, 240, 0.97);
+  border-color: currentColor;
+  box-shadow: inset 4px 0 0 currentColor;
 }
-
-/* the scale itself stays a NATIVE select — phone OS pickers, titles only.
-   OVERRIDE 2: 44px is a touch floor. Compressed by default (a <select>
-   doesn't need 44px of height to be legibly a select on a device with a
-   cursor); the coarse-pointer/mobile media queries below restore the floor
-   wherever a finger has to land on it. */
-.jd-turn-select {
-  /* compacted (owner, 2026-08-26): the scales' boxes were spending more
-     vertical room than the answers inside them need — 28px carries the
-     0.66rem line with air to spare, and the tracking comes in a step so
-     the words read as filled-in form entries, not signage */
-  min-height: 28px; width: 100%;
-  padding: 0.2rem 1.7rem 0.2rem 0.55rem;
-  font-family: var(--tmono); font-size: var(--t-body);
-  letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--tink-3);
-  background: rgba(255, 252, 240, 0.62)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1 L5 5 L9 1' fill='none' stroke='%2333240f' stroke-width='1.6'/%3E%3C/svg%3E")
-    right 0.55rem center no-repeat;
-  border: 1px solid var(--trule);
-  border-radius: 0;
-  -webkit-appearance: none; appearance: none;
-  cursor: pointer;
+.jd-q-opt.is-on .jd-q-dot { border-color: currentColor; border-width: 2px; }
+.jd-q-opt.is-on .jd-q-dot::after {
+  content: ""; position: absolute; inset: 3px; border-radius: 50%;
+  background: currentColor;
 }
-/* a chosen value is never colour alone: it goes bold and ink-dark */
-.jd-turn-select.is-set { color: var(--tink); font-weight: 700; background-color: rgba(255, 252, 240, 0.92); }
+.jd-q-opt.is-on .rc-bar { opacity: 1; }
+.jd-q-opt.is-on .jd-q-txt b { color: var(--tink); }
+/* the rank pencils, on a chosen row (the record card's inks, restated for
+   the row: the classes above colour only marks and bars) */
+.jd-q-opt.is-on.rc-q4, .jd-q-opt.is-on.rc-r3, .jd-q-opt.is-on.rc-g5 { color: #0b6a1f; }
+.jd-q-opt.is-on.rc-q3, .jd-q-opt.is-on.rc-g4 { color: #46761a; }
+.jd-q-opt.is-on.rc-q2, .jd-q-opt.is-on.rc-r2, .jd-q-opt.is-on.rc-g3 { color: #a06200; }
+.jd-q-opt.is-on.rc-g2 { color: #b0490f; }
+.jd-q-opt.is-on.rc-q1, .jd-q-opt.is-on.rc-r1, .jd-q-opt.is-on.rc-g1 { color: #8f1d12; }
+@media (forced-colors: active) {
+  .jd-q-opt.is-on { border-width: 3px; }
+  .jd-q-opt.is-on .jd-q-dot::after { background: CanvasText; }
+}
+/* THE PHONE (critic, round 2: "every option on every one of the six cards,
+   and back, visible without scrolling"): the type steps up to a phone's
+   size, a row is its label and gauge (~50px) with only the chosen row's
+   description under it — or every row's, with "definitions" on — the
+   prompt folds to one line, the replay strip stands down (the enlargement
+   keeps REDRAW), and back/next ride a bar stuck to the foot of the
+   scroller, so they are on screen whatever the card carries. */
+@media (max-width: 899px) {
+  .jd-q-label { font-size: 1.05rem; }
+  .jd-q-sum { font-size: 0.86rem; }
+  .jd-q-txt b { font-size: 0.95rem; }
+  .jd-q-txt small { font-size: 0.84rem; line-height: 1.35; }
+  .jd-q-desc { font-size: 0.86rem; }
+  .jd-q-more, .jd-q-defs { font-size: 0.66rem; }
+  .jd-q-step { font-size: 0.62rem; }
+  .jd-q-last { font-size: 0.84rem; }
+  .jd-q-opt { padding: 13px 12px; }
+  .jd-q-ask { margin-bottom: 14px; }
+  .jd-q-opt small { display: none; }
+  .jd-q-opt.is-on small, .jd-q.is-defs .jd-q-opt small { display: block; }
+  /* …but a re-rate's prefilled row says "last time" in its place */
+  .jd-q:not(.is-defs) .jd-q-opt.is-last small { display: none; }
+  .jd-q-defs { display: inline-flex; margin-left: auto; }
+  .jd-bench--q .jd-filmstrip { display: none; }
+  /* the prompt on one line, cut with an ellipsis; "show full prompt"
+     beside it unfolds it, and the card remembers (work.briefOpen) */
+  .jd-q .jd-turn-assign { padding: 6px 10px; display: flex; align-items: baseline; gap: 8px; }
+  .jd-q .jd-turn-assign-tag { display: none; }
+  .jd-q .jd-turn-assign p { flex: 1 1 auto; min-width: 0; font-size: 0.8rem; }
+  .jd-q .jd-turn-assign:not(.is-open) p {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-height: none; -webkit-mask-image: none; mask-image: none;
+  }
+  .jd-q .jd-turn-assign.is-open { flex-wrap: wrap; }
+  .jd-q .jd-turn-assign .jd-turn-pv { flex: 0 0 auto; margin-top: 0; }
+}
+/* back/next: a bar stuck to the scroller's foot, on the sheet's paper — a
+   phone held upright only (held landscape, the two columns leave the first
+   row and the buttons in the flow, and a stuck bar would cover the row) */
+@media (max-width: 899px) and (min-height: 501px) {
+  .jd-q .jd-turn-actions {
+    position: sticky; bottom: -12px; z-index: 3;
+    margin: var(--sp-2) -12px -12px; padding: 6px 12px 10px;
+    background: var(--tpaper) var(--tgrain);
+    box-shadow: 0 -8px 10px -9px rgba(20, 10, 3, 0.45);
+  }
+}
 
 /* ---- the report path: a checkbox, and a note only once it is ticked ------ */
 .jd-turn-check {
@@ -4008,12 +3970,6 @@ html.jd-bench-on .jd-turn[data-view="preview"] {
 @media (any-pointer: coarse) {
   .jd-turn-check, .jd-turn-note,
   .jd-turn-go, .jd-turn-alt { min-height: 44px; }
-  /* the SELECT stops short of the full 44px floor (owner, 2026-08-26): the
-     one-screen survey outranks it. A bench row's select is a full-width
-     target — ~350px of strip — so 40px of height is still an easy landing,
-     and the 4px×5 rows it returns is what lets the whole form stand on one
-     phone screen. Buttons and the note keep the floor: they are narrow. */
-  .jd-turn-select { min-height: 40px; }
   /* the docket's rings grow toward the floor as circles — a min-height
      alone would egg them */
   .jd-rail-ring { width: 34px; height: 34px; }
@@ -4364,9 +4320,6 @@ body.jd-pod-drag, body.jd-pod-drag * {
      call — a short transition makes that read as one document changing
      shape rather than two cards swapping */
   .jd-turn { transition: width 0.22s cubic-bezier(.2, .8, .25, 1); }
-  /* the def label's one hover feedback (OVERRIDE 1): an ink shift, no
-     click-to-unfold left to animate open */
-  .jd-def > span { transition: color 0.15s; }
 }
 
 /* ---- HOW BIG IS IT — the curation's closing card (owner, 2026-08-30) ------
@@ -4957,87 +4910,15 @@ body.jd-ped-drag, body.jd-ped-drag * {
    flow, and ≤600px everything else compresses with it.
    ========================================================================== */
 @media (max-width: 700px) {
-  /* the landscape bench unwinds: the card returns to the form's own measure,
-     the column wrappers go display:contents (the DOM's source order IS the
-     portrait order), and the exhibit goes sticky again */
-  .jd-turn[data-view="bench"] {
-    width: min(680px, 100%);
-    height: 100%;              /* the whole padded viewport — THE FLEX EXHIBIT, below */
-  }
-  /* THE FLEX EXHIBIT (critic round, 2026-08-27). The 26dvh clamp could
-     never serve both ends of the phone band: content shrank 0.26px per
-     viewport px while the window it had to fit shrank a full 1 — so the
-     form fit at 748 with 56px to spare and still scrolled 20px at 660.
-     Inverted: the card takes the whole padded viewport, the scroller goes
-     flex-column, and the EXHIBIT is the one elastic block — it absorbs
-     whatever height the paperwork doesn't need, floored so a short window
-     costs the drawing before it costs the form. The survey never scrolls
-     on any phone taller than ~640px, and on a tall one the leftover goes
-     into the drawing, not into dead paper. (The sticky pin stays: it only
-     has work to do below the floor, where scrolling returns.) */
-  .jd-turn[data-view="bench"] .jd-turn-scroll { display: flex; flex-direction: column; }
-  /* THE EXHIBIT AT FULL WIDTH (owner, 2026-09-11): on a phone the drawing
-     is as large as the report card shows it — the whole width of the
-     sheet, square, so its height follows — and the survey scrolls under
-     it. That retires the one-screen design of rounds 17–26 (a flex
-     exhibit sized by the height left over, 128px floor, 46dvh cap, the
-     pin sticky over the rows): the owner's call is that scrolling to the
-     rows is fine and a thumbnail-sized exhibit is not. The pin is an
-     ordinary flow child now — not sticky, because a plate the width of
-     the sheet pinned at the top would leave a 667px phone a hand's
-     breadth for the rows. */
-  .jd-turn[data-view="bench"] .jd-turn-pin {
-    flex: 0 0 auto; min-height: 0; align-items: center;
-  }
-  /* (the call needs no clamp here: since the podium it is 462px at every
-     width — see .jd-turn[data-view="call"] above) */
-  /* (the reveal needs no clamp here: its 2×2 pile lives on the darkroom's
-     560px measure at every width — round 26 rev. 2) */
-  /* ALL THREE wrappers go display:contents (critic round 3, 2026-08-27):
-     the flex exhibit above only works if the pin is a true FLEX CHILD of
-     the scroller. With .jd-bench left display:block the pin was a
-     grandchild — its flex:1 was inert and the plate's height:100% resolved
-     against an indefinite auto box, which WebKit collapses to a 2×2px
-     speck (Chrome happened to resolve it, which is how it slipped by).
-     Verified in the failing engine: contents here, and the plate renders
-     216px square at a 748px viewport. */
-  .jd-bench, .jd-bench-l, .jd-bench-r { display: contents; }
-  .jd-turn-pin {
-    position: static; z-index: 4;   /* was sticky — see the note above */
-    padding: 0.1rem 0 0.45rem; margin: 0 0 0.15rem;
-    background: var(--tpaper) var(--tgrain);
-    /* R2-F3 (round-17), reasoning updated (owner directive r4 — grade moved
-       to last, see benchPanel): no border-bottom here. The HEADER row is
-       always first under the pin in the portrait stack (order changed, its
-       position in the DOM did not), and the header carries no top rule of
-       its own to double against; a rule painted here would just be a lone
-       hairline with nothing on either side of it justifying it. The
-       box-shadow stays — it's doing a different job, selling the sticky
-       plate lifting off the rows sliding underneath it, not ruling off a
-       section. */
-    box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
-  }
-  /* THE PLATE IS ART + STRIP, IN FLOW (critic/coder mobile round, owner
-     report, 2026-09-29). The plate used to carry its own aspect-ratio: 1/1
-     — a leftover of the flex-exhibit era, when the plate WAS the square.
-     Since the filmstrip moved inside the figure (2026-09-16) the plate is
-     the square artwork (.jd-turn-art, square of its own width) PLUS the
-     strip under it, so a square plate is a contradiction the engine has to
-     settle: current Chrome/WebKit let the ratio's automatic minimum size
-     grow the box to its content (348×384 at 390 wide), but an engine that
-     honours the ratio strictly — older iOS Safari, the owner's phone —
-     keeps it 348×348 and lays the strip 27px over the prompt box beneath.
-     No ratio here now: the art keeps the square, the plate is simply its
-     content's height in every engine, and there is no minimum-size rule
-     left for an engine to disagree about. (Was `aspect-ratio: 1 / 1`.) */
-  .jd-turn-pin .jd-turn-plate {
-    flex: 0 0 auto; width: 100%; height: auto;
-    max-height: none; max-width: 100%;
-  }
+  /* (the bench's portrait stack — the column wrappers unwound to
+     display:contents, the exhibit full width — retired with the selects in
+     0.18.0: a question card is phone-first by default and only goes two
+     columns from 900px; see "the question card's sheet") */
+  /* the plate is art + strip, in flow, with no aspect-ratio of its own
+     (critic/coder mobile round, 2026-09-29: an engine honouring a square
+     plate strictly laid the filmstrip over what came under it) */
+  .jd-turn-pin .jd-turn-plate { height: auto; max-height: none; }
   .jd-turn-pin .jd-turn-corner { width: 15px; height: 15px; }
-  /* portrait rhythm tightens one step with the one-screen goal: the gap
-     ahead of the buttons drops from a section break to a row break */
-  .jd-bench-r .jd-turn-actions { margin-top: var(--sp-3); }
   /* THE EMPTIED TRAY GIVES ITS AIR BACK (critic/coder mobile round, owner
      report, 2026-09-29). Once every drawing stands on a step, the bare
      tray's 16px margin plus its 46px floor left a ~62px band of blank
@@ -5108,27 +4989,7 @@ body.jd-ped-drag, body.jd-ped-drag * {
      needing to stack at all: every survivor is on the card at once, at
      print size, at every width (the tokens shrink at ≤430px, the shape does
      not change). Nothing here hides a survivor. */
-  /* the examination row becomes label-over-control. The rhythm goes
-     ASYMMETRIC (critic round, 2026-08-27): near-equal air above and below
-     each label had dissolved the question/answer pairing — proximity no
-     longer said which label owned which box, which is what read as
-     "crammed". Now the tight 2px grid gap binds a label to ITS select and
-     the row's own padding (4px) plus the rule carries the seam between
-     pairs; the select's trailing margin is gone entirely. */
-  .jd-row { grid-template-columns: minmax(0, 1fr); padding: 4px 0 2px; }
-  .jd-row .jd-turn-select { margin-bottom: 0; }
-  /* and the question finds its voice: at 8.8px/68% ink the label was a
-     whisper under a 16px bold answer — one step up in size and ink keeps
-     the answer loudest (it is the visitor's own pencil) without letting
-     the printed form disappear under it */
-  .jd-row .jd-def { font-size: 0.64rem; color: rgba(51, 36, 15, 0.82); }
   .jd-rail { margin-bottom: 6px; }
-  /* the header row named two COLUMNS; label-over-control just stacked
-     both of them into one, so there is no pair left for it to name — each
-     row's own dotted-underline label already says what it is at this
-     width, the way it always has. Drop the header rather than let it read
-     as two mystery lines above the first row. */
-  .jd-row--head { display: none; }
   /* (the 108px pin is gone: a narrow screen is not a short one, and the
      ≤700px rule above is already bounded by the height it competes for.
      Stacking a width breakpoint on top of it only shrank the exhibit on
@@ -5143,23 +5004,15 @@ body.jd-ped-drag, body.jd-ped-drag * {
 @media (max-width: 768px) {
   /* 16px kills iOS's focus zoom, which would otherwise leave this fixed
      layer parked half off-screen */
-  .jd-turn-input, .jd-turn-select, .jd-turn-note { font-size: 16px; }
+  .jd-turn-input, .jd-turn-note { font-size: 16px; }
   .jd-turn-input { min-height: 8.5rem; }
   /* OVERRIDE 2: the 44px touch floor, kept UNCONDITIONALLY at this
      breakpoint regardless of what any-pointer reports — a phone-width
      viewport is a touch target regardless of what the UA claims about the
-     pointer that's actually attached to it right now. The select runs a
-     step under it (40px) — see the any-pointer:coarse note above: it is a
-     full-width strip, and the one-screen survey needs the height back. */
+     pointer that's actually attached to it right now. (A question card's
+     option rows are 48px at every width.) */
   .jd-turn-check, .jd-turn-note,
   .jd-turn-go, .jd-turn-alt { min-height: 44px; }
-  .jd-turn-select {
-    min-height: 40px;
-    /* tracking comes nearly to zero here: 16px uppercase mono is already the
-       loudest voice on the sheet — the spacing was width the answers don't
-       have at this measure */
-    letter-spacing: 0.02em;
-  }
   .jd-rail-ring { width: 34px; height: 34px; }
   /* seven rings (dataset v2's head-to-head node joined the docket) need
      the connectors short to hold one line on a 390px sheet */
@@ -5174,7 +5027,8 @@ body.jd-ped-drag, body.jd-ped-drag * {
      report, 2026-09-29). Five presses on the bench measured under the
      floor on a phone: the row label (348×15), its boxed plus (15×15), the
      filmstrip's play (28×28), the paper swap (20×20) and the docket's
-     rings (34×34). None of them may LOOK any different — the owner drew
+     rings (34×34) — the label and its plus left with the selects in
+     0.18.0. None of them may LOOK any different — the owner drew
      every one of those sizes — so each grows an invisible ::before hit
      pad instead: a pseudo-element is part of its button, a press on it is
      a press on the button, and it paints nothing. Each pad is sized to the
@@ -5188,27 +5042,16 @@ body.jd-ped-drag, body.jd-ped-drag * {
        drawing it sits on (it is seated 15px in from the corner).
      — the rail rings: 5px all round → 44×44 — the rail's own 5px gap on
        either side, so a pad meets the connector and never the next ring.
-     — the row label: 6px up (the row's top padding and rule) and 2px down
-       (the label-to-select gap) → 23px tall across the full 348px strip.
-       That is as far as it can go: 6px up is the previous row's select,
-       2px down is this row's, and a pad over a select would steal its
-       press. The full 44 would need the rows re-spaced, which is the
-       owner's one-screen rhythm (the 4px × 5 rows above), not a hit-area
-       fix. The boxed plus rides inside the label and its press bubbles to
-       the label's data-act, so the label's band is the plus's band too.
      Scoped to the turn's scrim: the filmstrip is shared with the report
      card and the about page, whose neighbours were not measured. */
   .jd-turn-scrim .fs-play,
-  .jd-turn-scrim .jd-rowhead,
   .jd-turn-scrim .jd-rail-step { position: relative; }
   .jd-turn-scrim .fs-play::before,
   .jd-turn-scrim .jd-turn-paper::before,
-  .jd-turn-scrim .jd-rail-step::before,
-  .jd-turn-scrim .jd-rowhead::before { content: ""; position: absolute; }
+  .jd-turn-scrim .jd-rail-step::before { content: ""; position: absolute; }
   .jd-turn-scrim .fs-play::before { inset: -8px; }
   .jd-turn-scrim .jd-turn-paper::before { inset: -12px; }
   .jd-turn-scrim .jd-rail-step::before { inset: -5px; }
-  .jd-turn-scrim .jd-rowhead::before { inset: -6px 0 -2px; }
   /* immersive mode has slid the banner off the top (see .site-banner above),
      so the reserved band comes back as ordinary padding — and returns only
      while the chrome is actually showing */
@@ -5299,18 +5142,9 @@ body.jd-ped-drag, body.jd-ped-drag * {
     border: 1px solid var(--trule); border-bottom: 0;
   }
 
-  /* THE BENCH ARRIVES TOP-FIRST. The exhibit rode the vertical centre of
-     a stretched column (owner, 2026-08-28) and the paperwork column held
-     min-height: 100% — on a 390px viewport that parked the drawing at
-     y 220 (Chrome) / y 247 (WebKit), half of it below the fold, and let
-     the two engines disagree by 53px of scroll. Top-anchored and with no
-     forced height, both columns start under the rail in every engine. The
-     plate keeps the report card's ruler (52dvh / 42vw) but its 240px
-     floor stands down to 180px, so the whole drawing is on screen when
-     the bench opens (≈203px at 390 tall, ≈224px at 430). */
-  .jd-turn[data-view="bench"] { --plate: clamp(180px, min(52dvh, 42vw), 420px); }
-  .jd-bench-l { justify-content: flex-start; }
-  .jd-bench-r { min-height: 0; }
+  /* (THE BENCH ARRIVES TOP-FIRST, 2026-09-29: the question card's own
+     short-landscape rule — "the question card's sheet" — keeps both
+     columns top-anchored and the plate on the screen since 0.18.0) */
 
   /* THE PODIUM STEPS DOWN as it does at ≤430px. The landscape call and
      unveil wear the desktop tiers (140 / 120px prints), which ran the
@@ -5930,6 +5764,31 @@ html.jd-bench-on .jd-record-scrim {
   html.jd-bench-on .jd-turn-scrim {
     padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
     padding-bottom: max(calc(84px + env(safe-area-inset-bottom, 0px)), calc(var(--jd-bench-bar-h, 0px) + 6px));
+  }
+}
+/* THE STRIP WHILE A QUESTION CARD IS UP (0.18.0, critic round 2): on a
+   phone the strip folds to ONE row — its tag, how many to go and the
+   prompt's title — so the card above it can stand every row of a question
+   on one screen. The turn card sets html.jd-turn-q while a question card is
+   painted; the strip's tools (new prompt, rated, hidden items, the ledger,
+   skip / scrap / rerun, sign out) come back on every other card and when
+   the card closes. jd-bench.js re-measures --jd-bench-bar-h as it folds. */
+@media (max-width: 899px) {
+  html.jd-turn-q .jd-bench-bar { flex-wrap: nowrap; }
+  html.jd-turn-q .jd-bench-bar .jd-bench-new-btn,
+  html.jd-turn-q .jd-bench-bar [data-bench="rated"],
+  html.jd-turn-q .jd-bench-bar [data-bench="hidden"],
+  html.jd-turn-q .jd-bench-bar [data-bench="resume"],
+  html.jd-turn-q .jd-bench-bar .jd-bench-link,
+  html.jd-turn-q .jd-bench-bar .jd-bench-acts,
+  html.jd-turn-q .jd-bench-bar .jd-bench-build,
+  html.jd-turn-q .jd-bench-bar .jd-bench-out { display: none; }
+  html.jd-turn-q .jd-bench-bar .jd-bench-title {
+    flex: 1 1 auto; min-width: 0; max-width: none;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  html.jd-bench-on.jd-turn-q .jd-turn-scrim {
+    padding-bottom: calc(var(--jd-bench-bar-h, 40px) + 6px);
   }
 }
 

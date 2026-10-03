@@ -19,10 +19,12 @@
 //   preview  the sitting opens on THE PREVIEW (0.15.0): first docket station,
 //          four cells A–D carrying every drawing of the run once, the
 //          eight-station docket on one line, a click enlarging a print; the
-//          grading panels then show the same seats; a ?bench&prompt= resume
+//          question cards then show the same seats; a ?bench&prompt= resume
 //          opens on it too and its next goes on to the podium; 2×2 at 390
 //   rate   ?bench seats the newest; the card is rated end to end — four
-//          grading panels, the podium, THE PEDESTAL CARD (gaps 1, 0, 2 by
+//          drawings of six question cards each (ONE QUESTION A CARD, 0.18.0:
+//          the live axes then the grade, each press going on by itself; the
+//          judgment rows exactly the presses), the podium, THE PEDESTAL CARD (gaps 1, 0, 2 by
 //          ballot), the size, the "notes for the record" — and filed with
 //          the gaps on the ranking and `pairs: null`; the unveil names the
 //          models from the filing's reveal; DONE advances the queue to the
@@ -30,12 +32,13 @@
 //          note, gap_after 1/0/2 and six DERIVED pairs, and the prompt went
 //          live
 //   direct ?bench&prompt=<id> seats the closed prompt with its prefill
-//          (opens on the podium, every scale answered, and the pedestal card
+//          (opens on the podium, every question card pre-selected, and the pedestal card
 //          comes up with the filed gaps — the reload round trip, through the
 //          server); ?bench&item= too
 //   pruned P2's sitting with a retired cell (structural-coherence, no
 //          successor) and layering-2 off its scale: the reopen drops both,
-//          says prefill_pruned and the card's one-line note
+//          says prefill_pruned and the card's one-line note; the docket lands
+//          on the Layering card, the first unanswered, and the rest is kept
 //   mapped P2's sitting as a v35 sitting (Layering on the 3-point
 //          `layering`, required_cells naming it): the reopen carries every
 //          answer onto layering-2 through the taxonomy's `successor` map
@@ -228,6 +231,120 @@ const previewState = (pg) => pg.evaluate(() => {
 });
 const benchFit = (pg) => pg.$eval('.jd-bench .jd-turn-pin .jd-turn-art-in', (e) => e.getAttribute('data-fit'));
 
+// ONE QUESTION A CARD (0.18.0): the question card on the bench, read off
+// the page — which drawing (and its generation, the plate's frame key) and
+// question, its options' radio state, pencil, "last time" note and box, the
+// prefill notes, its next and back, and the card's visible band (the
+// scroller, cut by the card's foot and by the bench strip)
+const qCard = (pg) => pg.evaluate(() => {
+  const q = document.querySelector('.jd-q');
+  if (!q) return null;
+  const g = q.querySelector('.jd-q-opts');
+  const go = document.querySelector('.jd-turn-actions .jd-turn-go');
+  const back = document.querySelector('.jd-turn-actions [data-act="back"]');
+  const box = (e) => { if (!e) return null; const r = e.getBoundingClientRect();
+    return { t: Math.round(r.top), b: Math.round(r.bottom), h: Math.round(r.height) }; };
+  const sc = document.querySelector('.jd-turn-scroll').getBoundingClientRect();
+  const cr = document.querySelector('.jd-turn').getBoundingClientRect();
+  const bar = document.querySelector('.jd-bench-bar');
+  const art = document.querySelector('.jd-turn-pin .jd-turn-art-in');
+  return {
+    slot: q.getAttribute('data-slot'),
+    gen: art ? String(art.getAttribute('data-fit') || '').replace(/^gen:/, '') : null,
+    step: (q.querySelector('.jd-q-step > span') || {}).textContent,
+    q: g && g.getAttribute('data-q'),
+    opts: g ? [...g.querySelectorAll('.jd-q-opt')].map((o) => ({ v: o.getAttribute('data-v'),
+      checked: o.getAttribute('aria-checked'), klass: o.className, box: box(o),
+      last: (o.querySelector('.jd-q-last') || {}).textContent || null })) : [],
+    pruned: (q.querySelector('.jd-turn-pruned:not(.jd-turn-mapped)') || {}).textContent || null,
+    mapped: (q.querySelector('.jd-turn-mapped') || {}).textContent || null,
+    go: go ? { act: go.getAttribute('data-act'), disabled: go.disabled, text: go.textContent } : null,
+    back: box(back),
+    vis: { t: Math.round(sc.top), b: Math.round(Math.min(sc.bottom, cr.bottom, bar ? bar.getBoundingClientRect().top : Infinity)) },
+    bar: bar ? (() => {
+      // one row: every visible item's vertical centre within 12px of the others
+      const mids = [...bar.children].filter((x) => getComputedStyle(x).display !== 'none')
+        .map((x) => { const r = x.getBoundingClientRect(); return (r.top + r.bottom) / 2; });
+      return { h: Math.round(bar.getBoundingClientRect().height),
+        rows: mids.length && Math.max(...mids) - Math.min(...mids) <= 12 ? 1 : 2 };
+    })() : null,
+    selects: document.querySelectorAll('.jd-turn select').length
+  };
+});
+const qChecked = (c) => (c && c.opts.filter((o) => o.checked === 'true').map((o) => o.v)) || [];
+const Q_SETTLE = 460;   // the card's double-tap guard is 400 ms from a paint
+const qMoved = (pg, step) => pg.waitForFunction((s) => {
+  const e = document.querySelector('.jd-q-step > span');
+  return !e || e.textContent !== s;
+}, step, { timeout: 5000 });
+// every option row and back inside the card's visible band (no scrolling)
+const qFits = (c) => !!(c && c.opts.length && c.opts.every((o) => o.box.t >= c.vis.t && o.box.b <= c.vis.b) &&
+  (!c.back || (c.back.t >= c.vis.t && c.back.b <= c.vis.b)));
+// one drawing's six cards, each answered by a press (the value (i + d) mod
+// n, varied) that goes on by itself after its beat; `each` sees every card
+async function answerCards(pg, d, each) {
+  const seen = [];
+  for (let i = 0; i < 12; i++) {
+    await pg.waitForTimeout(Q_SETTLE);
+    const c = await qCard(pg);
+    if (!c || (seen.length && c.slot !== seen[0].slot)) break;
+    seen.push(c);
+    if (each) await each(c, i);
+    await pg.click('.jd-q-opt:nth-child(' + (((i + d) % c.opts.length) + 1) + ')');
+    await qMoved(pg, c.step).catch(() => {});
+  }
+  return seen;
+}
+// a prefilled drawing, card by card: read each, then NEXT (armed on an
+// answered card) — never past its grade, which would leave the drawing
+async function walkCards(pg) {
+  const seen = [];
+  for (let i = 0; i < 8; i++) {
+    const c = await qCard(pg);
+    if (!c) break;
+    seen.push(c);
+    if (c.q === 'grade' || !c.go || c.go.disabled) break;
+    await pg.click('.jd-turn-actions [data-act="next"]');
+    await qMoved(pg, c.step).catch(() => {});
+  }
+  return seen;
+}
+const LIVE_Q = TAX.axes.filter((a) => !a.defunct).map((a) => a.id).concat(['grade']);
+// the owner's latest sitting on a run, as the card should pre-select it:
+// generation → { grade, axes }, a defunct axis's answer read through its
+// `successor` map (the taxonomy's read-time rule) when the live axis has none
+function lastSitting(runId) {
+  const sid = q("SELECT id FROM jd2_sessions WHERE run_id = ? AND rater_role = 'owner' ORDER BY filed_at DESC, id DESC", [runId])[0].id;
+  const out = {};
+  const later = [];
+  q('SELECT generation_id, kind, axis_id, value FROM jd2_judgments WHERE session_id = ?', [sid]).forEach((j) => {
+    const g = out[j.generation_id] = out[j.generation_id] || { grade: null, axes: {} };
+    if (j.kind === 'grade') { g.grade = Number(j.value); return; }
+    const ax = TAX.axes.find((a) => a.id === j.axis_id);
+    if (ax && ax.defunct) { if (ax.successor) later.push([g, ax.successor, Math.round(Number(j.value))]); return; }
+    g.axes[j.axis_id] = Number(j.value);
+  });
+  later.forEach(([g, s, v]) => { if (g.axes[s.id] == null && s.map[String(v)] != null) g.axes[s.id] = s.map[String(v)]; });
+  return out;
+}
+const valueLabel = (qid, v) => {
+  const ax = TAX.axes.find((a) => a.id === qid);
+  const l = (ax ? ax.values : TAX.grades).find((x) => Number(x.rank) === Number(v));
+  return l ? String(l.label).replace(/_([^_]+)_/g, '$1') : null;
+};
+// every one of a drawing's cards came up with the previous sitting's answer
+// pre-selected — the same value, by generation — saying "last time: <label>
+// — tap to keep" on that row
+const allPrefilled = (w, prev) => w.length === LIVE_Q.length && w.every((c, i) => {
+  const want = prev && prev[c.gen] ? (c.q === 'grade' ? prev[c.gen].grade : prev[c.gen].axes[c.q]) : undefined;
+  const on = c.opts.filter((o) => o.checked === 'true');
+  return c.q === LIVE_Q[i] && on.length === 1 && want != null && Number(on[0].v) === Number(want) &&
+    on[0].last === 'last time: ' + valueLabel(c.q, want) + ' — tap to keep';
+}) && w[0].selects === 0;
+const prefillDetail = (w, prev) => JSON.stringify(w.map((c) => [c.gen && c.gen.slice(-6), c.q, qChecked(c),
+  prev && prev[c.gen] ? (c.q === 'grade' ? prev[c.gen].grade : prev[c.gen].axes[c.q]) : null,
+  (c.opts.find((o) => o.checked === 'true') || {}).last]));
+
 // mode 'gaps' (the instrument) answers the pedestal card by ballot with
 // `gaps` (the card's stops: 0.5 = negligibly); mode 'pairs' (?pairs=1) runs
 // the six side-by-side cards
@@ -236,18 +353,15 @@ async function rateThrough(pg, note, mode, gaps, atEntry) {
   await pg.waitForSelector('.jd-turn[data-view="preview"] .jd-preview', { timeout: 10000 });
   const preview = await previewState(pg);
   await pg.click('.jd-turn-actions [data-act="next"]');
-  const fits = [];
-  // the four grading panels: every select answered (varied values)
+  const fits = [], qcards = [];
+  // the four drawings, ONE QUESTION A CARD (0.18.0): six cards each, every
+  // one answered by a press (varied values) that goes on by itself — the
+  // last grade on to the podium
   for (let d = 0; d < 4; d++) {
-    await pg.waitForSelector('.jd-bench', { timeout: 10000 });
+    await pg.waitForSelector('.jd-bench .jd-q-opts', { timeout: 10000 });
     fits.push(await benchFit(pg));
-    const sels = await pg.$$('.jd-bench select.jd-turn-select');
-    for (let i = 0; i < sels.length; i++) {
-      const n = await sels[i].evaluate((s) => s.options.length);
-      await sels[i].selectOption({ index: 1 + ((i + d) % (n - 1)) });
-    }
     if (d === 0) await shot(pg, '2-bench');
-    await pg.click('.jd-turn-actions [data-act="next"]');
+    qcards.push(await answerCards(pg, d));
   }
   // the podium: arm each step, then press the drawing for it
   await pg.waitForSelector('.jd-pod-tier[data-rank="1"]');
@@ -298,7 +412,7 @@ async function rateThrough(pg, note, mode, gaps, atEntry) {
   if (hasNote) await pg.fill('textarea[data-role="sitting-note"]', note);
   await shot(pg, '4-size-note');
   await pg.click('.jd-turn-actions [data-act="file"]');
-  return { cards, hasNote, preset, ped, rail, entry, edits, preview, fits };
+  return { cards, hasNote, preset, ped, rail, entry, edits, preview, fits, qcards };
 }
 
 // the catalogue entry card, read off the page: its heading, the view, the
@@ -469,7 +583,11 @@ async function main() {
       return after;
     });
     const e0 = r.entry;
-    check('the preview dealt the same seats the grading panels use (each panel\'s drawing is its preview cell\'s)',
+    check('ONE QUESTION A CARD on the bench: each drawing asked six cards — the live axes in taxonomy order, then the grade — each going on by itself, no select',
+      r.qcards.length === 4 && r.qcards.every((dr, d) => dr.length === LIVE_Q.length && dr.every((c, i) => c.q === LIVE_Q[i] &&
+        c.step === 'Drawing ' + 'ABCD'[d] + ' · ' + (i + 1) + ' of ' + LIVE_Q.length && qChecked(c).length === 0 && c.selects === 0)),
+      JSON.stringify(r.qcards.map((dr) => dr.map((c) => c.q + ':' + c.step))));
+    check('the preview dealt the same seats the question cards use (each drawing\'s plate is its preview cell\'s)',
       r.fits.length === 4 && r.fits.join() === r.preview.cells.map((c) => c.fit).join() &&
       r.rail[0] === 'preview', JSON.stringify({ fits: r.fits, cells: r.preview.cells.map((c) => c.fit), rail: r.rail }));
     check('the closing card is THE CATALOGUE ENTRY (heading, data-view, its rail station replacing the size\'s)',
@@ -536,6 +654,18 @@ async function main() {
     // spaced-rank-v1: 1st›2nd 1, 2nd›3rd 0, 3rd›4th 2, 1st›3rd 1, 2nd›4th 2, 1st›4th 3
     check('SQLite: the derived magnitudes are the summed gaps, capped at 3 (1,0,2,1,2,3)',
       prs.map((p) => Math.abs(Number(p.score))).sort().join() === [1, 0, 2, 1, 2, 3].sort().join(), JSON.stringify(prs));
+    // the judgment rows are exactly the cards' presses: each drawing (by its
+    // plate's generation id, r.fits) took value (i + d) mod n on card i
+    const wantJ = [];
+    r.qcards.forEach((dr, d) => dr.forEach((c, i) => {
+      const v = Number(c.opts[(i + d) % c.opts.length].v);
+      wantJ.push(String(r.fits[d]).replace(/^gen:/, '') + ':' + (c.q === 'grade' ? 'grade' : 'axis:' + c.q) + ':' + v);
+    }));
+    const gotJ = sess.length ? q('SELECT generation_id, kind, axis_id, value FROM jd2_judgments WHERE session_id = ?', [sess[0].id])
+      .map((x) => x.generation_id + ':' + (x.kind === 'grade' ? 'grade' : 'axis:' + x.axis_id) + ':' + Number(x.value)) : [];
+    check('SQLite: one judgment row per question card — the grade and every live axis per drawing, as pressed',
+      gotJ.length === 24 && JSON.stringify(gotJ.slice().sort()) === JSON.stringify(wantJ.slice().sort()),
+      JSON.stringify({ got: gotJ.slice().sort().slice(0, 6), want: wantJ.slice().sort().slice(0, 6) }));
     const cells = sess.length ? q("SELECT COUNT(*) AS n FROM jd2_judgments WHERE session_id = ? AND kind = 'grade'", [sess[0].id])[0].n : 0;
     const ranks = sess.length ? q('SELECT rank_pos FROM jd2_rankings WHERE session_id = ? ORDER BY rank_pos', [sess[0].id]) : [];
     check('SQLite: four grades and a strict ranking 1..4', Number(cells) === 4 &&
@@ -574,25 +704,30 @@ async function main() {
     // --- direct ------------------------------------------------------------
     await page.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P2.prompt_id, { waitUntil: 'load' });
     await seated(page, P2.prompt_id);
-    // a resume opens on the PREVIEW too (a glance, not a question); its next
-    // goes where the resume would have opened — the podium, full
+    // a resume opens on the PREVIEW too (a glance, not a question). A
+    // COMPLETE re-rate (owner, 2026-10-03) starts over at the top: its next
+    // opens drawing A's first card, every answer pre-selected
     const v0 = await previewState(page);
     await shot(page, '6a-direct-preview');
-    check('?bench&prompt=<closed id> opens on the preview, every answered station reachable, next toward the ranking',
+    check('?bench&prompt=<closed id> (complete) opens on the preview, every answered station reachable, next toward drawing A',
       v0.view === 'preview' && v0.rail[0].step === 'preview' && v0.rail[0].current &&
       v0.rail.filter((x) => x.step !== 'size').every((x) => x.reached) &&
-      v0.cells.length === 4 && v0.go && /next — ranking/.test(v0.go.text), JSON.stringify({ view: v0.view, rail: v0.rail, go: v0.go }));
+      v0.cells.length === 4 && v0.go && /next — drawing A/.test(v0.go.text), JSON.stringify({ view: v0.view, rail: v0.rail, go: v0.go }));
+    const prevP2 = lastSitting(P2.run_id);
     await page.click('.jd-turn-actions [data-act="next"]');
-    await page.waitForSelector('.jd-turn[data-view="call"]', { timeout: 10000 });
-    const v = await view(page);
-    const full = await page.$eval('.jd-turn-actions [data-act="next"]', (b) => !b.disabled).catch(() => false);
-    check('…and its next lands on the podium, full (prefilled ranks)', v === 'call' && full, v);
-    await page.click('.jd-rail-step[data-step="a"]');
-    await page.waitForSelector('.jd-bench select.jd-turn-select');
-    const answered = await page.$$eval('.jd-bench select.jd-turn-select', (s) => s.length > 0 && s.every((x) => x.value !== ''));
-    check('…and every scale on its drawings comes up answered (prefilled grades and axes)', answered);
-    const gapsReached = await page.$eval('.jd-rail-step--gaps', (b) => !b.disabled).catch(() => false);
+    await page.waitForSelector('.jd-bench .jd-q-opts', { timeout: 10000 });
+    // next walks drawing A's six, each with the filed answer pre-selected
+    const walkA = await walkCards(page);
     await shot(page, '6-direct-prefill');
+    check('…and its next opens drawing A\'s first card; next walks all six, each pre-selected at the last sitting\'s value for that generation, "last time: <label> — tap to keep" on the row',
+      allPrefilled(walkA, prevP2) && walkA[0].step === 'Drawing A · 1 of 6' &&
+      walkA[walkA.length - 1].go && !walkA[walkA.length - 1].go.disabled && /next — drawing B/.test(walkA[walkA.length - 1].go.text),
+      prefillDetail(walkA, prevP2));
+    await page.click('.jd-rail-step[data-step="call"]');
+    await page.waitForSelector('.jd-turn[data-view="call"]', { timeout: 10000 });
+    const full = await page.$eval('.jd-turn-actions [data-act="next"]', (b) => !b.disabled).catch(() => false);
+    check('…and the docket\'s ranking station is open, its podium full (prefilled ranks)', full);
+    const gapsReached = await page.$eval('.jd-rail-step--gaps', (b) => !b.disabled).catch(() => false);
     // the gaps prefill: the podium's button leads on, and the pedestal card
     // comes up with every margin the owner filed (seats are re-dealt, so the
     // gaps are compared in place order)
@@ -638,8 +773,23 @@ async function main() {
     });
     check('phone: the bench preview stacks 2×2 at 390px, every print on the sheet', phPv.n === 4 && phPv.cols === 2 &&
       phPv.rows === 2 && phPv.inside && phPv.wide, JSON.stringify(phPv));
+    // A PHONE SITTING ON THE BENCH (critic, round 2): drawing A's six cards
+    // answered with the strip mounted — every row and back on the first
+    // screen of each, the strip folded to one row while a question is up
+    const stripBefore = await ph.evaluate(() => Math.round(document.querySelector('.jd-bench-bar').getBoundingClientRect().height));
     await ph.click('.jd-turn-actions [data-act="next"]');
+    await ph.waitForSelector('.jd-bench .jd-q-opts', { timeout: 10000 });
+    const phCards = await answerCards(ph, 0, async (c, i) => { await shot(ph, '12q-' + (i + 1) + '-card-390'); });
+    check('phone 390×844 on the bench: drawing A is six cards, each with every option row and back in the card\'s visible area (the strip mounted)',
+      phCards.length === LIVE_Q.length && phCards.every(qFits),
+      JSON.stringify(phCards.filter((c) => !qFits(c)).map((c) => [c.step, c.vis, c.opts.map((o) => [o.box.t, o.box.b]), c.back])));
+    check('phone: the strip folds to ONE row while a question card is up', stripBefore > 60 &&
+      phCards.every((c) => c.bar && c.bar.rows === 1 && c.bar.h < 60), JSON.stringify({ before: stripBefore, during: phCards.map((c) => c.bar) }));
+    await ph.click('.jd-rail-step[data-step="call"]');
     await ph.waitForSelector('.jd-turn[data-view="call"]');
+    const stripAfter = await ph.evaluate(() => Math.round(document.querySelector('.jd-bench-bar').getBoundingClientRect().height));
+    check('…and unfolds again off the question cards (the ranking): its tools are back', stripAfter > 60 &&
+      await ph.$eval('.jd-bench-bar [data-bench="skip"]', (b) => getComputedStyle(b).display !== 'none').catch(() => false), String(stripAfter));
     await ph.click('.jd-turn-actions [data-act="next"]');
     await ph.waitForSelector('.jd-turn[data-view="gaps"] .jd-ped');
     await throughGaps(ph);
@@ -696,19 +846,34 @@ async function main() {
         !('structural-coherence' in x.prefill.axes) && !('layering-2' in x.prefill.axes) && Object.keys(x.prefill.axes).length > 0),
       JSON.stringify(qp.responses.map((x) => x.prefill && x.prefill.axes)));
     await page.click('.jd-rail-step[data-step="a"]');
-    await page.waitForSelector('.jd-bench select.jd-turn-select');
-    const pr = await page.evaluate(() => ({
-      note: (document.querySelector('.jd-turn-pruned:not(.jd-turn-mapped)') || {}).textContent || null,
-      mapped: !!document.querySelector('.jd-turn-mapped'),
-      layering: (document.querySelector('.jd-bench select[data-axis="layering-2"]') || {}).value,
-      others: [...document.querySelectorAll('.jd-bench select.jd-turn-select')]
-        .filter((x) => x.getAttribute('data-axis') !== 'layering-2').every((x) => x.value !== ''),
-      gate: (document.querySelector('.jd-turn-actions [data-act="next"]') || {}).disabled
-    }));
+    await page.waitForSelector('.jd-bench .jd-q-opts');
+    // the docket lands on the drawing's first UNANSWERED card: Layering
+    const pr = await qCard(page);
     await shot(page, '12d-pruned-prefill');
-    check('pruned: the card notes it in one line, leaves Layering unanswered (gate shut) and keeps the rest',
-      pr.note === 'earlier answers on a retired or rescaled axis were not carried over' && !pr.mapped && pr.layering === '' &&
-      pr.others && pr.gate === true, JSON.stringify(pr));
+    // the cards before it kept their answers (back walks them) …
+    await page.click('.jd-turn-actions [data-act="back"]');
+    await qMoved(page, pr.step).catch(() => {});
+    const prB1 = await qCard(page);
+    await page.click('.jd-turn-actions [data-act="back"]');
+    await qMoved(page, prB1.step).catch(() => {});
+    const prB2 = await qCard(page);
+    // … and so did the cards after it: Layering answered, the press goes on
+    await page.click('.jd-turn-actions [data-act="next"]');
+    await qMoved(page, prB2.step).catch(() => {});
+    await page.click('.jd-turn-actions [data-act="next"]');
+    await qMoved(page, prB1.step).catch(() => {});
+    const prL = await qCard(page);
+    await page.waitForTimeout(Q_SETTLE);
+    await page.click('.jd-q-opt:nth-child(1)');
+    await qMoved(page, prL.step).catch(() => {});
+    const prAfter = await walkCards(page);
+    check('pruned: the docket lands on the Layering card, unanswered (next shut), and the card notes it in one line',
+      pr && pr.q === 'layering-2' && pr.step === 'Drawing A · 3 of 6' && qChecked(pr).length === 0 && pr.go && pr.go.disabled &&
+      pr.pruned === 'earlier answers on a retired or rescaled axis were not carried over' && !pr.mapped, JSON.stringify(pr));
+    check('pruned: the rest is kept — the cards before and after Layering come up answered',
+      prB1 && prB1.q === LIVE_Q[1] && qChecked(prB1).length === 1 && prB2 && prB2.q === LIVE_Q[0] && qChecked(prB2).length === 1 &&
+      prL && prL.q === 'layering-2' && prAfter.length === 3 && prAfter.every((c, i) => c.q === LIVE_Q[3 + i] && qChecked(c).length === 1),
+      JSON.stringify({ b1: prB1 && [prB1.q, qChecked(prB1)], b2: prB2 && [prB2.q, qChecked(prB2)], after: prAfter.map((c) => [c.q, qChecked(c)]) }));
     restoreP2();
 
     // --- the mapped prefill (taxonomy v36) --------------------------------------
@@ -739,21 +904,25 @@ async function main() {
         Number(x.prefill.axes['layering-2']) === wantOf[x.generation_id]),
       JSON.stringify(qm.responses.map((x) => [x.generation_id, x.prefill && x.prefill.axes, wantOf[x.generation_id]])));
     await page.click('.jd-rail-step[data-step="a"]');
-    await page.waitForSelector('.jd-bench select.jd-turn-select');
-    const pm = await page.evaluate(() => {
-      const sel = document.querySelector('.jd-bench select[data-axis="layering-2"]');
-      const bar = sel && sel.parentNode.querySelector('.rc-bar');
-      return {
-        note: (document.querySelector('.jd-turn-mapped') || {}).textContent || null,
-        pruned: !!document.querySelector('.jd-turn-pruned:not(.jd-turn-mapped)'),
-        value: sel ? sel.value : null, cls: bar ? bar.className : '',
-        all: [...document.querySelectorAll('.jd-bench select.jd-turn-select')].every((x) => x.value !== ''),
-        gate: (document.querySelector('.jd-turn-actions [data-act="next"]') || {}).disabled
-      };
-    });
+    await page.waitForSelector('.jd-bench .jd-q-opts');
+    // every card answered, so the docket lands on the first; walk the six,
+    // then back from the grade to Layering, the third
+    const pmWalk = await walkCards(page);
+    for (let i = 0; i < 3; i++) {
+      const c = await qCard(page);
+      await page.click('.jd-turn-actions [data-act="back"]');
+      await qMoved(page, c.step).catch(() => {});
+    }
+    const pmL = await qCard(page);
+    const pmOn = pmL && pmL.opts.filter((o) => o.checked === 'true')[0];
+    const pm = {
+      note: pmL && pmL.mapped, pruned: !!(pmL && pmL.pruned), q: pmL && pmL.q,
+      value: pmOn ? pmOn.v : null, cls: pmOn ? pmOn.klass : '',
+      all: allPrefilled(pmWalk, lastSitting(P2.run_id)), gate: pmL && pmL.go ? pmL.go.disabled : null
+    };
     await shot(page, '12e-mapped-prefill');
-    check('mapped: the card says so in the same place ("earlier Layering answers were carried onto its new 4-point scale"), seats a mapped Layering on the rc-q ramp, gate open',
-      pm.note === 'earlier Layering answers were carried onto its new 4-point scale' && !pm.pruned &&
+    check('mapped: the card says so in the same place ("earlier Layering answers were carried onto its new 4-point scale"), pre-selects a mapped Layering on its card in the rc-q pencil, every card answered, next armed',
+      pm.note === 'earlier Layering answers were carried onto its new 4-point scale' && !pm.pruned && pm.q === 'layering-2' &&
       ['1', '3', '4'].indexOf(pm.value) !== -1 && new RegExp('\\brc-q' + pm.value + '\\b').test(pm.cls) && pm.all && pm.gate === false,
       JSON.stringify(pm));
     // the report card: the drawer's own card, opened on P2 — in a fresh
@@ -874,22 +1043,28 @@ async function main() {
     const rv = await previewState(page);
     const rvSearch = await page.evaluate(() => location.search);
     await shot(page, '13b-rerate-preview');
-    check('RE-RATE seats it as ?bench&prompt= does: the preview, every answered station reached, next toward the ranking; the sheet down',
+    check('RE-RATE seats it as ?bench&prompt= does: the preview, every answered station reached, next toward drawing A; the sheet down',
       rv.view === 'preview' && rv.rail[0].current && rv.rail.filter((x) => x.step !== 'size').every((x) => x.reached) &&
-      rv.cells.length === 4 && rv.go && /next — ranking/.test(rv.go.text) &&
+      rv.cells.length === 4 && rv.go && /next — drawing A/.test(rv.go.text) &&
       (await page.$eval('.jd-bench-sheet', (e) => e.hidden)), JSON.stringify({ view: rv.view, rail: rv.rail, go: rv.go }));
     check('…and the address names it (?bench&prompt=<id>), so a reload comes back to it',
       rvSearch === '?bench&prompt=' + P2.prompt_id, rvSearch);
     check('…and the preview says it is a re-rating, in its one instruction line',
       await page.$eval('.jd-preview-line', (p) => /Click one to enlarge\. Your last sitting’s answers are on the card; change what you like — filing adds a new sitting\.$/.test(p.textContent.trim()) &&
         !!p.querySelector('.jd-preview-rerate')).catch(() => false));
+    const prevRR = lastSitting(P2.run_id);
     await page.click('.jd-turn-actions [data-act="next"]');
+    await page.waitForSelector('.jd-bench .jd-q-opts', { timeout: 10000 });
+    const rrFirst = await qCard(page);
+    await page.click('.jd-rail-step[data-step="b"]');
+    await page.waitForSelector('.jd-bench .jd-q-opt.is-on');
+    const rrWalk = await walkCards(page);
+    await page.click('.jd-rail-step[data-step="call"]');
     await page.waitForSelector('.jd-turn[data-view="call"]', { timeout: 10000 });
     const rrFull = await page.$eval('.jd-turn-actions [data-act="next"]', (b) => !b.disabled).catch(() => false);
-    await page.click('.jd-rail-step[data-step="b"]');
-    await page.waitForSelector('.jd-bench select.jd-turn-select');
-    const rrAnswered = await page.$$eval('.jd-bench select.jd-turn-select', (s) => s.length > 0 && s.every((x) => x.value !== ''));
-    check('…with the prefill: the podium full (the places), every scale answered (grades and axes)', rrFull && rrAnswered);
+    check('…with the prefill: next opens drawing A\'s first card; every card pre-selected at the last sitting\'s value by generation (grades and axes, "last time" on the row); the podium full',
+      !!(rrFirst && rrFirst.step === 'Drawing A · 1 of 6') && rrFull && allPrefilled(rrWalk, prevRR), prefillDetail(rrWalk, prevRR));
+    await page.click('.jd-rail-step[data-step="call"]');
     await page.click('.jd-rail-step[data-step="call"]');
     await page.click('.jd-turn-actions [data-act="next"]');
     await page.waitForSelector('.jd-turn[data-view="gaps"] .jd-ped');

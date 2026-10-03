@@ -1233,7 +1233,7 @@
         /* the card stays even when no model has earned a bar yet (2026-09-10,
            with the folder's return): a missing chart reads as a broken
            folder, a stated shortfall reads as the truth */
-        return cardHTML('fx-grades', 'Overall grade',
+        return cardHTML('fx-grades', JD_gradeQuestion(window.JD_TAX).label,
           'no model has ' + MIN_N + ' grades on visitor turns under the ' +
           'current rubric yet' + notPlotted(dropped), '');
       }
@@ -1251,7 +1251,7 @@
       });
       var svg = chartSVG(W, rows.length * ROWH + 6,
         'Average overall grade. ' + alt.join('. '), s);
-      return cardHTML('fx-grades', 'Overall grade',   /* owner, 2026-09-11 */
+      return cardHTML('fx-grades', JD_gradeQuestion(window.JD_TAX).label,   /* owner, 2026-09-11 */
         /* "current rubric" = the v17 rework onward — the endpoint's era gate
            (owner call, 2026-08-28): pre-v17 grades are the old demo era and
            re-enter by being re-rated, never by being grandfathered */

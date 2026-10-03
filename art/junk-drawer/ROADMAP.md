@@ -112,7 +112,13 @@ back-end change; the owner decides the wording):
   engine's existing walk of the SVG; a drawn box is a transform-free
   overlay. Not now.
 
-- **One question at a time.** A rating card that asks understanding, then
+- **One question at a time — DONE 0.18.0 (2026-10-03, per drawing; branch
+  `junk-drawer-one-question`).** Each drawing's station is six question
+  cards — the five live axes in taxonomy order, then the overall grade —
+  each a list of large radio rows that goes on by itself when one is
+  pressed; phone first. Same card for visitors and the bench (CLAUDE.md,
+  "ONE QUESTION A CARD"). The "per question across drawings" variant is not
+  built. Original note: A rating card that asks understanding, then
   structural coherence, then layering, then jnsq, then the overall grade,
   per drawing (or per question across drawings) — instead of the full panel
   of selects. Same card for visitors and the bench.
