@@ -36,7 +36,7 @@ plays the same meeting every time, in the browser and in the headless harness.
 | open work | `OPEN-WORK.md` — ideas approved and not built, the crews' requests not done, known issues, the decisions waiting on the owner's ear, cost |
 | the staff's rules | `STAFF.md` — what the shape-note staff prints and never prints, the layers and their sizes, the look, the collision rules, the checks |
 | the plans | `PLAN-ONE-ROOM.md` (the room; phases C–E open), `PLAN-CATERPILLAR.md` (the band's volume control) and `PLAN-REFACTOR.md` (efficiency, reliability and maintainability with nothing audible or visible changed: the faults found, the copies to fold, the page's frame, the order of work), each with a status banner. The build's plans — composition, engraving, execution — are in `archive/plans/`; what they proposed is built, declined (`OWNER-RULINGS.md`) or open (`OPEN-WORK.md`) |
-| the handoffs | `handoff/` — what is current: the listening packets (`listen-*.md`), the last integration (`r3c-integrate-1.md`), the last engraving pass (`r3c-engrave-2.md`), the caterpillar (`caterpillar-1.md`, `-2.md`) and one open brief (`drone-wave-handoff.md`). Everything a later round superseded is in `archive/handoff/` |
+| the handoffs | `handoff/` — what is current: the listening packets (`listen-*.md`; `listen-kept-mouths.md`, the ward's mouths, waits on the owner), the last integration (`r3c-integrate-1.md`), the last engraving pass (`r3c-engrave-2.md`), the caterpillar (`caterpillar-1.md`, `-2.md`) and one open brief (`drone-wave-handoff.md`). Everything a later round superseded is in `archive/handoff/` |
 | the archive | `archive/` — the layered contract, the build's plans, every superseded handoff and listening packet, the critics' briefs and panels, the second look, the old page mockups; `archive/README.md` says what each was. Nothing there governs |
 | mockups | `mockups/` — the three engraving directions the owner chose from (A, "The Colony Tunebook", shipped) |
 
@@ -108,9 +108,12 @@ baseline again (`--write`) in the same commit.
 
 `?seed=N` · `&guest=<name>` (one of `bands handcart gulls variations changes
 tongues farward hosanna socialhall testimony trombones handbells singingschool
-steeples oldtune`) · `&exp=-reckoning` / `-singingSchool` ·
-`&latin=1` · `&kolobPreview=1` · `&kolobCumulative=1`. The Ives switch forces a guest;
-the Whole switch governs the withheld tune; Latin reveals the dev labels.
+steeples oldtune`) · `&exp=-reckoning` / `-singingSchool` / `+rungOut` /
+`+keptMouths` · `&latin=1` · `&kolobPreview=1` · `&kolobCumulative=1`. The Ives
+switch forces a guest; the Whole switch governs the withheld tune; Latin reveals
+the dev labels. `rungOut` and `keptMouths` are off, waiting on the owner's ear
+(`handoff/listen-kept-mouths.md`): the ward's mouths parted only once they have
+rung out, and kept from line to line.
 
 ## Where to hear things
 

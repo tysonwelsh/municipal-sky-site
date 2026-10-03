@@ -7,7 +7,7 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 
 ## The refactor
 
-- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a), §3.5, §4.0(b), §4.0(c), §4.1, §4.2, §4.3, §4.4 and §4.5 built): the owner asked for a plan to improve
+- **`PLAN-REFACTOR.md`** (2026-10-01; §2 built, v0.36.3; §3.6, §3.1, §3.3, §3.7, §3.8, §3.2, §3.4, §4.0(a), §3.5, §4.0(b), §4.0(c), §4.1, §4.2, §4.3, §4.4, §4.5, §4.6 and §4.7 built; §4.6's third **awaits the owner**): the owner asked for a plan to improve
   efficiency, reliability and maintainability without changing what is heard or seen. Its §2, the
   real faults, is done (commits 3eefffb to a373760: a cue that threw ended its layer for the visit; a
   stillness survived STOP; STOP's own race; errors swallowed silently; a broken page let PLAY be
@@ -42,9 +42,14 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   part kept on a canvas of its own and drawn again only when it changes, a held page painted at the
   idle rate once it stands still, and the tie grain made exact (a curve settles the same in every
   run); its items 3 and 4 (a group's engraving and layout kept with it) were measured to cost more
-  than they saved and left out. What remains is §3.5's tail (the composer's steps in order) and §4
-  (the audio graph with the owner, memory), in §6's order — and the frame's real cost, the proof
-  sheet's stamps, which §4.2 found (its builder's first follow-up below).
+  than they saved and left out; and §4.6, the audio graph (commits b455d56 and 7d4f0d0): the organ's
+  sounding spans kept in the order they end, and STOP stopping what still sounds behind the doors it
+  shuts; its third, the ward's mouths kept from line to line, prepared behind two switches that are
+  off and **AWAITS THE OWNER** (commit 8f4055a; `handoff/listen-kept-mouths.md`, below); and §4.7,
+  memory over hours (commit 5c08e83): the desk's times capped, the worker forgetting a left seed, the
+  field's and a release's panners let go. What remains is §3.5's tail (the composer's steps in order),
+  the owner's call on the ward's mouths, and the frame's real cost, the proof sheet's stamps, which
+  §4.2 found (its builder's first follow-up below).
   The §2 builders' follow-ups, not done:
   - the drone stays ducked after a broken hymn's chain is released by the net (§2.1);
   - a cue's fault that repeats is now logged at each of the net's retries (every 5 s for a layer), not once (§2.1);
@@ -278,6 +283,49 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
     conductor's report): the live spectrum and the live hand are still compared by eye only;
   - the 860 px p99 did not move with §4.2 (207 → 214 ms, within its spread over three runs a side):
     what makes the worst frames is not what §4.2 cut.
+  The §4.6 builder's follow-ups, not done:
+  - **AWAITS THE OWNER: the ward's mouths** — `rungOut` and `keptMouths` (`kolob-experimental.js`,
+    both off; `kolob-voices-vocal.js`, MOUTHS RUNG OUT and KEPT MOUTHS; commit 8f4055a). The packet
+    is `handoff/listen-kept-mouths.md`: three builds of seeds 7, 22 and 37 (today, `?exp=+rungOut`,
+    `?exp=+keptMouths`), what to listen for, and the captures' numbers. Switching either on for every
+    visitor is one word in `DEFAULTS` and a VERSION bump; nothing else waits on them;
+  - **today's ward cuts its mouths** (found by §4.6; the reason for `rungOut`): ARMING parts a mouth
+    when the caller's clock passes its span's end + RING, and the ward's pump hands its own cue's
+    time, which the clock fires up to its lookahead early — 0.25 s in view, 1.6 s hidden. So a mouth
+    is parted inside the crossfade that closes it: on seed 22's first ten minutes 2,699 of 6,811
+    partings while sound passed (0.9 % of the mouths' sound), on seed 37 1,540 of the Hosanna's and
+    the ward's 16,530 mouth spans lose more than half; in a hidden tab (a background tab, a locked
+    phone) 55 % of the ward's sound. Every caller of `VoicesVocal.arm` hands its own cue's time
+    (the ward's pump in `kolob-cast.js`, the far ward, the Hosanna, the gift of tongues) and the
+    parting queue is the context's, shared, so whichever arms next parts every mouth due by its
+    clock; only the shared throat's mouths are parted by span (the ward and the Hosanna's crowd —
+    a pew's or a lone singer's way into the room is parted at its line's end). `rungOut` is the
+    fix, waiting on the owner because it is heard;
+  - the organ's `held` list (the touch: `heldAt` looks back over up to ~200 keys at every note,
+    63,000–150,000 elements a meeting) is its largest walk; about a millisecond of a meeting, left;
+  - the sources STOP stops are stopped after the doors are disconnected: a browser that no longer
+    pulls a disconnected source may never process its stop either (not measured in a browser); the
+    nodes are let go by the house all the same (the doors' list is cleared);
+  - a guest's teardown sentinel keeps its own time after a STOP (up to the guest's remaining length
+    and its margin): it gives back the band's and the company's lent town air (`lendTown`), whose
+    convolver rings 2.6 s; a lend that waited for the air to fall quiet would let the sentinel stop
+    with the rest;
+  - the probe that proved no stopped source reached the output (a harness that follows every
+    connect and disconnect) and the mouths' probe (gate × envelope while joined) are scratch: either
+    would make a harness mode (`graph` or `mouths`) for the next change to the graph or the arming.
+  The §4.7 builder's follow-ups, not done:
+  - the hall still holds the notes of the layers that never let go: a layer outside THE HOUSE (the
+    bells, the drone, the telegraph, the still small voice) keeps one pool of panners for as long as
+    the doors stand, and each note's last gain stays wired into it after its sources end (seed 22 at
+    two hours, by a probe that keeps connections as a browser does: the bells' panners hold 2,646
+    nodes, the drone's 1,397, the telegraph's 1,101, the still small voice's 736; together about
+    1,700 more an hour). Each note could leave its panner when its source ends, as a field event's
+    now does (`fieldDest`'s third argument);
+  - the four-hour probe (connections kept as a browser keeps them, the hymnal given a Worker, a
+    sample on the hour) is a scratch copy of the harness; a harness mode would let the next change
+    to the graph's lifetime be held to it in one command;
+  - the hymnal's arrays reach the cap only after about twelve hours (one entry a hymn: 67 in four);
+    the counts beside them (`posted`, `composed`) still grow, as numbers.
 
 ## Ideas approved, not built
 
@@ -404,6 +452,11 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
   `roundRect` without a fallback — **fixed** (`kolob-viz.js`).
 - **The hymns hold 1,900–2,900 nodes** and a callback can take 4.3–5.1 of its 5.3 ms on a
   busy Mac (listen-r3b): "close to an audible glitch at the peaks".
+- **The ward cuts its own mouths short** (found by PLAN-REFACTOR §4.6): a mouth is parted by the
+  pump's clock, which runs ahead of the audio by the clock's lookahead, so many are disconnected
+  inside the crossfade that closes them — about 1 % of the ward's sound with the page in view, about
+  half of it in a hidden tab. The fix is built and off (`?exp=+rungOut`), waiting on the owner's ear
+  (`handoff/listen-kept-mouths.md`; the refactor's §4.6 follow-ups above).
 
 ## Decisions waiting on the owner's ear
 
@@ -428,6 +481,9 @@ rulings are in `OWNER-RULINGS.md`; the staff's rules in `STAFF.md`.*
 - **The drone:** the landing, and how many Sundays reckon (`RECKON_CANDIDATES`).
 - **The organ under the ward:** `UNDER_WARD_DB` (`kolob-voices-organ.js`).
 - **What to scale back**, "either for technical or aesthetic reasons" (2026-09-28).
+- **The ward's mouths** (PLAN-REFACTOR §4.6, `handoff/listen-kept-mouths.md`): `rungOut` — a
+  mouth parted only once it has rung out, no cut — and `keptMouths` — each singer's mouths kept
+  from line to line, a sixth of the filters a line; both off (`kolob-experimental.js` `DEFAULTS`).
 
 ## Cost
 
