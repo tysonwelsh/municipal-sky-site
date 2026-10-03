@@ -119,7 +119,7 @@ include '../../../includes/header.php';
   Wear re-rolls on every click of <strong>remembered</strong>.</p>
 </div>
 
-<?php // the engine, from the one list (_engine.php), exactly as index.php loads it
+<?php // the engine, from the one list (_engine.php), in index.php's order (not deferred: this lab's own script below is a plain tag)
 $k_engine = array_map(function ($f) { return '../' . $f; }, require __DIR__ . '/../_engine.php');   // (shelved: the engine lives one folder up)
 kolob_engine_tags($k_engine, 'otl_v'); ?>
 <script src="tune-lab.js?v=<?php echo otl_v('tune-lab.js'); ?>"></script>

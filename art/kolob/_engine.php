@@ -6,7 +6,8 @@
 // written out in four places once failed silently when a copy went stale):
 //
 //   $kolob_engine = require __DIR__ . '/_engine.php';
-//   kolob_engine_tags($kolob_engine, 'kolob_v');   // the <script> tags + the load guard
+//   kolob_engine_tags($kolob_engine, 'kolob_v', true);   // the <script> tags + the load guard
+//                                                        // (true: deferred, as the page has them)
 //
 // and the harness (art/kolob/_harness.js) reads this same file, so a module
 // added here is loaded everywhere at once. The order is SCORE.md §1's: the
@@ -36,13 +37,22 @@
 if (!function_exists('kolob_engine_tags')) {
     // Echo one <script> per room, cache-busted by $version_of($file), then the
     // load guard, called with the list's file names. $version_of is the
-    // page's own hash helper (kolob_v, otl_v…).
-    function kolob_engine_tags(array $engine, $version_of)
+    // page's own hash helper (kolob_v, otl_v…). With $defer (the page,
+    // index.php, whose scripts are deferred: PLAN-REFACTOR §4.1) each
+    // room's tag is deferred and the guard is printed as a module script:
+    // the browser runs an inline module in the deferred scripts' own queue,
+    // in document order — after the rooms above it, before kolob-ui.js below,
+    // which reads KOLOB._broken as it runs. (An inline classic script would
+    // run before the rooms, and a DOMContentLoaded handler after kolob-ui.js:
+    // every deferred script has run when that event fires.) Without it (the
+    // labs, whose own scripts follow as plain tags) the tags block, and the
+    // guard runs inline after them, as before.
+    function kolob_engine_tags(array $engine, $version_of, $defer = false)
     {
         foreach ($engine as $js) {
-            echo '<script src="' . htmlspecialchars($js) . '?v=' . call_user_func($version_of, $js) . '"></script>' . "\n";
+            echo '<script src="' . htmlspecialchars($js) . '?v=' . call_user_func($version_of, $js) . '"' . ($defer ? ' defer' : '') . '></script>' . "\n";
         }
-        echo '<script>(' . kolob_engine_guard() . ')(' . json_encode(array_map('basename', $engine)) . ');</script>' . "\n";
+        echo '<script' . ($defer ? ' type="module"' : '') . '>(' . kolob_engine_guard() . ')(' . json_encode(array_map('basename', $engine)) . ');</script>' . "\n";
     }
     // THE LOAD GUARD's script: a function of the list's file names (`need`),
     // run once every room's tag has run. tools/loadcheck.js reads it from

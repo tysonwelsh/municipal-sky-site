@@ -173,6 +173,9 @@ window.KOLOB = window.KOLOB || {};
   // (a note or event that says logged: false — an unlogged guest's, the
   // Hosanna's shout — is never engraved: SCORE §6, PLAN §8.12)
   // (the Hosanna is audio-only whatever it says: the owner's ruling)
+  // (a note is the engine's one object, handed to every listener: the staff
+  // reads it, keeps copies of what it engraves, and never writes into it —
+  // kolob-core.js, ONE NOTE, ONE OBJECT)
   function onNote(n) {
     if (VS.freeze && holdsBack(onNote, n)) return;   // (dev: a capture asked — taken in by the moment it was written: THE FRAME-EXACT CAPTURE)
     if (!n || n.logged === false || n.hosanna) return;

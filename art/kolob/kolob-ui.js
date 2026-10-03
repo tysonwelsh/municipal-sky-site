@@ -532,6 +532,7 @@
   }
   function logEvent(ev) {
     noteHymn(ev);
+    if (ev && ev.type === "transport" && ev.action === "play") pollWhilePlaying();   // (THE POLL'S CLOCK)
     var log = document.getElementById("kolob-log"); if (!log) return;
     noteGuest(ev);
     var d = dsEvent(ev);
@@ -576,7 +577,10 @@
   // a listener can always look down and see who they are hearing. The engine
   // emits notes at SCHEDULING time (often seconds early), so rows queue until
   // the audio clock reaches them; a "new phrase" is a note that starts after
-  // a real gap in that layer's sound.
+  // a real gap in that layer's sound. Only a meeting's phrases queue: one
+  // begun while it is stopped (a stop touched on the rail) still ends its
+  // layer's phrase, and writes no row (the poll that dropped it is stopped
+  // then: THE POLL'S CLOCK, below).
   // ==========================================================================
   var PHRASE_GAP_S = 3.0;                       // this much quiet = a fresh phrase
   var phraseLast = {};                          // layer -> when its last note ends
@@ -589,15 +593,21 @@
   // its visitation events write its minutes.)
   var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1 };
   // (and a layer the minutes have no name for is not written in English;
-  // a note an unlogged guest sounds — logged: false — writes no row)
+  // a note an unlogged guest sounds — logged: false — writes no row. The
+  // note is the engine's one object, handed to every listener: it is read
+  // here and never written — kolob-core.js, ONE NOTE, ONE OBJECT. A phrase
+  // goes into the queue at its place in time, after any that begin at the
+  // same moment: the order a stable sort by time gave, without sorting the
+  // whole queue for every phrase.)
   function onNoteForLog(n) {
     if (!n || !n.layer || PHRASE_SKIP[n.layer] || !LAYERS_DS[n.layer] || n.logged === false) return;
     var end = n.startTime + (n.duration || 0);
     var last = phraseLast[n.layer] != null ? phraseLast[n.layer] : -1e9;
-    if (n.startTime > last + PHRASE_GAP_S) {
+    if (n.startTime > last + PHRASE_GAP_S && K.isPlaying && K.isPlaying()) {
       if (phraseQueue.length > 80) phraseQueue.shift();
-      phraseQueue.push({ layer: n.layer, at: n.startTime });
-      phraseQueue.sort(function (a, b) { return a.at - b.at; });
+      var qi = phraseQueue.length;
+      while (qi > 0 && phraseQueue[qi - 1].at > n.startTime) qi--;
+      phraseQueue.splice(qi, 0, { layer: n.layer, at: n.startTime });
     }
     if (end > last) phraseLast[n.layer] = end;
   }
@@ -636,9 +646,30 @@
   }
 
   // ==========================================================================
-  // The programme card + order of service + hymn board (polled ~300ms)
+  // The programme card + order of service + hymn board (polled every 300 ms
+  // while a meeting plays: THE POLL'S CLOCK, below)
   // ==========================================================================
   var SECTION_ORDER = ["prelude", "invocation", "hymn", "testimony", "sacrament", "doxology", "postlude"];
+
+  // THE POLL'S NODES — looked up once (every script is deferred, so the
+  // page's markup is all there when this file runs), and each given its
+  // text only when the text changes: most polls change nothing. A node set
+  // by its text is asked what it holds (the text a node holds is the text it
+  // was given); one set by its HTML keeps what it was last given in
+  // shownHTML, and whatever else writes it (applyScript) writes it through
+  // putHTML too. (The direction line and the hymn board kept to this already.)
+  var EL = {
+    play: document.getElementById("kolob-play"), pause: document.getElementById("kolob-pause"),
+    scene: document.querySelector(".kolob-scene"),
+    prog: document.getElementById("kolob-running-head"),
+    day: document.getElementById("kolob-rh-left"), mm: document.getElementById("kolob-rh-mm"),
+    direction: document.getElementById("kolob-direction"),
+    seed: document.getElementById("kolob-seed-current"),
+    hymn: document.getElementById("kolob-board-hymn"), nums: document.getElementById("kolob-board-nums"),
+  };
+  var shownHTML = {};
+  function putText(el, s) { if (el.textContent !== s) el.textContent = s; }
+  function putHTML(el, s) { if (shownHTML[el.id] !== s) { el.innerHTML = s; shownHTML[el.id] = s; } }
 
   // The programme card on the hymn board (#kolob-running-head keeps its old
   // id; updateRunningHead fills it):
@@ -651,32 +682,31 @@
   function joinParts(parts) { return parts.filter(Boolean).join(SEP); }
   function titleCase(s) { return s ? s.charAt(0) + s.slice(1).toLowerCase() : s; }
   function updateRunningHead(c, playing) {
-    var day = document.getElementById("kolob-rh-left");
-    var mm = document.getElementById("kolob-rh-mm");
+    var day = EL.day, mm = EL.mm;
     if (!day || !mm) return;
-    var prog = document.getElementById("kolob-running-head");
+    var prog = EL.prog;
     if (prog) {
       prog.classList.toggle("is-live", !!playing);
       prog.classList.toggle("is-deseret", !latinMode);
     }
     if (!playing) {
-      day.textContent = TT(STR, STR_EN).idle;
-      mm.textContent = "";
+      putText(day, TT(STR, STR_EN).idle);
+      putHTML(mm, "");
       return;
     }
     // (the calendar's Sunday — the meeting requires the calendar; the kind
     // of meeting only should the conductor name no Sunday)
     var sd = c.sunday && c.sunday.id ? (latinMode ? SUNDAYS_EN[c.sunday.id] : c.sunday.nameDs) : null;
-    day.textContent = sd || TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "";
+    putText(day, sd || TT(ACTIVITIES_DS, ACTIVITIES_EN)[c.activity] || "");
     var mode = TT(MODES_DS, MODES_EN)[c.mode] || "";
     // (the meter: a composed hymn's, as it was announced — typed — while its
     // section lasts; else the conductor's, during a hymn)
     var sings = c.section === "hymn" || c.section === "doxology";
     var meter = sings && boardHymn && boardHymn.meter ? boardHymn.meter : (c.section === "hymn" ? c.meter : null);
-    mm.innerHTML = joinParts([
+    putHTML(mm, joinParts([
       latinMode ? titleCase(mode) : mode,
       meter ? metersDots(meter) : "",
-    ]);
+    ]));
   }
   var METER_DOTS = { CM: "8.6.8.6", LM: "8.8.8.8", SM: "6.6.8.6", "87.87": "8.7.8.7", CMD: "8.6.8.6 ×2", "87.87D": "8.7.8.7 ×2", "76.76D": "7.6.7.6 ×2", "11s": "11.11.11.11", "10.10R": "10.10 ℟" };
   function metersDots(m) { return METER_DOTS[m] || m; }
@@ -699,7 +729,7 @@
     return "";
   }
   function updateDirection(c, playing) {
-    var el = document.getElementById("kolob-direction"); if (!el) return;
+    var el = EL.direction; if (!el) return;
     var txt = directionFor(c, playing);
     // lower case, as a direction is set (rit., a tempo); Deseret keeps its capitals
     if (latinMode) txt = txt.toLowerCase();
@@ -718,9 +748,9 @@
   }
 
   function updateBoard(c, playing) {
-    var seedEl = document.getElementById("kolob-seed-current");
-    if (seedEl && K.getSeed) seedEl.textContent = String(K.getSeed());
-    var hymnEl = document.getElementById("kolob-board-hymn");
+    var seedEl = EL.seed;
+    if (seedEl && K.getSeed) putText(seedEl, String(K.getSeed()));
+    var hymnEl = EL.hymn;
     if (hymnEl) {
       var hy = playing ? boardHymn : null, html = "";
       if (hy) {
@@ -732,7 +762,7 @@
       }
       if (hymnEl.getAttribute("data-html") !== html) { hymnEl.innerHTML = html; hymnEl.setAttribute("data-html", html); }
     }
-    var numsEl = document.getElementById("kolob-board-nums");
+    var numsEl = EL.nums;
     if (numsEl) {
       if (playing && K.getMotifStats) {
         var ms = K.getMotifStats() || {};
@@ -744,12 +774,12 @@
         // was recited "...X, Y, Z, and per se and" in the pioneers' day).
         var themeCard = latinMode ? gestureLatin(w.letter) : (w.letter || "—");
         var S = TT(STR, STR_EN);
-        numsEl.innerHTML =
+        putHTML(numsEl,
           '<span class="kolob-board-n" title="' + (w.gesture || "") + '">' + S.theme + '<b>' + themeCard + (w.gen ? "·" + w.gen : "") + '</b></span>' +
           '<span class="kolob-board-n">' + S.develops + '<b>' + (ms.developments || 0) + '</b></span>' +
-          '<span class="kolob-board-n">' + S.answers + '<b>' + (ms.answers || 0) + '</b></span>';
+          '<span class="kolob-board-n">' + S.answers + '<b>' + (ms.answers || 0) + '</b></span>');
       } else {
-        numsEl.innerHTML = '<span class="kolob-board-n">—</span>';
+        putHTML(numsEl, '<span class="kolob-board-n">—</span>');
       }
     }
   }
@@ -757,11 +787,14 @@
   function poll() {
     var playing = !!(K.isPlaying && K.isPlaying());
     var paused = playing && !!(K.isPaused && K.isPaused());
-    var playBtn = document.getElementById("kolob-play");
+    var playBtn = EL.play;
     if (playBtn) { playBtn.classList.toggle("is-playing", playing); playBtn.classList.toggle("is-held", paused); }
-    var pauseBtn = document.getElementById("kolob-pause");
-    if (pauseBtn) { pauseBtn.classList.toggle("is-paused", paused); pauseBtn.setAttribute("aria-pressed", paused ? "true" : "false"); }
-    var scene = document.querySelector(".kolob-scene");
+    var pauseBtn = EL.pause;
+    if (pauseBtn) {
+      pauseBtn.classList.toggle("is-paused", paused);
+      if (pauseBtn.getAttribute("aria-pressed") !== (paused ? "true" : "false")) pauseBtn.setAttribute("aria-pressed", paused ? "true" : "false");
+    }
+    var scene = EL.scene;
     var c = (K.getConductor && K.getConductor()) || {};
     if (scene) {
       scene.classList.toggle("is-sacrament", !!(playing && c.section === "sacrament"));
@@ -778,9 +811,20 @@
     flushPhraseLog();
     if (window.KolobViz && window.KolobViz.setConductor) window.KolobViz.setConductor(c, playing, paused);
     if (cat) cat.tick();                               // the band's caterpillar (wireCaterpillar, below)
+    if (!playing && pollTimer) { clearInterval(pollTimer); pollTimer = null; }   // (THE POLL'S CLOCK)
   }
   var cat = null;
-  setInterval(poll, 300);
+  // THE POLL'S CLOCK. The poll runs every 300 ms while a meeting plays or is
+  // held. The first poll that finds it stopped writes the stopped page (the
+  // buttons, the idle card, the board, the viz told, the caterpillar's last
+  // tick, the phrases dropped) and stops the clock: nothing it shows moves
+  // while the meeting is stopped but what a press moves, and that press polls
+  // at once (GATHER's new seed, the script switch) or never reaches the
+  // minutes (a phrase on the rail: the phrase log, above). The meeting's
+  // transport event sets it going again, whoever called the meeting (PLAY,
+  // the lock screen's play, a queued restart): logEvent, above.
+  var pollTimer = null;
+  function pollWhilePlaying() { if (!pollTimer) pollTimer = setInterval(poll, 300); }
 
   // ==========================================================================
   // Transport + gather (reseed & restart)
@@ -854,6 +898,7 @@
       if (window.KolobText) window.KolobText.init(v);
       if (seedInput) seedInput.value = "";
       clearLog();
+      if (!wasPlaying) poll();                         // (stopped, the poll's clock stands: the new seed is shown now)
       if (wasPlaying) {
         // let the stop-fade complete before the new meeting is called (a
         // STOP inside the wait cancels it: THE QUEUED PLAY, above)
@@ -910,7 +955,7 @@
     // the programme card and the direction line: idle text now; poll() re-sets
     // them in the current script from the conductor (or the preview) at once
     setText("#kolob-rh-left", S.idle);
-    setText("#kolob-rh-mm", "");
+    if (EL.mm) putHTML(EL.mm, "");
     setText("#kolob-direction", "");
     var prog = document.getElementById("kolob-running-head");
     if (prog) prog.classList.toggle("is-deseret", !latinMode);

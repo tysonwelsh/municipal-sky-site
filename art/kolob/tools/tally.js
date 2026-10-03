@@ -17,11 +17,21 @@
 //   --flags force=bands (the harness's switches, as render.js takes them: every
 //     build rendered here is rendered with them — one guest forced on both
 //     sides, so a change to its room is proved on the seeds that seat it)
+//   --jobs N  harness processes at once (default min(4, the cores)); both
+//     sides render on one pool of N, so neither waits on the other's last
+//     seed. Each render is witnessed on its own as a lone one is, the dumps
+//     are the same files byte for byte at any N, and the report differs only
+//     in its timing line (PLAN-REFACTOR §4.0(c)). A harness keeps about two
+//     cores busy by itself (V8's collector and compiler beside the run), so
+//     four cores fill at three or four: 20 seeds a side at 1200 s took 149 s
+//     at 1, 85 at 2, 70 at 3, 72 at 4 and 68 at 6 (and 85 s before, at 2 a
+//     side with B after A)
 //
 // A/B renders 60 seeds a side by default (seconds of work): twenty meetings
 // leave a share such as "meetings with a guest" ±30 points of noise.
 "use strict";
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const crypto = require("crypto");
 const U = require("./lib/util.js");
@@ -35,6 +45,7 @@ const HELP = `tally.js — counts over complete meetings; --a/--b compares two b
   --a <spec> --b <spec>            A/B: spec = dump dir | engine dir | git:<ref> | worktree
   --harness-a / --harness-b        harness per side (default: see README)
   --flags ives,force=bands   harness switches for every build rendered (default none)
+  --jobs N            harness processes at once, both builds on one pool (default min(4, the cores))
   --threshold 15      shift (in %) worth a flag (default 15)
   --first             meeting 1 of each seed only
   --out <dir>         (default tools/out/tally-<stamp>)`;
@@ -114,11 +125,11 @@ function show(v, unit) {
 }
 
 // ---------------------------------------------------------------------------
-async function loadSide(spec, a, into, harness, dfltSeeds) {
+async function loadSide(spec, a, into, harness, dfltSeeds, pool) {
   const isDir = spec && spec !== true && fs.existsSync(String(spec)) && fs.statSync(String(spec)).isDirectory();
   const hasDumps = isDir && fs.readdirSync(String(spec)).some((f) => f.endsWith(".jsonl"));
   const seeds = U.parseSeeds(a.seeds, U.parseSeeds(dfltSeeds || "1-20"));
-  const o = hasDumps ? { dumps: spec, seeds: a.seeds ? seeds : null } : { engine: spec === "worktree" ? null : spec, harness, seeds, secs: +a.secs || 1200, flags: U.parseList(a.flags, []), into, jobs: +a.jobs || 0 };
+  const o = hasDumps ? { dumps: spec, seeds: a.seeds ? seeds : null } : { engine: spec === "worktree" ? null : spec, harness, seeds, secs: +a.secs || 1200, flags: U.parseList(a.flags, []), into, pool };
   const set = await R.obtainSet(o);
   const runs = set.files.map((f) => D.readDump(f));
   const recs = [];
@@ -129,6 +140,12 @@ async function loadSide(spec, a, into, harness, dfltSeeds) {
     recs.push(recordOf(run, m));
   }));
   return { set, runs, recs, partial };
+}
+// the timing line: the one line of a report that two renders of the same
+// seeds may differ in (the pool's size and the clock)
+function timing(t0, pool, sides, stampNow) {
+  const n = sides.reduce((s, x) => s + (x.set.rendered || 0), 0), secs = ((Date.now() - t0) / 1000).toFixed(1);
+  return "- " + (n ? n + " render" + (n === 1 ? "" : "s") + " in " + secs + " s, " + pool.size + " at a time" + (sides.length > 1 ? " (A and B on one pool)" : "") : "nothing rendered (dump sets read) · " + secs + " s") + " · " + stampNow;
 }
 // "1-20, 25" for a long list of seeds
 function seedList(seeds) {
@@ -162,17 +179,19 @@ async function main() {
   const thr = (+a.threshold || 15) / 100;
   const L = [];
   const stampNow = new Date().toISOString().slice(0, 16).replace("T", " ");
+  const pool = R.pool(+a.jobs || Math.min(4, os.cpus().length)), t0 = Date.now();
 
   if (!a.a && !a.b) {
     // ---------------- one build ----------------
-    const S = await loadSide(a.dumps || a.engine || "worktree", a, path.join(out, "dumps"), a.harness);
+    const S = await loadSide(a.dumps || a.engine || "worktree", a, path.join(out, "dumps"), a.harness, null, pool);
     if (!S.recs.length) throw new Error("no complete meetings (raise --secs)");
     const M = metricsFor(S.recs);
     const val = (grp, id) => { const m = M.find((x) => x.group === grp && x.id === id); return m ? m.stat(S.recs) : null; };
     L.push("# Tally — " + S.recs.length + " complete meetings");
     L.push("");
     L.push("- " + R.describe(S.set.manifest));
-    L.push("- seeds " + seedList(S.runs.map((r) => r.seed)) + (a.first ? " · meeting 1 only" : "") + (S.partial ? " · " + S.partial + " partial meetings left out" : "") + " · " + stampNow);
+    L.push("- seeds " + seedList(S.runs.map((r) => r.seed)) + (a.first ? " · meeting 1 only" : "") + (S.partial ? " · " + S.partial + " partial meetings left out" : ""));
+    L.push(timing(t0, pool, [S], stampNow));
     const verdicts = S.set.manifest && S.set.manifest.verdicts ? Object.values(S.set.manifest.verdicts) : [];
     if (verdicts.length) L.push("- harness verdicts: " + verdicts.filter((v) => /PASS/.test(v || "")).length + "/" + verdicts.length + " PASS" + (verdicts.some((v) => !/PASS/.test(v || "")) ? " (the harness's own checks; the rest: " + [...new Set(verdicts.filter((v) => !/PASS/.test(v || "")).flatMap((v) => String(v).replace(/^FAIL — /, "").split("; ")))].join("; ") + ")" : ""));
     L.push("");
@@ -197,8 +216,13 @@ async function main() {
     fs.writeFileSync(path.join(out, "metrics.json"), JSON.stringify(M.map((m) => ({ group: m.group, id: m.id, unit: m.unit, value: m.stat(S.recs), support: m.support(S.recs) })), null, 1));
   } else {
     // ---------------- A/B ----------------
-    const A = await loadSide(a.a || "worktree", a, path.join(out, "dumps-a"), a["harness-a"], "1-60");
-    const B = await loadSide(a.b || "worktree", a, path.join(out, "dumps-b"), a["harness-b"], "1-60");
+    // both sides on one pool; a failure on either stops the other's renders
+    // not yet begun, and the failure is what is told
+    const side = (spec, dir, harness) => loadSide(spec, a, path.join(out, dir), harness, "1-60", pool).catch((e) => { pool.stop(); throw e; });
+    const sides = await Promise.allSettled([side(a.a || "worktree", "dumps-a", a["harness-a"]), side(a.b || "worktree", "dumps-b", a["harness-b"])]);
+    const why = sides.filter((x) => x.status === "rejected").map((x) => x.reason);
+    if (why.length) throw why.find((e) => !e.stopped) || why[0];
+    const A = sides[0].value, B = sides[1].value;
     if (!A.recs.length || !B.recs.length) throw new Error("no complete meetings on one side (raise --secs)");
     const MA = metricsFor(A.recs.concat(B.recs));   // one metric list over the union, evaluated per side
     const rows = [];
@@ -237,7 +261,8 @@ async function main() {
     L.push("");
     L.push("- **A:** " + R.describe(A.set.manifest));
     L.push("- **B:** " + R.describe(B.set.manifest));
-    L.push("- " + (sameSeeds ? "seeds " + seedList(seedsA) : "seeds **A:** " + seedList(seedsA) + " · **B:** " + seedList(seedsB)) + (a.first ? " · meeting 1 only" : "") + " · threshold ±" + Math.round(thr * 100) + " % · " + stampNow);
+    L.push("- " + (sameSeeds ? "seeds " + seedList(seedsA) : "seeds **A:** " + seedList(seedsA) + " · **B:** " + seedList(seedsB)) + (a.first ? " · meeting 1 only" : "") + " · threshold ±" + Math.round(thr * 100) + " %");
+    L.push(timing(t0, pool, [A, B], stampNow));
     L.push("");
     L.push("## Verdict");
     L.push("");

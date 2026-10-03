@@ -12,6 +12,14 @@
 // same way every time: a setting reads what was set (save and restore keep
 // a stack, as a canvas does), measureText measures 7 px a character,
 // getImageData is blank, and a canvas's box is the size it was made at.
+//
+// recorder({ trace }) also hands every line it hashes, in order, to
+// trace(line) — the call written as the hash reads it, `<who>.<what>(<args>)`,
+// its canvases, paths and gradients named C<n>, P<n> and G<n> in the order
+// made — and rec.mark(text) hands trace a line of its own (`#` and the text)
+// that the digest never sees (the harness marks each frame so: _harness.js
+// KOLOB_STAFF_TRACE; tools/tracediff.js reads two such traces against each
+// other, frame by frame).
 "use strict";
 const crypto = require("crypto");
 
@@ -23,9 +31,10 @@ const DEFAULTS = {
   imageSmoothingEnabled: true, imageSmoothingQuality: "low", filter: "none",
 };
 
-function recorder() {
+function recorder(opts) {
   const hash = crypto.createHash("sha1");
   const rec = { calls: 0, canvases: 0, paths: 0 };
+  const trace = opts && typeof opts.trace === "function" ? opts.trace : null;
   let seq = 0;
   function fmt(v) {
     if (v && v.__rec) return v.__rec;
@@ -36,7 +45,12 @@ function recorder() {
     if (Array.isArray(v) || ArrayBuffer.isView(v)) return "[" + Array.prototype.map.call(v, fmt).join(",") + "]";
     return "{" + Object.keys(v).sort().map((k) => k + ":" + fmt(v[k])).join(",") + "}";
   }
-  function log(who, what, args) { rec.calls++; hash.update(who + "." + what + "(" + Array.prototype.map.call(args, fmt).join(",") + ")\n"); }
+  function log(who, what, args) {
+    rec.calls++;
+    const line = who + "." + what + "(" + Array.prototype.map.call(args, fmt).join(",") + ")\n";
+    hash.update(line);
+    if (trace) trace(line);
+  }
   // a gradient: its stops written down
   function gradient(kind, args) {
     const g = { __rec: "G" + ++seq };
@@ -98,6 +112,7 @@ function recorder() {
   rec.canvas = canvas;
   rec.Path2D = Path2D;
   rec.log = log;
+  rec.mark = (text) => { if (trace) trace("#" + text + "\n"); };
   rec.digest = () => hash.copy().digest("hex");
   return rec;
 }

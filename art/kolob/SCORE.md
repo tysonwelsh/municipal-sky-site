@@ -22,8 +22,9 @@ staff; the build's plans are in `archive/plans/`.
 answers the load guard's roll call: `KOLOB._rooms["kolob-x.js"] = true`. The
 substrate (`PJ2.Rand`, `PJ2.Clock`, `PJ2.Fx`) and the Earth tunes
 (`KOLOB.Tunes`) are checked by the globals they raise; `kolob_engine_tags`
-(`_engine.php`) prints the guard, which names every room that did not answer
-— to the console, and to the page in `KOLOB._broken` (the facade among them
+(`_engine.php`) prints the guard (on the page, whose scripts are deferred, as a
+module script: run after the rooms and before `kolob-ui.js`), which names
+every room that did not answer — to the console, and to the page in `KOLOB._broken` (the facade among them
 when `KolobAudio` did not rise; unset on a page that loaded whole), on which
 `kolob-ui.js` wires nothing: PLAY stays disabled and the minutes say the
 engine failed to load. `tools/loadcheck.js` runs the same guard
@@ -392,7 +393,10 @@ stream `hymn:<n>:<i>` is rebuilt from the visit's seed and the label, and the
 meeting's earlier hymns are handed to it in the same order and the same
 lightened form (`Hymnal.lighten`: the Score whole, of the dev report only
 `frame`, `peak`, `checks` and the fingerprint's `share`). The worker forgets
-`h:<n>:*` and `r:<n>:*` together.
+what the desk lets go of, by key: a meeting two back (`h:<n>:*` and
+`r:<n>:*` together) and every hymn of a seed the visit has left (a GATHER).
+The desk keeps its times (`stats()`'s `workerMs`, `mainMs`, `receiveMs`) for
+the last 200 hymns.
 
 Authority: `../prosperos-jukebox-v2/pj2-clock.js`, `kolob-core.js`
 (`cueAt`/`cueIn`, `cycle`), `kolob-meeting.js` (`HymnHands`, `hallListens`,
@@ -504,7 +508,10 @@ type and the payload, never a label.
 
 **`onNote(n)`** — every sounded pitched note is reported, doublings included:
 `{ layer, freq, startTime, duration, …extra }` (`startTime` absolute audio
-time). The extras, by layer:
+time). A note is one object, built once and handed to every listener, as an
+event is: a listener reads it and never writes into it, nor into what it
+carries (`kolob-core.js`, ONE NOTE, ONE OBJECT; the harness fails a run whose
+listener writes into a note). The extras, by layer:
 
 | layer | fields a note may carry |
 |---|---|
@@ -767,7 +774,9 @@ unity-gain seats `handbells` −0.35, `cornet` −0.12, `fiddle` −0.2, `floor`
 −0.25, `speaker` −0.35, `reed` −0.15. `S.seatedSend(layer)` seats a guest who
 stands in the chapel as a layer of its own, or into the layer's gain where one
 exists (the practice into `choir`), through the meeting's doors (`doors.seats`;
-STOP closes them). The layers with sliders are `LAYERS` in `kolob-core.js`:
+STOP closes them once its fade is done, and stops every source the meeting
+made that still sounds behind them but a guest's teardown sentinel: THE DOORS'
+SOURCES). The layers with sliders are `LAYERS` in `kolob-core.js`:
 `organ drone choir clarinet harmonium strings bells voice telegraph tuba
 ambient` (`tuba` is the raspberry's alone).
 
