@@ -91,6 +91,13 @@ back-end change; the owner decides the wording):
 
 **Before the drawer opens to the public:**
 
+- **Sanitizer and DOM must agree on namespace prefixes (2026-10-02).** A
+  drawing that uses `xlink:href` without declaring `xmlns:xlink` passes the
+  sanitizer but fails the browser's XML parse, so since the DOMParser
+  change it is left out of the pile. None of the 570 filed SVGs do this.
+  Make the sanitizer reject an undeclared prefix (reason string to add to
+  the frozen list deliberately), so the verdict and the DOM agree.
+
 - **Consent**: a checkbox that includes confirming the visitor is over 18,
   and a fuller disclaimer than "sent to Anthropic etc." New consent
   version; privacy.php §4 must match.
