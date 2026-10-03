@@ -184,8 +184,8 @@ last (`qList()`; its name and question are `taxonomy.json` `gradeQuestion`,
 read through `JD_gradeQuestion` by this card, the report card and the
 analytics folder); `work.qAt` says which card stands. Each card, phone
 first: the drawing on top (its blind letter pencilled on, press to enlarge
-— `openZoom`), the progress line "Drawing B · 3 of 6" (echoing the answer
-just given, "✓ Minor problems"; on a phone the "definitions" switch), the
+— `openZoom`), the progress line "Drawing B · 3 of 6" (on a phone with the
+"definitions" switch), the
 prompt (one line on a phone; "show full prompt" stays open for the sitting,
 `work.briefOpen`), the axis `label` as the heading and its `summary` as the
 question (the `description` behind "more" — with the house rule after it
@@ -194,17 +194,16 @@ for the axes in `houseRuleAxes`), and the values best first as radio rows
 `role="radio"` buttons with `aria-checked`, the whole row the target,
 ≥ 48px; label and the report card's gauge, the description under it — on a
 phone only the chosen row's, or all with "definitions" on, remembered per
-device; the chosen row in the `JD_axisCls` / `rc-g` pencil). A press records
-the answer in `work.ratings` at once (`qPick`) and goes on after `Q_BEAT`
-(350 ms; at once under prefers-reduced-motion) through `nav()`: to the next
-card, the next drawing's first, or after the last drawing's grade to the
-ranking; the one-drawing turn's last card files only by its button (the
-press brings it into view). A press within `Q_GUARD` (400 ms) of a question
-being painted is ignored, so a double tap never answers the next card. Back
+device; the chosen row in the `JD_axisCls` / `rc-g` pencil). A tap only
+SELECTS (0.18.1, owner 2026-10-03: "just having me select it and then push
+the next button"): it records the answer in `work.ratings` at once
+(`qPick`), lights the row and arms NEXT, and a second tap re-selects —
+nothing advances by itself. NEXT, through `nav()`, is the only way on: to
+the next card, the next drawing's first, or after the last drawing's grade
+to the ranking; the one-drawing turn's last card files by its button. Back
 walks the cards, across drawings too (into the drawing before at its
-grade); next stands armed on an answered card. The arrows move between
-rows and Enter/Space choose (moving must not choose, since a choice
-advances). Entering a drawing by the rail or a partial resume lands on its
+grade). The arrows move between rows without selecting, Space selects, and
+Enter selects — or, on the row already selected, presses NEXT. Entering a drawing by the rail or a partial resume lands on its
 first unanswered card (`firstOpenQ`); a COMPLETE re-rate's preview opens
 drawing A's first card (owner, 2026-10-03), each prefilled row saying "last
 time: <label> — tap to keep" (`work.qPrefilled`). A card change inside a
@@ -213,7 +212,7 @@ is still every question answered (`benchRated`), and a drawing's rail ring
 fills only then. The filing payload and `work.ratings` are unchanged. The
 house rule shows ONCE per sitting, on the preview. On a phone the drawing's
 size (`--qplate`) is the window less the fullest card's furniture, back/next
-ride a bar stuck to the scroller's foot, the replay strip stands down, and
+ride a bar stuck to the scroller's foot (NEXT always on screen), the replay strip stands down, and
 the bench strip folds to one row while a question card is up
 (`html.jd-turn-q`), so at 390×844 every row of every card and back are on
 the first screen with the strip mounted. Desktop (≥ 900px, and a phone held
