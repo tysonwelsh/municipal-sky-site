@@ -5,11 +5,18 @@
  *
  *   php scripts/jd2-profile-probe.php                       # the PLAN: what each cell would send (free)
  *   JD_PROFILE_LIVE=1 php scripts/jd2-profile-probe.php     # LIVE: 12 small calls, real money
+ *   JD_PROFILE_LIVE=1 php scripts/jd2-profile-probe.php --web   # LIVE: 16 — the visitor's web profile too
  *
  * Options: --model ID (one pool model id, e.g. kimi-k3), --profile NAME (one
- * of bench-low, bench-medium, bench-max) — together they re-run one cell;
+ * of bench-low, bench-medium, bench-max, web) — together they re-run one
+ * cell; --web (add the web profile to the default three bench profiles);
  * --prompt TEXT (default "a plain red circle"); --json FILE (also write every
  * cell, with the provider's raw usage object, as JSON lines).
+ *
+ * The web profile (2026-10-02, the pool refresh) is the visitor turn's: its
+ * own 12000 budget and the visitor's JD_PROVIDER_TIMEOUT, both through the
+ * same jd_provider_call(). It is off by default so the bench check stays the
+ * 12 calls it always was; --web adds it, --profile web runs it alone.
  *
  * WHY. The first live batch at the pre-split `bench` profile ran every model
  * at its top setting inside one shared 12000-token budget, and two of four
@@ -32,7 +39,7 @@
  * · latency · cost (jd-prices.json) · SVG: `ok` when
  * jd_extract_svg() found one AND jd_sanitize_svg() passed it, else why not.
  *
- * The 12 cells run as 12 concurrent child processes of this script
+ * The cells (12, or 16 with --web) run as concurrent child processes of this script
  * (--cell MODEL:PROFILE prints one JSON line), so the wall time is the
  * slowest cell's, not the sum. Keys come from config/secrets.php through
  * jd_provider_key(); only the slot NAME is ever printed.
@@ -49,13 +56,17 @@ require_once __DIR__ . '/../api/jd-svg-sanitizer.php';
 require_once __DIR__ . '/../api/jd-usage.php';
 
 const PROBE_PROFILES = ['bench-low', 'bench-medium', 'bench-max'];
+// every profile a cell may run: the bench three plus the visitor's web profile
+const PROBE_ALL_PROFILES = ['bench-low', 'bench-medium', 'bench-max', 'web'];
 
 $args = array_slice($argv, 1);
-$opt = ['model' => null, 'profile' => null, 'prompt' => 'a plain red circle', 'json' => null, 'cell' => null];
+$opt = ['model' => null, 'profile' => null, 'prompt' => 'a plain red circle', 'json' => null, 'cell' => null, 'web' => false];
 for ($i = 0; $i < count($args); $i++) {
     $a = $args[$i];
     $name = substr($a, 2);
-    if (in_array($a, ['--model', '--profile', '--prompt', '--json', '--cell'], true)) {
+    if ($a === '--web') {
+        $opt['web'] = true;
+    } elseif (in_array($a, ['--model', '--profile', '--prompt', '--json', '--cell'], true)) {
         $opt[$name] = $args[++$i] ?? probe_bail("$a needs a value.");
     } else {
         probe_bail("Unknown argument $a. See the header of scripts/jd2-profile-probe.php.");
@@ -75,23 +86,24 @@ foreach (jd2_pool($taxonomy) as $m) {
 // --- one cell (a child process): one call, one JSON line --------------------
 if ($opt['cell'] !== null) {
     [$modelId, $profile] = array_pad(explode(':', $opt['cell'], 2), 2, '');
-    if (!isset($pool[$modelId]) || !in_array($profile, PROBE_PROFILES, true)) {
-        probe_bail("--cell must be MODEL:PROFILE with a pool model and a bench profile.");
+    if (!isset($pool[$modelId]) || !in_array($profile, PROBE_ALL_PROFILES, true)) {
+        probe_bail("--cell must be MODEL:PROFILE with a pool model and a probe profile.");
     }
     echo json_encode(probe_cell($pool[$modelId], $profile, $opt['prompt']), JSON_UNESCAPED_SLASHES) . "\n";
     exit(0);
 }
 
 $models = $opt['model'] === null ? array_keys($pool) : [$opt['model']];
-$profiles = $opt['profile'] === null ? PROBE_PROFILES : [$opt['profile']];
+$profiles = $opt['profile'] !== null ? [$opt['profile']]
+    : ($opt['web'] ? PROBE_ALL_PROFILES : PROBE_PROFILES);
 foreach ($models as $m) {
     if (!isset($pool[$m])) {
         probe_bail("--model $m is not in the pool (" . implode(', ', array_keys($pool)) . ').');
     }
 }
 foreach ($profiles as $p) {
-    if (!in_array($p, PROBE_PROFILES, true)) {
-        probe_bail("--profile $p is not one of " . implode(', ', PROBE_PROFILES) . '.');
+    if (!in_array($p, PROBE_ALL_PROFILES, true)) {
+        probe_bail("--profile $p is not one of " . implode(', ', PROBE_ALL_PROFILES) . '.');
     }
 }
 
@@ -131,7 +143,7 @@ foreach ($procs as $c) {
     $cells[] = is_array($row) ? $row : ['model' => $c['m'], 'profile' => $c['p'], 'error' => 'child failed: ' . trim($err . ' ' . $out)];
 }
 
-$order = array_flip(PROBE_PROFILES);
+$order = array_flip(PROBE_ALL_PROFILES);
 usort($cells, fn ($a, $b) => [$a['model'], $order[$a['profile']] ?? 9] <=> [$b['model'], $order[$b['profile']] ?? 9]);
 echo "\n| model | profile | effort sent | budget | HTTP | stop | output tok | thinking tok | latency | cost | SVG |\n";
 echo "|---|---|---|---|---|---|---|---|---|---|---|\n";

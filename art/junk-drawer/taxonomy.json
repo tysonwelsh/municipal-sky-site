@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "version": 32,
+  "version": 33,
   "updated": "2026-10-02",
   "instrument": "v2.0",
   "instrumentNote": "The dataset v2 instrument: this rubric plus the comparison and gaps scales below and the rules of a sitting; every v2 session stamps it beside the taxonomy version. v1 instruments ignore it.",
-  "poolVersion": "pool-2026-08-14",
+  "poolVersion": "pool-2026-10-02",
   "intakeVersion": "intake-v4",
   "intakeVersionNote": "The intake prompt's version (api/jd2-intake-prompt.php: the system prompt's bytes with the facets and the size tiers rendered in). Stamped on every prompt intake answers (jd2_prompts.intake_version). Bump it whenever those bytes change — the prompt prose, a facet, a heading, a scope note, a tier description or example — as harness ids are bumped: answers under different intake prompts are not pooled.",
   "utility": {
@@ -439,9 +439,17 @@
       "id": "claude-opus-5",
       "label": "Claude Opus 5",
       "vendor": "Anthropic",
-      "pool": true,
+      "pool": false,
       "provider": "anthropic",
       "api_model": "claude-opus-5"
+    },
+    {
+      "id": "claude-opus-5-5",
+      "label": "Claude Opus 5.5",
+      "vendor": "Anthropic",
+      "pool": true,
+      "provider": "anthropic",
+      "api_model": "claude-opus-5-5"
     },
     {
       "id": "claude-opus-4-6",
@@ -472,9 +480,17 @@
       "id": "gpt-5-1",
       "label": "GPT-5.1",
       "vendor": "OpenAI",
-      "pool": true,
+      "pool": false,
       "provider": "openai",
       "api_model": "gpt-5.1"
+    },
+    {
+      "id": "gpt-6-astra",
+      "label": "GPT-6 Astra",
+      "vendor": "OpenAI",
+      "pool": true,
+      "provider": "openai",
+      "api_model": "gpt-6-astra"
     },
     {
       "id": "gemini-2-5-pro",
@@ -982,6 +998,11 @@
       "date": "2026-10-02",
       "version": 32,
       "note": "The gaps scale takes the owner's pedestal wording now that the \"by how much\" card is the instrument: gap 0 (id `same`, value 0, unchanged) reads \"Negligibly better\" (was \"About the same\") with the description \"The higher place is better, but only just.\", and the four labels Negligibly better / Slightly better / Better / Much better stand, so every `placeholder` flag goes; each value gains `short`, the word the card's ledger slips use. comparison (the 7-point scale, \"About the same\" at 0) is a different scale and is unchanged. The intake prompt does not render gaps, so intakeVersion stays intake-v4. No grade, axis, comparison or pool change."
+    },
+    {
+      "date": "2026-10-02",
+      "version": 33,
+      "note": "Model-pool refresh (owner, 2026-10-02), poolVersion pool-2026-10-02 (was pool-2026-08-14): the current flagship of each of the four vendors. New and in the pool: claude-opus-5-5 (Claude Opus 5.5, wire claude-opus-5-5) in place of claude-opus-5, and gpt-6-astra (GPT-6 Astra, wire gpt-6-astra) in place of gpt-5-1. Kimi K3 (kimi-k3) and Gemini 3.1 Pro (gemini-3.1-pro-preview) stay: each is still its vendor's newest model on the vendor's own model list. claude-opus-5 and gpt-5-1 keep their entries, provider and api_model (v1 rows and the v2 runs filed under pool-2026-08-14 name them) with `pool: false`. The vendors are unchanged, so the consent text is too. utility (the intake clerk) unchanged. No grade, axis, scale or intake change, so intakeVersion stays intake-v4."
     }
   ]
 }

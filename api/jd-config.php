@@ -84,19 +84,33 @@ JD_PROMPT;
 //                 (owner, 2026-10-02: "not all the way to the bottom, but we
 //                 don't need high either — goldilocks"); jd2-config.php's
 //                 JD2_OWNER_DEFAULT_PROFILE
-//   bench-max     every vendor's top documented setting (the old `bench`)
+//   bench-max     every vendor's top documented setting (the old `bench`;
+//                 OpenAI's top accepted rung became `xhigh` with GPT-6
+//                 Astra, v4-bench.5)
 // The bare word `bench` is no longer a profile. On the wire (jd2-generate's
 // `profile`, from an older client) it means "the server's default owner
 // profile"; in jd2_runs it is the retired pre-split profile, stored on the
 // runs filed before 2026-10-02 under harness v4-bench.3 (max effort, the
 // 12000-token budget that starved two of the four models — below).
 //
-// The vendor values, verified against each vendor's docs on 2026-10-02:
-//   Anthropic Opus 5   output_config.effort low|medium|high|xhigh|max; thinking
-//                      on by default (adaptive), so no `thinking` key is sent
-//                      on any bench profile — it stays on.
-//   OpenAI gpt-5.1     reasoning_effort none (default)|low|medium|high
-//                      (developers.openai.com/api/docs/models/gpt-5.1)
+// The vendor values, verified against each vendor's docs on 2026-10-02 and
+// re-verified for the pool refresh the same day (taxonomy poolVersion
+// pool-2026-10-02; every cell proved live by scripts/jd2-profile-probe.php):
+//   Anthropic Opus 5.5 output_config.effort low|medium|high|xhigh|max, default
+//                      medium. Thinking is ALWAYS on: `thinking: {type:
+//                      'disabled'}` is a 400 at every effort on this model, so
+//                      no `thinking` key is sent on ANY profile, web included;
+//                      effort is the only control.
+//   OpenAI gpt-6-astra reasoning_effort low|medium|high|xhigh|max (Chat
+//                      Completions spelling; developers.openai.com/api/docs/
+//                      models/gpt-6-astra). No `none` rung on this model.
+//                      BUT the Chat Completions endpoint this layer calls
+//                      refuses `max`: probed 2026-10-02, HTTP 400
+//                      unsupported_value, "'reasoning_effort' does not support
+//                      'max' with this model. Supported values are: 'low',
+//                      'medium', 'high', and 'xhigh'." So the top rung we can
+//                      send is `xhigh`, and bench-max sends it (it sent
+//                      `high`, GPT-5.1's top, under v4-bench.4).
 //   Moonshot kimi-k3   reasoning_effort low|high|max, default max
 //                      (platform.kimi.ai/docs/api/chat). There is NO medium:
 //                      bench-medium sends `high`, the middle rung of K3's
@@ -117,31 +131,35 @@ JD_PROMPT;
 //
 // What IS genuinely equalised across the four: the system prompt (byte
 // identical), the user prompt, the profile's output budget
-// (JD_MAX_TOKENS_BY_PROFILE), provider-default sampling (forced — Opus 5
-// rejects temperature outright), and pair_order slot randomisation.
+// (JD_MAX_TOKENS_BY_PROFILE), provider-default sampling (forced — Opus 5 and
+// Opus 5.5 reject temperature outright), and pair_order slot randomisation.
 //
-// KNOWN FLAW IN THE WEB PROFILE, left deliberately: openai sends no reasoning
-// parameter, so GPT-5.1 runs at its vendor default (none) while the other
-// three are explicitly throttled. Fixing it would change visitor behaviour and
-// make v3-web.1 data non-comparable with itself, so it stays until the web
-// harness is next bumped. No bench profile inherits the flaw.
+// THE WEB PROFILE SINCE v4-web.4 (pool refresh, 2026-10-02): every vendor at
+// its LOW rung, thinking on everywhere. Two changes from v4-web.3:
+//   - anthropic: `thinking: {type: 'disabled'}` became `output_config.effort
+//     low`. Forced: Opus 5.5 answers 400 to disabled thinking at every
+//     effort. It also retires the old web flaw that thinking-off Opus could
+//     leak <thinking> tags into the visible answer.
+//   - openai: sends `reasoning_effort: 'low'` (v4-web.3 sent nothing, so
+//     GPT-5.1 ran at its vendor default `none` while the other three were
+//     explicitly throttled — the KNOWN FLAW this comment used to carry; the
+//     harness bump was the moment to fix it).
+// So web now equals bench-low's rungs with the visitor's 12000 budget and
+// timeout. v4-web.3 and v4-web.4 are NOT pooled.
 const JD_EFFORT = [
     'web' => [
-        // Opus 5 thinks by default; disabled is accepted at effort high or
-        // below. NOTE: with thinking off, Opus 5 can leak <thinking> tags
-        // into visible output — a plausible source of recorded disobedience
-        // on this profile, and another reason the bench profiles leave
-        // thinking on.
-        'anthropic' => ['thinking' => ['type' => 'disabled']],
-        'openai'    => [],
+        // Opus 5.5 cannot disable thinking (400); its cheapest, fastest
+        // setting is effort low with thinking on.
+        'anthropic' => ['output_config' => ['effort' => 'low']],
+        'openai'    => ['reasoning_effort' => 'low'],
         'kimi'      => ['reasoning_effort' => 'low'],
         'google'    => ['thinking_level' => 'low'],
     ],
-    // budget_tokens is REMOVED on Opus 5 (400). Effort is output_config, and
-    // 'max' requires thinking left on — so no thinking key on any bench row.
+    // budget_tokens is REMOVED on Opus 5 and 5.5 (400). Effort is
+    // output_config; thinking stays on — no thinking key on any row.
     'bench-max' => [
         'anthropic' => ['output_config' => ['effort' => 'max']],
-        'openai'    => ['reasoning_effort' => 'high'],
+        'openai'    => ['reasoning_effort' => 'xhigh'],  // GPT-6 Astra's top rung on Chat Completions ('max' is a 400; was 'high', GPT-5.1's)
         'kimi'      => ['reasoning_effort' => 'max'],
         'google'    => ['thinking_level' => 'high'],
     ],
@@ -173,15 +191,15 @@ const JD_EFFORT = [
 //
 // So the bench profiles get 64000: the largest single number every pool
 // model accepts. The binding cap is Gemini 3.1 Pro's 65,536 output tokens
-// (ai.google.dev/gemini-api/docs/models/gemini-3.1-pro-preview); Opus 5 and
-// GPT-5.1 allow 128,000, Kimi K3 far more. The whole pool gets the same
+// (ai.google.dev/gemini-api/docs/models/gemini-3.1-pro-preview); Opus 5.5 and
+// GPT-6 Astra allow 128,000 (as Opus 5 and GPT-5.1 did), Kimi K3 far more. The whole pool gets the same
 // number, deliberately (same argument as JD_PROVIDER_TIMEOUT). OpenAI's own
 // guidance is to reserve at least 25,000 for reasoning and output. The budget
 // is a ceiling, not a target: it is spent only when a model thinks that long,
 // and jd-usage.php prices what was actually spent.
 //
-// web stays 12000 — visitor behaviour unchanged (and the web profile thinks
-// little or not at all). JD_MAX_TOKENS is kept as its alias for every
+// web stays 12000 — the visitor's budget (the web profile thinks at every
+// vendor's low rung; the pool-refresh probe finished every web cell inside it). JD_MAX_TOKENS is kept as its alias for every
 // pre-existing reader (scripts/jd-cost-probe.php, v1).
 const JD_MAX_TOKENS_BY_PROFILE = [
     'web'          => 12000,
@@ -209,9 +227,25 @@ const JD_MAX_TOKENS_BY_PROFILE = [
 // `bench`) and v4-bench.4 are NOT pooled. v4-benchmed.1 and v4-benchlow.1 are
 // the medium and low profiles, new the same day; the three bench harnesses
 // are never pooled with each other either — comparing them is the point.
+// v4-web.4 (2026-10-02, the pool refresh): the web profile's PARAMETERS
+// changed (the prompt bytes did not) — Anthropic `thinking: disabled` became
+// `output_config.effort: low` (Opus 5.5 rejects disabled thinking at every
+// effort) and OpenAI gained `reasoning_effort: low` (it sent nothing). See
+// the web profile's note above JD_EFFORT. Runs under v4-web.3 and v4-web.4
+// are NOT pooled. The bench harness ids do not move: their parameters are
+// unchanged, and the new models are told apart by pool_version
+// (pool-2026-10-02), not by harness — except bench-max, below.
+// v4-bench.5 (2026-10-02, the pool refresh; owner's call): bench-max is
+// "every vendor's top documented setting", and GPT-6 Astra goes above
+// GPT-5.1's top rung (`high`). Its docs list `max`, but Chat Completions
+// answers 400 to `max` and accepts `xhigh` (probed 2026-10-02), so OpenAI's
+// bench-max parameter changed from `high` to `xhigh` — the top rung the
+// endpoint accepts. Nothing was generated under v4-bench.4 with this
+// pool. v4-bench.4 and v4-bench.5 are NOT pooled. bench-medium and bench-low
+// keep their ids: their parameters did not change.
 const JD_HARNESS_BY_PROFILE = [
-    'web'          => 'v4-web.3',
-    'bench-max'    => 'v4-bench.4',
+    'web'          => 'v4-web.4',
+    'bench-max'    => 'v4-bench.5',
     'bench-medium' => 'v4-benchmed.1',
     'bench-low'    => 'v4-benchlow.1',
 ];
@@ -258,6 +292,13 @@ function jd_profile_timeout(string $profile): int
     return $profile === 'web' ? JD_PROVIDER_TIMEOUT : JD_BENCH_TIMEOUT;
 }
 
+// HISTORY, NOT THE POOL. Dataset v2 reads the pool from taxonomy.json
+// (`models[]` with `pool: true`, through jd2_pool() in jd2-config.php) and
+// stamps `poolVersion` on every run. This constant is read only by the v1
+// visitor endpoint jd-generate.php, which is frozen (JD_V1_FROZEN) and never
+// generates, so it is left as v1 knew it: the pool-2026-08-14 cast. It was
+// deliberately NOT updated in the 2026-10-02 pool refresh.
+//
 // C4.2 — all four pool entries draw every turn: the slot→model assignment
 // is chosen per submission by pair_order (0-23, an index into JD_DRAW_PERMS)
 // and recorded; the model_id values are taxonomy.json `models` registry ids

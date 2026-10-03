@@ -17,14 +17,21 @@ declare(strict_types=1);
  *
  *   Anthropic /v1/messages — input_tokens EXCLUDES both cache figures, so the
  *     three input buckets simply add up. output_tokens INCLUDES thinking;
- *     output_tokens_details.thinking_tokens (seen on Opus 5, 2026-10-02) is
- *     that part, kept in `reasoning` for visibility and never added on top.
+ *     output_tokens_details.thinking_tokens (seen on Opus 5 and Opus 5.5,
+ *     2026-10-02) is that part, kept in `reasoning` for visibility and never
+ *     added on top.
  *   OpenAI /v1/chat/completions — prompt_tokens INCLUDES cached_tokens, so the
  *     cached part must be subtracted out to avoid billing it twice at the full
  *     rate; and completion_tokens ALREADY INCLUDES reasoning_tokens, so
  *     reasoning is reported for visibility but never added on top.
  *     (Kimi's OpenAI-compatible usage from api.moonshot.ai rides this branch:
- *     same field names, same inclusion rules.)
+ *     same field names, same inclusion rules.) Both now also report
+ *     prompt_tokens_details.cache_write_tokens (seen 2026-10-02: 0 on
+ *     gpt-6-astra, 256 of kimi-k3's 431 prompt_tokens). Read as a part of
+ *     prompt_tokens (an inference from those numbers, not a documented rule)
+ *     and absent from cached_tokens, they price at the input rate — which is what
+ *     Moonshot charges for a 5-minute cache write ($3.00, the same as input;
+ *     platform.kimi.ai/docs/pricing/chat) and OpenAI has no write charge.
  *   Google usageMetadata — promptTokenCount INCLUDES cachedContentTokenCount
  *     (same subtraction discipline as OpenAI), and thoughtsTokenCount is
  *     BILLED AS OUTPUT by Google, so it is added to candidatesTokenCount in

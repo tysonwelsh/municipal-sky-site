@@ -30,8 +30,8 @@ function jd_provider_params(string $provider, string $profile = 'web'): string
     ][$provider] ?? ['max_tokens' => $maxTokens];
 
     return json_encode(array_merge($base, $effort, [
-        // Forced, not chosen: Opus 5 rejects temperature outright, so
-        // provider-default is the only setting all four can share.
+        // Forced, not chosen: Opus 5 and Opus 5.5 reject temperature
+        // outright, so provider-default is the only setting all four share.
         'temperature' => 'provider-default',
         'effort_profile' => $profile,
         'harness' => jd_harness($profile),
@@ -160,9 +160,10 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt, st
                 ['role' => 'user', 'content' => $prompt],
             ],
         ];
-        // web: thinking disabled. bench-*: output_config.effort, and NO
-        // thinking key — thinking stays on (Opus 5 rejects disabled thinking
-        // above effort high, and the bench profiles want it on at every rung).
+        // Every profile (web included since v4-web.4): output_config.effort
+        // and NO thinking key — thinking stays on. Opus 5.5 answers 400 to
+        // `thinking: {type: 'disabled'}` at every effort; effort is the only
+        // control (its default is medium, so every profile sets it).
         foreach ($effort as $k => $v) {
             $payload[$k] = $v;
         }
@@ -218,7 +219,11 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt, st
             'Content-Type: application/json',
             'Authorization: Bearer ' . $key,
         ];
-        // max_completion_tokens, not max_tokens (gpt-5 reasoning family).
+        // max_completion_tokens, not max_tokens (the reasoning families,
+        // gpt-5 then gpt-6). reasoning_effort is the Chat Completions
+        // spelling; on gpt-6-astra it accepts low|medium|high|xhigh and
+        // refuses `max` with a 400, though the model page lists max (probed
+        // 2026-10-02; jd-config.php's JD_EFFORT note).
         $payload = [
             'model' => $apiModel,
             'max_completion_tokens' => $maxTokens,

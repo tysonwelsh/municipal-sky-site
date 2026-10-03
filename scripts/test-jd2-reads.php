@@ -812,8 +812,8 @@ check('a rerun row files no intake and no curate (the prompt keeps its own title
 check('the same CSV at bench-max: three more runs, no new prompt — the watering can (filed at bench-low) is now a rerun too',
     $rc === 0 && preg_match('/#2\s+rerun ' . $canId . ' \(same text, on file\)/', $o) === 1
     && (int) one($db, "SELECT COUNT(*) FROM jd2_prompts WHERE text = 'a tin watering can'") === 1
-    && $byProfile($canId) === ['initial:bench-low:v4-benchlow.1', 'rerun:bench-max:v4-bench.4']
-    && $byProfile($robotId) === ['initial:bench-medium:v4-benchmed.1', 'rerun:bench-low:v4-benchlow.1', 'rerun:bench-max:v4-bench.4'],
+    && $byProfile($canId) === ['initial:bench-low:v4-benchlow.1', 'rerun:bench-max:v4-bench.5']
+    && $byProfile($robotId) === ['initial:bench-medium:v4-benchmed.1', 'rerun:bench-low:v4-benchlow.1', 'rerun:bench-max:v4-bench.5'],
     json_encode([$byProfile($robotId), $byProfile($canId)]) . "\n" . $o);
 [$rc, $o] = batch(escapeshellarg($csvP) . ' --local --resume --profile bench-max --state ' . escapeshellarg($stateP));
 check('--resume at bench-max with everything done: nothing drawn (each profile resumes only its own rows)',

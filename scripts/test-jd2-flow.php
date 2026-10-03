@@ -781,11 +781,17 @@ check('no profile sent: the owner run is filed under bench-medium (v4-benchmed.1
 check('bench-low / bench-medium / bench-max filed as sent, each with its own harness and the 64000 budget',
       $prof['bench-low'] === [200, 'bench-low', 'v4-benchlow.1', 'bench-low', 64000]
       && $prof['bench-medium'] === [200, 'bench-medium', 'v4-benchmed.1', 'bench-medium', 64000]
-      && $prof['bench-max'] === [200, 'bench-max', 'v4-bench.4', 'bench-max', 64000], json_encode($prof));
+      && $prof['bench-max'] === [200, 'bench-max', 'v4-bench.5', 'bench-max', 64000], json_encode($prof));
 $webParams = json_decode((string) one($db, "SELECT g.params FROM jd2_generations g JOIN jd2_runs r ON r.id = g.run_id WHERE r.profile = 'web' LIMIT 1"), true) ?: [];
-check('a visitor turn stays on web: v4-web.3 and the 12000 budget (JD_MAX_TOKENS)',
-      ($webParams['harness'] ?? '') === 'v4-web.3' && JD_MAX_TOKENS === 12000
+check('a visitor turn stays on web: v4-web.4 and the 12000 budget (JD_MAX_TOKENS)',
+      ($webParams['harness'] ?? '') === 'v4-web.4' && JD_MAX_TOKENS === 12000
       && ($webParams['max_tokens'] ?? $webParams['max_completion_tokens'] ?? $webParams['max_output_tokens'] ?? null) === 12000, json_encode($webParams));
+// pool refresh 2026-10-02: Opus 5.5 answers 400 to thinking:disabled at every
+// effort, so no profile may send a `thinking` key; web runs every vendor low
+check('no profile sends Anthropic a thinking key; web asks Anthropic and OpenAI for low effort',
+      array_filter(array_keys(JD_EFFORT), static fn ($p) => isset(JD_EFFORT[$p]['anthropic']['thinking'])) === []
+      && jd_effort('anthropic', 'web') === ['output_config' => ['effort' => 'low']]
+      && jd_effort('openai', 'web') === ['reasoning_effort' => 'low'], json_encode(JD_EFFORT['web']));
 foreach (['bench-ultra' => 'an unknown word', 'bench' . "\u{00A0}" => 'a near miss'] as $badP => $what) {
     [$st, $j] = gen(['client_ref' => jd_uuid4(), 'slot' => 'a', 'prompt' => 'x', 'profile' => $badP, 'website' => ''], true);
     check("an owner profile that is $what → 400, nothing filed", $st === 400 && ($j['error']['code'] ?? '') === 'bad_request'
