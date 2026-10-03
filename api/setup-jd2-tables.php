@@ -147,6 +147,12 @@ jd2_ensure_column($db, 'jd2_prompts', 'intake_json', 'TEXT NULL AFTER intake_mod
 jd2_ensure_column($db, 'jd2_prompts', 'intake_cost_usd', 'DECIMAL(10,6) NULL AFTER intake_json', 'DECIMAL(10,6) NULL');
 jd2_ensure_column($db, 'jd2_prompts', 'intake_at', 'DATETIME NULL AFTER intake_cost_usd', 'TEXT NULL');
 
+// The sanitizer's named normalization (2026-10-02: CDATA sections unwrapped,
+// not refused): what it changed between raw_response and svg, a comma-joined
+// list of JD2_GEN_NORMALIZED words, NULL when the drawing passed
+// byte-identical. Additive, nullable.
+jd2_ensure_column($db, 'jd2_generations', 'normalized', 'VARCHAR(64) NULL AFTER disobedience', 'TEXT NULL');
+
 // The effort profiles split on 2026-10-02 (bench → bench-max, bench-medium,
 // bench-low). MySQL needs nothing (VARCHAR, no CHECK); a dev SQLite file made
 // before then carries the old profile CHECK and would refuse every new owner
@@ -218,6 +224,7 @@ function jd2_setup_mysql_ddl(): array
         'profile'    => jd2_setup_words(JD2_PROFILE),
         'run_status' => jd2_setup_words(JD2_RUN_STATUS),
         'gen_status' => jd2_setup_words(JD2_GEN_STATUS),
+        'gen_normalized' => jd2_setup_words(JD2_GEN_NORMALIZED),
         'role'       => jd2_setup_words(JD2_RATER_ROLE),
         'ses_status' => jd2_setup_words(JD2_SESSION_STATUS),
         'jkind'      => jd2_setup_words(JD2_JUDGMENT_KIND),
@@ -293,6 +300,7 @@ CREATE TABLE IF NOT EXISTS jd2_generations (
     status         VARCHAR(16)   NOT NULL DEFAULT 'pending', -- {$w['gen_status']} (JD2_GEN_STATUS)
     reject_reason  VARCHAR(64)   NULL,                 -- the sanitizer's frozen reason when rejected
     disobedience   TINYINT       NOT NULL DEFAULT 0,   -- 1 = the SVG had to be dug out of the reply
+    normalized     VARCHAR(64)   NULL,                 -- what the sanitizer changed between raw_response and svg: {$w['gen_normalized']}, comma-joined; NULL = nothing
     latency_ms     INT           NULL,                 -- wall time of the provider call
     usage_json     TEXT          NULL,                 -- JSON: the provider's usage object, its own key names (re-priceable)
     cost_usd       DECIMAL(10,6) NULL,                 -- cost snapshotted at write time; NULL when unpriced
@@ -486,6 +494,7 @@ CREATE TABLE IF NOT EXISTS jd2_generations (
     status         TEXT     NOT NULL DEFAULT 'pending' CHECK (status IN ({$in['gen_status']})),
     reject_reason  TEXT     NULL,
     disobedience   INTEGER  NOT NULL DEFAULT 0 CHECK (disobedience IN (0, 1)),
+    normalized     TEXT     NULL,
     latency_ms     INTEGER  NULL,
     usage_json     TEXT     NULL,
     cost_usd       DECIMAL(10,6) NULL,

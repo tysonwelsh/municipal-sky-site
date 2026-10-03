@@ -56,6 +56,13 @@ function jd_mock_call(string $provider, string $prompt): array
             : ($provider === 'google' ? 'mock-google.svg' : 'mock-openai.svg'))
     );
 
+    // '[cdata]': the 2026-10-02 Kimi K3 shape — a <style> whose CSS sits in
+    // a CDATA section, inserted after the root's start tag. The sanitizer
+    // unwraps it, so the slot files ok with normalized = 'cdata_unwrapped'.
+    if (jd_mock_token_hits($prompt, 'cdata', $provider)) {
+        $svg = preg_replace('/^(<svg\b[^>]*>)/', "$1<style><![CDATA[ .jd-mock-cdata > * { opacity: 1; } ]]></style>", $svg, 1);
+    }
+
     if (stripos($prompt, '[prose]') !== false) {
         $svg = "Certainly! Here is the object you described.\n\n```svg\n"
             . $svg

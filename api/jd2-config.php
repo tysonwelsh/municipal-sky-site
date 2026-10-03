@@ -83,6 +83,14 @@ const JD2_RUN_STATUS = ['pending', 'generated', 'failed'];
 /** jd2_generations.status — v1's generation states, unchanged. */
 const JD2_GEN_STATUS = ['pending', 'ok', 'failed', 'rejected'];
 
+/**
+ * jd2_generations.normalized — what the sanitizer changed between the model's
+ * raw_response and the svg served, as a comma-joined list of these words
+ * (the keys of jd_sanitize_svg()'s 'normalized'); NULL when nothing was.
+ * jd2_normalized_column() builds it.
+ */
+const JD2_GEN_NORMALIZED = ['cdata_unwrapped'];
+
 /** jd2_sessions.rater_role — two populations, never pooled. */
 const JD2_RATER_ROLE = ['owner', 'visitor'];
 
@@ -441,6 +449,51 @@ function jd2_deal(array $pool): array
         $deal[JD2_SLOT_LETTERS[$k]] = $id;
     }
     return $deal;
+}
+
+/**
+ * A passing sanitizer verdict's 'normalized' as the jd2_generations.normalized
+ * value: the words with a nonzero count, in JD2_GEN_NORMALIZED order (a word
+ * the list does not know yet is kept, last, rather than hidden), joined by
+ * commas; NULL when the drawing passed byte-identical.
+ */
+function jd2_normalized_column(array $verdict): ?string
+{
+    $counts = is_array($verdict['normalized'] ?? null) ? $verdict['normalized'] : [];
+    $words = array_keys(array_filter($counts, static fn ($n): bool => (int) $n > 0));
+    if (!$words) {
+        return null;
+    }
+    usort($words, static function (string $a, string $b): int {
+        $ia = array_search($a, JD2_GEN_NORMALIZED, true);
+        $ib = array_search($b, JD2_GEN_NORMALIZED, true);
+        return ($ia === false ? PHP_INT_MAX : $ia) <=> ($ib === false ? PHP_INT_MAX : $ib) ?: strcmp($a, $b);
+    });
+    return implode(',', $words);
+}
+
+/**
+ * The status a run's slots settle it to: null while any dealt slot is still
+ * pending (or the deal is unreadable), else 'generated' when at least one
+ * drawing is ok and 'failed' when none is. jd2-generate applies it to a
+ * pending run as its last slot settles; jd2-resanitize re-applies it after a
+ * rejected drawing is recovered.
+ */
+function jd2_run_settled_status(PDO $db, string $runId): ?string
+{
+    $run = $db->prepare('SELECT deal FROM jd2_runs WHERE id = ?');
+    $run->execute([$runId]);
+    $dealt = count(jd2_deal_decode($run->fetchColumn()));
+    $q = $db->prepare(
+        "SELECT COUNT(*) AS settled, SUM(CASE WHEN status = '" . JD2_GEN_OK . "' THEN 1 ELSE 0 END) AS ok
+           FROM jd2_generations WHERE run_id = ? AND status <> '" . JD2_GEN_PENDING . "'"
+    );
+    $q->execute([$runId]);
+    $n = $q->fetch(PDO::FETCH_ASSOC);
+    if ($dealt === 0 || (int) $n['settled'] < $dealt) {
+        return null;
+    }
+    return (int) $n['ok'] > 0 ? JD2_RUN_GENERATED : JD2_RUN_FAILED;
 }
 
 /** A stored deal (jd2_runs.deal) back as slot => model_id; [] when unreadable. */

@@ -323,9 +323,12 @@ try {
     }
 
     // --- 14. Success --------------------------------------------------------
+    // svg is the sanitized drawing; raw_response stays byte-exact model
+    // output; normalized names what the sanitizer changed between the two
+    // (NULL when the drawing passed byte-identical).
     jd2_finish_generation($db, $generationId, $runId, $settle + [
         'status' => JD2_GEN_OK, 'raw_response' => $raw, 'svg' => $verdict['svg'],
-        'disobedience' => $disobedience,
+        'disobedience' => $disobedience, 'normalized' => jd2_normalized_column($verdict),
     ]);
 
     jd_json_out(200, [
@@ -533,7 +536,7 @@ function jd2_finish_generation(PDO $db, string $generationId, string $runId, arr
         $db->prepare(
             'UPDATE jd2_generations
                 SET status = ?, reject_reason = ?, raw_response = ?, svg = ?,
-                    disobedience = ?, latency_ms = ?, usage_json = ?, cost_usd = ?, priced = ?
+                    disobedience = ?, normalized = ?, latency_ms = ?, usage_json = ?, cost_usd = ?, priced = ?
               WHERE id = ? AND status = ?'
         )->execute([
             $f['status'],
@@ -541,6 +544,7 @@ function jd2_finish_generation(PDO $db, string $generationId, string $runId, arr
             $f['raw_response'] ?? null,
             $f['svg'] ?? null,
             (int) ($f['disobedience'] ?? 0),
+            $f['normalized'] ?? null,
             $f['latency_ms'] ?? null,
             $f['usage'] === null ? null : json_encode($f['usage']),
             $costUsd,
@@ -549,21 +553,14 @@ function jd2_finish_generation(PDO $db, string $generationId, string $runId, arr
             JD2_GEN_PENDING,
         ]);
 
-        // The run settles when every dealt slot has: 'generated' if any
-        // drawing survived, 'failed' if none did. Two last slots may both see
-        // the run whole; the pending guard makes the second a no-op.
-        $run = $db->prepare('SELECT deal FROM jd2_runs WHERE id = ?');
-        $run->execute([$runId]);
-        $dealt = count(jd2_deal_decode($run->fetchColumn()));
-        $q = $db->prepare(
-            "SELECT COUNT(*) AS settled, SUM(CASE WHEN status = '" . JD2_GEN_OK . "' THEN 1 ELSE 0 END) AS ok
-               FROM jd2_generations WHERE run_id = ? AND status <> '" . JD2_GEN_PENDING . "'"
-        );
-        $q->execute([$runId]);
-        $n = $q->fetch(PDO::FETCH_ASSOC);
-        if ($dealt > 0 && (int) $n['settled'] >= $dealt) {
+        // The run settles when every dealt slot has (jd2_run_settled_status):
+        // 'generated' if any drawing survived, 'failed' if none did. Two last
+        // slots may both see the run whole; the pending guard makes the
+        // second a no-op.
+        $settled = jd2_run_settled_status($db, $runId);
+        if ($settled !== null) {
             $db->prepare('UPDATE jd2_runs SET status = ? WHERE id = ? AND status = ?')->execute([
-                (int) $n['ok'] > 0 ? JD2_RUN_GENERATED : JD2_RUN_FAILED, $runId, JD2_RUN_PENDING,
+                $settled, $runId, JD2_RUN_PENDING,
             ]);
         }
     }, $db);

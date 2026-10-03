@@ -26,7 +26,12 @@
 // JD_INTAKE_MOCK_FAIL tells the mock to fail), jd2-rate leaving the clerk's
 // size alone, and jd2-curate's tags and owner size.
 //
-// One PASS/FAIL line per check, grouped by case (a)–(j); exit 0 iff all pass.
+// (l) is the sanitizer's named normalization: a mock drawing whose <style>
+// wraps its CSS in CDATA (the mock's '[cdata]' switch) files ok with
+// normalized = 'cdata_unwrapped', and api/jd2-resanitize.php recovers the same
+// drawings when they are seeded as the old rules filed them.
+//
+// One PASS/FAIL line per check, grouped by case (a)–(l); exit 0 iff all pass.
 
 putenv('JD_DEV_MOCK=1');
 putenv('JD_DEV_LATENCY_MS=1');
@@ -780,6 +785,96 @@ $db->prepare("INSERT INTO jd2_runs (id, prompt_id, kind, requested_by, profile, 
 check('a slot of a run under the retired `bench` profile is refused (409 retired_profile), nothing drawn',
       $st === 409 && ($j['error']['code'] ?? '') === 'retired_profile'
       && (int) one($db, 'SELECT COUNT(*) FROM jd2_generations WHERE run_id = ?', [$oldRun]) === 0, json_encode($j));
+
+// ============================================================================
+section('(l) the sanitizer\'s normalization: CDATA unwrapped and recorded; jd2-resanitize');
+/** An owner turn of four slots on a new prompt; returns [responses by slot, run id]. */
+function ownerTurn(string $prompt): array
+{
+    $ref = jd_uuid4();
+    $out = [];
+    $runId = null;
+    foreach (['a', 'b', 'c', 'd'] as $slot) {
+        $body = ['client_ref' => $ref, 'slot' => $slot, 'prompt' => $prompt, 'website' => ''];
+        if ($runId !== null) {
+            $body['run_id'] = $runId;
+        }
+        $out[$slot] = gen($body, true);
+        $runId ??= $out[$slot][1]['run_id'] ?? null;
+    }
+    return [$out, $runId];
+}
+[$tc, $runC] = ownerTurn('a tin lantern with a paper shade [cdata]');
+$gensC = rows($db, 'SELECT * FROM jd2_generations WHERE run_id = ? ORDER BY slot', [$runC]);
+$cdataOk = count($gensC) === 4;
+foreach ($gensC as $g) {
+    $cdataOk = $cdataOk && $g['status'] === 'ok' && $g['normalized'] === 'cdata_unwrapped' && $g['reject_reason'] === null
+        && str_contains((string) $g['raw_response'], '<![CDATA[') && !str_contains((string) $g['svg'], '<![CDATA[')
+        && str_contains((string) $g['svg'], '<style> .jd-mock-cdata &gt; * { opacity: 1; } </style>')
+        && ($tc[$g['slot']][1]['svg'] ?? null) === $g['svg'];
+}
+check('a drawing whose <style> wraps its CSS in CDATA files ok, normalized = cdata_unwrapped; svg (served) has no CDATA, raw_response keeps it',
+      $cdataOk, json_encode(array_map(fn ($g) => [$g['slot'], $g['status'], $g['reject_reason'], $g['normalized']], $gensC)));
+check('a drawing that passed byte-identical files normalized NULL',
+      (int) one($db, "SELECT COUNT(*) FROM jd2_generations WHERE run_id = ? AND status = 'ok' AND normalized IS NULL", [$run1]) === 4);
+
+// Seed the 2026-10-02 case: the CDATA run as the old rules filed it — every
+// slot rejected element_not_allowed, no svg, the run failed. Usage, latency
+// and cost stay as filed and must survive the recovery.
+$before = rows($db, 'SELECT id, usage_json, latency_ms, cost_usd, priced, params, disobedience, created FROM jd2_generations WHERE run_id = ? ORDER BY slot', [$runC]);
+$db->prepare("UPDATE jd2_generations SET status = 'rejected', reject_reason = 'element_not_allowed', svg = NULL, normalized = NULL WHERE run_id = ?")->execute([$runC]);
+$db->prepare("UPDATE jd2_runs SET status = 'failed' WHERE id = ?")->execute([$runC]);
+// and a drawing that is rejected under the current rules too
+[$th, $runH] = ownerTurn('a brass bell [hostile]');
+check('a hostile drawing is still rejected (setup for the re-check)',
+      (int) one($db, "SELECT COUNT(*) FROM jd2_generations WHERE run_id = ? AND status = 'rejected' AND reject_reason = 'element_not_allowed'", [$runH]) === 4
+      && one($db, 'SELECT status FROM jd2_runs WHERE id = ?', [$runH]) === 'failed');
+
+function resanitize(bool $dry): array
+{
+    global $root;
+    $out = [];
+    exec('JD_DEV_MOCK=1 ' . escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($root . '/api/jd2-resanitize.php')
+        . ($dry ? ' --dry-run' : '') . ' 2>&1', $out, $rc);
+    return [$rc, implode("\n", $out)];
+}
+[$rc, $out] = resanitize(true);
+check('jd2-resanitize --dry-run lists 8 rejected drawings: 4 would pass, 4 still rejected; writes nothing',
+      $rc === 0 && str_contains($out, 'dry run done — 8 rejected drawing(s) checked: 4 would pass, 4 still rejected')
+      && substr_count($out, 'element_not_allowed → ok (normalized: cdata_unwrapped)  [would apply]') === 4
+      && substr_count($out, 'element_not_allowed → still rejected: element_not_allowed') === 4
+      && str_contains($out, "run $runC  status failed → generated  [would apply]")
+      && (int) one($db, "SELECT COUNT(*) FROM jd2_generations WHERE run_id = ? AND status = 'rejected'", [$runC]) === 4
+      && one($db, 'SELECT status FROM jd2_runs WHERE id = ?', [$runC]) === 'failed', $out);
+[$rc, $out] = resanitize(false);
+$after = rows($db, 'SELECT id, usage_json, latency_ms, cost_usd, priced, params, disobedience, created FROM jd2_generations WHERE run_id = ? ORDER BY slot', [$runC]);
+$gensR = rows($db, 'SELECT * FROM jd2_generations WHERE run_id = ? ORDER BY slot', [$runC]);
+$recOk = count($gensR) === 4;
+foreach ($gensR as $g) {
+    $recOk = $recOk && $g['status'] === 'ok' && $g['reject_reason'] === null && $g['normalized'] === 'cdata_unwrapped'
+        && $g['svg'] === $gensC[array_search($g['slot'], array_column($gensC, 'slot'), true)]['svg'];
+}
+check('applied: the 4 recovered rows are ok with the sanitized svg, normalized set, reject_reason cleared',
+      $rc === 0 && $recOk && str_contains($out, 'done — 8 rejected drawing(s) checked: 4 recovered, 4 still rejected'), $out);
+check('usage, latency, cost, priced, params, disobedience and created are untouched', $after === $before,
+      json_encode([$before, $after]));
+check('the run re-settles failed → generated; the still-rejected run stays failed',
+      one($db, 'SELECT status FROM jd2_runs WHERE id = ?', [$runC]) === 'generated'
+      && str_contains($out, "run $runC  status failed → generated")
+      && one($db, 'SELECT status FROM jd2_runs WHERE id = ?', [$runH]) === 'failed'
+      && (int) one($db, "SELECT COUNT(*) FROM jd2_generations WHERE run_id = ? AND status = 'rejected'", [$runH]) === 4, $out);
+[$rc, $out] = resanitize(false);
+check('idempotent: a second run recovers nothing', $rc === 0
+      && str_contains($out, 'done — 4 rejected drawing(s) checked: 0 recovered, 4 still rejected'), $out);
+[$st, $body] = (static function () use ($runC) {
+    global $BASE;
+    $ch = curl_init($BASE . '/api/jd2-resanitize.php?dry-run=1');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $b = curl_exec($ch);
+    return [curl_getinfo($ch, CURLINFO_HTTP_CODE), (string) $b];
+})();
+check('over the web on a dev box it answers plain text (the key gate is production-only)',
+      $st === 200 && str_contains($body, 'DRY RUN') && str_contains($body, 'dry run done'), $body);
 
 printf("\n%d passed, %d failed\n", $passed, $failed);
 if ($failed > 0) {
