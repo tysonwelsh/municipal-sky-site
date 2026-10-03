@@ -57,7 +57,7 @@ two are never pooled. The full reasoning and every owner decision are in
 | v2 schema runner + doc | `api/setup-jd2-tables.php`, `db/junk-drawer-v2-schema.md` |
 | v1 endpoints (frozen, reads only) | `api/jd-*.php`; `JD_V1_FROZEN = true` in `api/jd-config.php` |
 | v1 archive | `~/Media/junk-drawer-v1/2026-10-01/` (dump, JSONL, CSVs, items); runbook `db/junk-drawer-v1-archive.md`; git tag `junk-drawer-v1-final` |
-| the rubric | `art/junk-drawer/taxonomy.json` (v35) — grades, axes, the house rule, size tiers, model registry + pool, comparison and gap scales, the intake facets, `intakeVersion` and the intake model |
+| the rubric | `art/junk-drawer/taxonomy.json` (v36) — grades, axes, the house rule, size tiers, model registry + pool, comparison and gap scales, the intake facets, `intakeVersion` and the intake model |
 | the curator's ledger | `art/junk-drawer/ledger.html` |
 | the owner's bench | `index.php?bench` (`?bench&prompt=<id>` for one prompt; `?admin` for the card editor) |
 | owner scripts | `scripts/jd2-batch-run.php` (CSV batch generation), `scripts/jd2-export.py` (JSONL + CSVs) |
@@ -106,16 +106,18 @@ re-derive them):
 ## 5. The instrument
 
 Per drawing: an overall grade (Prime / Choice / Select / Standard /
-Utility, filed as 5..1) and five axes (taxonomy v35, 2026-10-02, the
-scales settled) — Understanding Assignment (4-point), Structural Coherence
-(4-point, `structural-coherence-2`; the 3-point `structural-coherence` is
-defunct), Layering (3-point), Paintwork (4-point, new), Je ne sais quoi
-(3-point). Each issue axis is named by the edit that fixes it: redraw
+Utility, filed as 5..1) and five axes (taxonomy v36, 2026-10-03) —
+Understanding Assignment (4-point), Structural Coherence (4-point,
+`structural-coherence-2`; the 3-point `structural-coherence` is defunct),
+Layering (4-point, `layering-2`, mid-campaign; the 3-point `layering` is
+defunct, and its `successor` map reads its answers onto the new scale at
+read time — Small as Minor, Big as Major), Paintwork (4-point), Je ne sais
+quoi (3-point). Each issue axis is named by the edit that fixes it: redraw
 (Understanding Assignment, including any added thing), move on x/y
 (Structural Coherence, including framing), restack or erase (Layering,
 including an unrequested setting), repaint in place (Paintwork, including
-every cast shadow). The 4-point issue axes read No / Minor / Moderate /
-Major problems; Layering No / Small / Big. Above the axes the card prints
+every cast shadow). The four issue axes read No / Minor / Moderate /
+Major problems. Above the axes the card prints
 the house rule (`houseRule`: what every model was told). Then the
 podium: drag or tap the drawings into 1st..4th. Then the **pedestal card**
 is live (0.12.0): one card asks each adjacent pair "how much better?"
@@ -133,7 +135,9 @@ there, and the owner's size (`size_by` `owner`) is never overwritten.
 
 Labels, descriptions, scales, the model pool and the intake model are all
 **data in `taxonomy.json`**; ids are permanent, labels may be reworded, a
-retired axis gets `"defunct": true`. The four gap labels are the owner's
+retired axis gets `"defunct": true` (and, when the owner says how its
+answers read on the new scale, a `successor` map — read time only; filed
+rows never change). The four gap labels are the owner's
 pedestal wording (taxonomy v32).
 
 ## 6. What is done (all live since 2026-10-02)

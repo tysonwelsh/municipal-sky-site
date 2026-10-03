@@ -315,6 +315,7 @@
       it.complete = !!res.complete;
       /* the new sitting is on today's rubric: nothing left to prune */
       it.prefill_pruned = false;
+      it.prefill_mapped = false;
       if (res.complete) it.needs = [];
       if (size && !viaEntry) { it.size_class = size; it.size_by = 'owner'; }
       /* fold the answers back into the queue copy, so prev re-seats what
@@ -402,6 +403,9 @@
         /* the queue left an earlier answer out of the prefill (a retired or
            rescaled axis, taxonomy v35): the card says so above its rows */
         prefillPruned: !!it.prefill_pruned,
+        /* …or carried an answer onto a successor axis through the
+           taxonomy's map (v36: layering → layering-2): said in the same place */
+        prefillMapped: !!it.prefill_mapped,
         responses: usable.map(function (r) {
           var pf = r.prefill || {};
           return {

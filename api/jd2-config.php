@@ -8,6 +8,8 @@
 //   3. the canonical pair order                             (jd2_pair_key)
 //   4. the spaced-ranking derivation                        (jd2_derive_pairs)
 //   5. what "complete" means at a taxonomy version          (jd2_required_cells)
+//      and how a retired scale reads on its successor's       (jd2_axis_successors,
+//                                                               jd2_map_axes)
 //
 // Include-only: no output, no session, no cookies. The database handle, the
 // schema probes, the key gate, ULIDs and the taxonomy accessors come from
@@ -357,6 +359,131 @@ function jd2_session_cells(?array $session, array $taxonomy): array
         }
     }
     return jd2_required_cells($taxonomy);
+}
+
+// ---------------------------------------------------------------------------
+// 5b. THE SUCCESSOR RULE (taxonomy v36, owner 2026-10-03). A scale change is
+// a new axis id with the old one defunct (v35's structural-coherence →
+// structural-coherence-2, v36's layering → layering-2), and a filed judgment
+// is never edited. When the owner says how the old scale's answers read on
+// the new one, the taxonomy records it on the DEFUNCT axis as data:
+//
+//   "successor": {"id": "layering-2", "map": {"3": 4, "2": 3, "1": 1}}
+//
+// — old rank (a string key) => new rank. The map is applied at READ time only
+// and only where a reader asks for one scale: the bench prefill (jd2-queue,
+// `prefill_mapped`), the analytics' per-axis panels (jd2-analytics,
+// `mapped`), the report card (data.php's annotations, marked `mapped_from`)
+// and the export (scripts/jd2-export.py, beside the filed id and value). The
+// row keeps its filed axis id and value; completeness keeps reading the
+// sitting's own required_cells. A rank the map does not name is not carried
+// (the reader treats it as a defunct value: pruned, or left out). A value
+// filed directly on the successor always wins over a mapped one. A defunct
+// axis without `successor` maps nowhere, as before.
+
+/**
+ * Every defunct axis with a usable successor: old id => {id, map}, where id
+ * is a LIVE axis and map is old rank (string) => new rank (float), each new
+ * rank on the successor's scale. A chain (a successor itself retired with a
+ * successor of its own) is followed to the live end, the maps composed; a
+ * broken entry (an unknown or still-defunct end, a cycle, an off-scale rank)
+ * is left out, so the old axis simply stays history.
+ *
+ * @return array<string,array{id:string,map:array<string,float>}>
+ */
+function jd2_axis_successors(array $taxonomy): array
+{
+    $byId = [];
+    foreach ($taxonomy['axes'] ?? [] as $axis) {
+        if (is_array($axis) && isset($axis['id'])) {
+            $byId[(string) $axis['id']] = $axis;
+        }
+    }
+    $live = jd_axis_ranks($taxonomy);
+    $hop = static function (array $axis): ?array {
+        $s = $axis['successor'] ?? null;
+        if (empty($axis['defunct']) || !is_array($s) || !is_string($s['id'] ?? null) || !is_array($s['map'] ?? null)) {
+            return null;
+        }
+        return $s;
+    };
+    $out = [];
+    foreach ($byId as $id => $axis) {
+        $s = $hop($axis);
+        if ($s === null) {
+            continue;
+        }
+        $map = [];
+        foreach ($s['map'] as $from => $to) {
+            if (is_numeric($from) && is_numeric($to)) {
+                $map[(string) (int) round((float) $from)] = (float) $to;
+            }
+        }
+        $seen = [$id => true];
+        $to = (string) $s['id'];
+        while (!isset($live[$to]) && isset($byId[$to]) && !isset($seen[$to]) && ($next = $hop($byId[$to])) !== null) {
+            $seen[$to] = true;
+            $step = [];
+            foreach ($next['map'] as $f => $t) {
+                if (is_numeric($f) && is_numeric($t)) {
+                    $step[(string) (int) round((float) $f)] = (float) $t;
+                }
+            }
+            foreach ($map as $f => $t) {
+                $k = (string) (int) round($t);
+                if (isset($step[$k])) {
+                    $map[$f] = $step[$k];
+                } else {
+                    unset($map[$f]);
+                }
+            }
+            $to = (string) $next['id'];
+        }
+        if (!isset($live[$to])) {
+            continue;
+        }
+        foreach ($map as $f => $t) {
+            if (jd_rank_on_scale($t, $live[$to]) === null) {
+                unset($map[$f]);
+            }
+        }
+        if ($map !== []) {
+            $out[(string) $id] = ['id' => $to, 'map' => $map];
+        }
+    }
+    return $out;
+}
+
+/**
+ * One drawing's filed axis values read onto the live scales: each value on a
+ * defunct axis with a successor (jd2_axis_successors) is carried to the
+ * successor at the mapped rank, unless the drawing already has a value filed
+ * on the successor (the direct answer wins) or the map does not name its
+ * rank (it stays as filed, for the caller to prune or skip). Nothing else is
+ * touched. `mapped` says, per successor id, which axis and filed value it
+ * came from.
+ *
+ * @param array<string,float> $axes        axis id => filed rank (a standing's judgments[gid]['axes'])
+ * @param array<string,array> $successors  jd2_axis_successors()
+ * @return array{axes:array<string,float>,mapped:array<string,array{axis:string,value:float}>}
+ */
+function jd2_map_axes(array $axes, array $successors): array
+{
+    $mapped = [];
+    foreach ($axes as $axis => $value) {
+        $s = $successors[(string) $axis] ?? null;
+        if ($s === null || array_key_exists($s['id'], $axes) || isset($mapped[$s['id']])) {
+            continue;
+        }
+        $to = $s['map'][(string) (int) round((float) $value)] ?? null;
+        if ($to === null) {
+            continue;
+        }
+        unset($axes[$axis]);
+        $axes[$s['id']] = $to;
+        $mapped[$s['id']] = ['axis' => (string) $axis, 'value' => (float) $value];
+    }
+    return ['axes' => $axes, 'mapped' => $mapped];
 }
 
 // ===========================================================================

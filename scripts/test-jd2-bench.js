@@ -33,6 +33,15 @@
 //          (opens on the podium, every scale answered, and the pedestal card
 //          comes up with the filed gaps — the reload round trip, through the
 //          server); ?bench&item= too
+//   pruned P2's sitting with a retired cell (structural-coherence, no
+//          successor) and layering-2 off its scale: the reopen drops both,
+//          says prefill_pruned and the card's one-line note
+//   mapped P2's sitting as a v35 sitting (Layering on the 3-point
+//          `layering`, required_cells naming it): the reopen carries every
+//          answer onto layering-2 through the taxonomy's `successor` map
+//          (prefill_mapped; the card's note; the rc-q ramp), the report card
+//          shows ONE Layering row at the mapped value, marked "mapped from
+//          the 3-point scale", and the judgment rows do not move
 //   scrap  hides it (visibility hidden) and the bench moves on
 //   hidden HIDDEN ITEMS lists it from the ledger; SHOW returns it live — and
 //          a jd2-curate answer naming another build (the response rewritten
@@ -650,43 +659,133 @@ async function main() {
 
     // --- the pruned prefill (taxonomy v35) --------------------------------------
     // P2's owner sitting as if an older rubric had filed it: a cell on the
-    // RETIRED structural-coherence and every layering value off its current
-    // 3-point scale (4). The reopen must carry neither into the new sitting,
-    // and the card says so in one line above the rows.
+    // RETIRED structural-coherence (no successor) and every layering-2 value
+    // off its current 4-point scale (5). The reopen must carry neither into
+    // the new sitting, and the card says so in one line above the rows.
     const sid2 = q("SELECT id FROM jd2_sessions WHERE run_id = ? AND rater_role = 'owner' ORDER BY filed_at DESC, id DESC", [P2.run_id])[0].id;
-    const keepLayering = q("SELECT id, value FROM jd2_judgments WHERE session_id = ? AND axis_id = 'layering'", [sid2]);
+    const keepLayering = q("SELECT id, axis_id, value FROM jd2_judgments WHERE session_id = ? AND axis_id = 'layering-2' ORDER BY generation_id", [sid2]);
+    const keepCells = q('SELECT required_cells FROM jd2_sessions WHERE id = ?', [sid2])[0].required_cells;
+    const restoreP2 = () => php('if (!JD_DEV_MODE) { exit(2); } $db = jd_db(); $sid = getenv("JD_SID"); ' +
+      '$db->prepare("DELETE FROM jd2_judgments WHERE session_id = ? AND axis_id = \'structural-coherence\'")->execute([$sid]); ' +
+      '$u = $db->prepare("UPDATE jd2_judgments SET axis_id = ?, value = ? WHERE id = ?"); ' +
+      'foreach (json_decode(getenv("JD_KEEP"), true) as $r) { $u->execute([$r["axis_id"], $r["value"], $r["id"]]); } ' +
+      '$db->prepare("UPDATE jd2_sessions SET required_cells = ? WHERE id = ?")->execute([getenv("JD_CELLS"), $sid]);',
+    { JD_SID: sid2, JD_CELLS: keepCells,
+      JD_KEEP: JSON.stringify(keepLayering.map((x) => ({ id: x.id, axis_id: x.axis_id, value: Number(x.value) }))) });
     php('if (!JD_DEV_MODE) { exit(2); } $db = jd_db(); $sid = getenv("JD_SID"); ' +
       '$g = $db->prepare("SELECT DISTINCT generation_id FROM jd2_judgments WHERE session_id = ?"); $g->execute([$sid]); ' +
       '$ins = $db->prepare("INSERT INTO jd2_judgments (id, session_id, generation_id, kind, axis_id, value) VALUES (?, ?, ?, \'axis\', \'structural-coherence\', 2)"); ' +
       'foreach ($g->fetchAll(PDO::FETCH_COLUMN) as $gid) { $ins->execute([jd_ulid(), $sid, $gid]); } ' +
-      '$db->prepare("UPDATE jd2_judgments SET value = 4 WHERE session_id = ? AND axis_id = \'layering\'")->execute([$sid]);',
+      '$db->prepare("UPDATE jd2_judgments SET value = 5 WHERE session_id = ? AND axis_id = \'layering-2\'")->execute([$sid]);',
     { JD_SID: sid2 });
     await page.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P2.prompt_id, { waitUntil: 'load' });
     await seated(page, P2.prompt_id);
     const qp = await page.evaluate((id) => window.JD_bench.queue().items.filter((x) => x.prompt_id === id)[0], P2.prompt_id);
-    check('pruned: the queue drops the retired axis and the off-scale values from the prefill and says prefill_pruned',
-      qp.prefill_pruned === true && qp.responses.every((x) => x.prefill && !('structural-coherence' in x.prefill.axes) &&
-        !('layering' in x.prefill.axes) && Object.keys(x.prefill.axes).length > 0),
+    check('pruned: the queue drops the retired axis and the off-scale values from the prefill and says prefill_pruned (nothing mapped)',
+      qp.prefill_pruned === true && qp.prefill_mapped === false && qp.responses.every((x) => x.prefill &&
+        !('structural-coherence' in x.prefill.axes) && !('layering-2' in x.prefill.axes) && Object.keys(x.prefill.axes).length > 0),
       JSON.stringify(qp.responses.map((x) => x.prefill && x.prefill.axes)));
     await page.click('.jd-rail-step[data-step="a"]');
     await page.waitForSelector('.jd-bench select.jd-turn-select');
     const pr = await page.evaluate(() => ({
-      note: (document.querySelector('.jd-turn-pruned') || {}).textContent || null,
-      layering: (document.querySelector('.jd-bench select[data-axis="layering"]') || {}).value,
+      note: (document.querySelector('.jd-turn-pruned:not(.jd-turn-mapped)') || {}).textContent || null,
+      mapped: !!document.querySelector('.jd-turn-mapped'),
+      layering: (document.querySelector('.jd-bench select[data-axis="layering-2"]') || {}).value,
       others: [...document.querySelectorAll('.jd-bench select.jd-turn-select')]
-        .filter((x) => x.getAttribute('data-axis') !== 'layering').every((x) => x.value !== ''),
+        .filter((x) => x.getAttribute('data-axis') !== 'layering-2').every((x) => x.value !== ''),
       gate: (document.querySelector('.jd-turn-actions [data-act="next"]') || {}).disabled
     }));
     await shot(page, '12d-pruned-prefill');
     check('pruned: the card notes it in one line, leaves Layering unanswered (gate shut) and keeps the rest',
-      pr.note === 'earlier answers on a retired or rescaled axis were not carried over' && pr.layering === '' &&
+      pr.note === 'earlier answers on a retired or rescaled axis were not carried over' && !pr.mapped && pr.layering === '' &&
       pr.others && pr.gate === true, JSON.stringify(pr));
-    // put P2's sitting back as it was filed (the rest of the run reads it)
+    restoreP2();
+
+    // --- the mapped prefill (taxonomy v36) --------------------------------------
+    // P2's owner sitting as the campaign's v35 sittings were filed: Layering
+    // on the 3-point `layering` (Small, Big, Small, No by generation order)
+    // and required_cells naming it. `layering` is defunct with successor
+    // layering-2 (3→4, 2→3, 1→1): the reopen carries every answer onto
+    // layering-2 through the map, says so where it says "pruned", and the
+    // report card shows it under Layering, marked — the rows stay as filed.
+    const layOld = [2, 1, 2, 3], layNew = { 3: 4, 2: 3, 1: 1 };
+    const genOld = {};
+    keepLayering.forEach((x, i) => { genOld[x.id] = layOld[i % 4]; });
     php('if (!JD_DEV_MODE) { exit(2); } $db = jd_db(); $sid = getenv("JD_SID"); ' +
-      '$db->prepare("DELETE FROM jd2_judgments WHERE session_id = ? AND axis_id = \'structural-coherence\'")->execute([$sid]); ' +
-      '$u = $db->prepare("UPDATE jd2_judgments SET value = ? WHERE id = ?"); ' +
-      'foreach (json_decode(getenv("JD_KEEP"), true) as $r) { $u->execute([$r["value"], $r["id"]]); }',
-    { JD_SID: sid2, JD_KEEP: JSON.stringify(keepLayering.map((x) => ({ id: x.id, value: Number(x.value) }))) });
+      '$u = $db->prepare("UPDATE jd2_judgments SET axis_id = \'layering\', value = ? WHERE id = ?"); ' +
+      'foreach (json_decode(getenv("JD_OLD"), true) as $id => $v) { $u->execute([$v, $id]); } ' +
+      '$cells = json_decode(getenv("JD_CELLS"), true); $cells[array_search("layering-2", $cells, true)] = "layering"; ' +
+      '$db->prepare("UPDATE jd2_sessions SET required_cells = ? WHERE id = ?")->execute([json_encode($cells), $sid]);',
+    { JD_SID: sid2, JD_CELLS: keepCells, JD_OLD: JSON.stringify(genOld) });
+    const filedOld = q("SELECT generation_id, axis_id, value FROM jd2_judgments WHERE session_id = ? AND axis_id IN ('layering', 'layering-2') ORDER BY generation_id", [sid2]);
+    const wantOf = {};
+    filedOld.forEach((x) => { wantOf[x.generation_id] = layNew[Math.round(Number(x.value))]; });
+    await page.goto(BASE + '/art/junk-drawer/?bench&prompt=' + P2.prompt_id, { waitUntil: 'load' });
+    await seated(page, P2.prompt_id);
+    const qm = await page.evaluate((id) => window.JD_bench.queue().items.filter((x) => x.prompt_id === id)[0], P2.prompt_id);
+    check('mapped: the queue carries layering 2 / 1 / 2 / 3 onto layering-2 at 3 / 1 / 3 / 4, says prefill_mapped and prunes nothing; the sitting stays complete',
+      qm.prefill_mapped === true && qm.prefill_pruned === false && qm.complete === true && filedOld.length === 4 &&
+      qm.responses.every((x) => x.prefill && !('layering' in x.prefill.axes) &&
+        Number(x.prefill.axes['layering-2']) === wantOf[x.generation_id]),
+      JSON.stringify(qm.responses.map((x) => [x.generation_id, x.prefill && x.prefill.axes, wantOf[x.generation_id]])));
+    await page.click('.jd-rail-step[data-step="a"]');
+    await page.waitForSelector('.jd-bench select.jd-turn-select');
+    const pm = await page.evaluate(() => {
+      const sel = document.querySelector('.jd-bench select[data-axis="layering-2"]');
+      const bar = sel && sel.parentNode.querySelector('.rc-bar');
+      return {
+        note: (document.querySelector('.jd-turn-mapped') || {}).textContent || null,
+        pruned: !!document.querySelector('.jd-turn-pruned:not(.jd-turn-mapped)'),
+        value: sel ? sel.value : null, cls: bar ? bar.className : '',
+        all: [...document.querySelectorAll('.jd-bench select.jd-turn-select')].every((x) => x.value !== ''),
+        gate: (document.querySelector('.jd-turn-actions [data-act="next"]') || {}).disabled
+      };
+    });
+    await shot(page, '12e-mapped-prefill');
+    check('mapped: the card says so in the same place ("earlier Layering answers were carried onto its new 4-point scale"), seats a mapped Layering on the rc-q ramp, gate open',
+      pm.note === 'earlier Layering answers were carried onto its new 4-point scale' && !pm.pruned &&
+      ['1', '3', '4'].indexOf(pm.value) !== -1 && new RegExp('\\brc-q' + pm.value + '\\b').test(pm.cls) && pm.all && pm.gate === false,
+      JSON.stringify(pm));
+    // the report card: the drawer's own card, opened on P2 — in a fresh
+    // context, since data.php's ETag (rightly) ignores a judgment edited in
+    // place, which only this fixture does, and the bench's cache would 304
+    const rcCtx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    const rcPage = await rcCtx.newPage();
+    rcPage.on('pageerror', (e) => errors.push('rc: ' + String(e)));
+    await rcPage.goto(BASE + '/art/junk-drawer/', { waitUntil: 'load' });
+    await rcPage.waitForFunction(() => window.JD_record && window.JD_record.ready(), null, { timeout: 20000 });
+    await rcPage.evaluate((pid) => window.JD_record.open(pid), P2.prompt_id);
+    await rcPage.waitForSelector('table.rc-subj', { timeout: 10000 });
+    const rcm = await rcPage.evaluate(() => {
+      const rows = [...document.querySelectorAll('table.rc-subj tbody tr:not(.rc-axdesc)')].map((tr) => ({
+        name: (tr.querySelector('.rc-subj-name') || {}).textContent,
+        mark: (tr.querySelector('.rc-mark-word') || {}).textContent,
+        bar: (tr.querySelector('.rc-bar') || {}).className || '',
+        mapped: (tr.querySelector('.rc-mapped') || {}).textContent || null,
+        tip: (tr.querySelector('.rc-mapped') || { getAttribute: () => null }).getAttribute('title')
+      }));
+      return { rows, marks: document.querySelectorAll('.rc-mapped').length };
+    });
+    await shot(rcPage, '12f-report-card-mapped');
+    const lay = rcm.rows.filter((r) => r.name === 'Layering');
+    const tax4 = TAX.axes.filter((a) => a.id === 'layering-2')[0];
+    const lab4 = {};
+    tax4.values.forEach((v) => { lab4[v.label] = v.rank; });
+    check('report card: ONE Layering row, at a mapped 4-point value on the rc-q ramp, marked "mapped from the 3-point scale" with the filed answer in its tooltip',
+      lay.length === 1 && rcm.marks === 1 && lay[0].mapped === 'mapped from the 3-point scale' &&
+      [1, 3, 4].indexOf(lab4[lay[0].mark]) !== -1 && new RegExp('\\brc-q' + lab4[lay[0].mark] + '\\b').test(lay[0].bar) &&
+      /^Rated “(No|Small|Big) problems” on the 3-point scale/.test(lay[0].tip || ''),
+      JSON.stringify(rcm));
+    await rcCtx.close();
+    check('mapped: reading moved nothing — the four judgments are still axis layering at 2 / 1 / 2 / 3',
+      JSON.stringify(q("SELECT generation_id, axis_id, value FROM jd2_judgments WHERE session_id = ? AND axis_id IN ('layering', 'layering-2') ORDER BY generation_id", [sid2])) ===
+      JSON.stringify(filedOld));
+    restoreP2();
+    // put P2's sitting back as it was filed (the rest of the run reads it)
+    check('P2\'s sitting is back as filed (layering-2, its own required_cells)',
+      JSON.stringify(q("SELECT id, axis_id, value FROM jd2_judgments WHERE session_id = ? AND axis_id IN ('layering', 'layering-2') ORDER BY generation_id", [sid2])
+        .map((x) => [x.id, x.axis_id, Number(x.value)])) === JSON.stringify(keepLayering.map((x) => [x.id, x.axis_id, Number(x.value)])) &&
+      q('SELECT required_cells FROM jd2_sessions WHERE id = ?', [sid2])[0].required_cells === keepCells);
 
     // --- scrap ---------------------------------------------------------------
     await page.click('.jd-bench-bar [data-bench="scrap"]');
