@@ -38,7 +38,7 @@ window.KOLOB = window.KOLOB || {};
   function cycle(lane, self, turn, t, fallbackS) { return S.cycle(lane, self, turn, t, fallbackS); }
   function panAt(layer, p) { return S.panAt(layer, p); }
   function getLayerParam(layer, key, fallback) { return S.getLayerParam(layer, key, fallback); }
-  function fieldDest(key, pan) { return S.fieldDest(key, pan); }
+  function fieldDest(key, pan, src) { return S.fieldDest(key, pan, src); }
   function noiseSource() { return S.noiseSource(); }
   function noiseOffset() { return S.noiseOffset(); }
   function env(g, t, pts) { return S.env(g, t, pts); }
@@ -263,7 +263,7 @@ window.KOLOB = window.KOLOB || {};
     var f = S.ctx.createBiquadFilter();
     f.type = "lowpass"; f.frequency.setValueAtTime(Y.rnd(260, 520), t);
     var g = S.ctx.createGain();
-    n.connect(f); f.connect(g); g.connect(fieldDest("wind", Y.rnd(-0.5, 0.5)));
+    n.connect(f); f.connect(g); g.connect(fieldDest("wind", Y.rnd(-0.5, 0.5), n));
     env(g, t, [[dur * 0.45, 0.055], [dur * 0.55, 0]]);
     n.start(t, noiseOffset()); n.stop(t + dur + 0.3);
     emitNote("ambient", 0, t, dur);
@@ -281,7 +281,7 @@ window.KOLOB = window.KOLOB || {};
         var o = S.ctx.createOscillator();
         o.type = "sine"; o.frequency.setValueAtTime(f, tt + c * 0.045);
         var g = S.ctx.createGain();
-        o.connect(g); g.connect(fieldDest("crickets", 0.5));
+        o.connect(g); g.connect(fieldDest("crickets", 0.5, o));
         env(g, tt + c * 0.045, [[0.004, 0.016], [0.035, 0]]);
         o.start(tt + c * 0.045); o.stop(tt + c * 0.045 + 0.08);
       }
@@ -298,7 +298,7 @@ window.KOLOB = window.KOLOB || {};
       var o = S.ctx.createOscillator();
       o.type = "sine"; o.frequency.setValueAtTime(i % 2 ? 430 : 480, tt);
       var g = S.ctx.createGain();
-      o.connect(g); g.connect(fieldDest("clock", -0.55));
+      o.connect(g); g.connect(fieldDest("clock", -0.55, o));
       env(g, tt, [[0.002, 0.03], [0.06, 0]]);
       o.start(tt); o.stop(tt + 0.12);
     }
@@ -312,7 +312,7 @@ window.KOLOB = window.KOLOB || {};
     var o = S.ctx.createOscillator();
     o.type = "sine"; o.frequency.setValueAtTime(f, t);
     var g = S.ctx.createGain();
-    o.connect(g); g.connect(fieldDest("fork", 0));
+    o.connect(g); g.connect(fieldDest("fork", 0, o));
     env(g, t, [[0.01, 0.05], [synth("field").rnd(6, 10), 0]]);
     o.start(t); o.stop(t + 11);
     emitNote("ambient", f, t, 8);
@@ -327,7 +327,7 @@ window.KOLOB = window.KOLOB || {};
       var o = S.ctx.createOscillator();
       o.type = "sine"; o.frequency.setValueAtTime(base * ratios[i] + (i ? Y.rnd(0.3, 1.4) : 0), t);
       var g = S.ctx.createGain();
-      o.connect(g); g.connect(fieldDest("bell", Y.pick([-0.6, 0.6])));
+      o.connect(g); g.connect(fieldDest("bell", Y.pick([-0.6, 0.6]), o));
       env(g, t, [[0.02, 0.035 / (1 + i * 0.8)], [Y.rnd(6, 11) / (1 + i * 0.5), 0]]);
       o.start(t); o.stop(t + 12);
     }
@@ -346,7 +346,7 @@ window.KOLOB = window.KOLOB || {};
     var sf = S.ctx.createBiquadFilter();
     sf.type = "bandpass"; sf.frequency.setValueAtTime(Y.rnd(950, 1200), t); sf.Q.setValueAtTime(14, t);
     var sg = S.ctx.createGain();
-    st.connect(sf); sf.connect(sg); sg.connect(fieldDest("beacon", side));
+    st.connect(sf); sf.connect(sg); sg.connect(fieldDest("beacon", side, st));
     var span = head.length * 0.5 + 1.5;
     // The beacon is quiet by design — it rides the shared ambient layer (gain
     // 0.5) and is washed into the tabernacle reverb, so it reads as far-off.
@@ -365,7 +365,7 @@ window.KOLOB = window.KOLOB || {};
       var o = S.ctx.createOscillator();
       o.type = "sine"; o.frequency.setValueAtTime(f, tt);
       var g = S.ctx.createGain();
-      o.connect(g); g.connect(fieldDest("beacon", side));
+      o.connect(g); g.connect(fieldDest("beacon", side, o));
       env(g, tt, [[0.01, 0.15], [isDah ? 0.3 : 0.1, 0.127], [0.05, 0]]);
       o.start(tt); o.stop(tt + 0.6);
       emitNote("ambient", f, tt, isDah ? 0.35 : 0.15);
@@ -386,7 +386,7 @@ window.KOLOB = window.KOLOB || {};
     var lg = S.ctx.createGain(); lg.gain.setValueAtTime(0.3, t);
     lfo.connect(lg); lg.connect(patter.gain);
     var g = S.ctx.createGain();
-    n.connect(f); f.connect(patter); patter.connect(g); g.connect(fieldDest("rain", 0));
+    n.connect(f); f.connect(patter); patter.connect(g); g.connect(fieldDest("rain", 0, n));
     env(g, t, [[dur * 0.35, 0.04], [dur * 0.65, 0]]);
     n.start(t, noiseOffset()); n.stop(t + dur + 0.3);
     lfo.start(t); lfo.stop(t + dur + 0.3);
@@ -405,7 +405,7 @@ window.KOLOB = window.KOLOB || {};
     o.frequency.linearRampToValueAtTime(f * 1.5, t + 0.25);
     o.frequency.linearRampToValueAtTime(f, t + Y.rnd(1.2, 1.8));
     var g = S.ctx.createGain();
-    o.connect(g); g.connect(fieldDest("coyote", Y.pick([-0.7, 0.7])));
+    o.connect(g); g.connect(fieldDest("coyote", Y.pick([-0.7, 0.7]), o));
     env(g, t, [[0.2, 0.02], [1.2, 0.014], [0.5, 0]]);
     o.start(t); o.stop(t + 2.4);
     emitNote("ambient", 0, t, 2);                              // a gliss owns no single pitch

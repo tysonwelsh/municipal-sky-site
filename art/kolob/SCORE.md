@@ -393,7 +393,10 @@ stream `hymn:<n>:<i>` is rebuilt from the visit's seed and the label, and the
 meeting's earlier hymns are handed to it in the same order and the same
 lightened form (`Hymnal.lighten`: the Score whole, of the dev report only
 `frame`, `peak`, `checks` and the fingerprint's `share`). The worker forgets
-`h:<n>:*` and `r:<n>:*` together.
+what the desk lets go of, by key: a meeting two back (`h:<n>:*` and
+`r:<n>:*` together) and every hymn of a seed the visit has left (a GATHER).
+The desk keeps its times (`stats()`'s `workerMs`, `mainMs`, `receiveMs`) for
+the last 200 hymns.
 
 Authority: `../prosperos-jukebox-v2/pj2-clock.js`, `kolob-core.js`
 (`cueAt`/`cueIn`, `cycle`), `kolob-meeting.js` (`HymnHands`, `hallListens`,

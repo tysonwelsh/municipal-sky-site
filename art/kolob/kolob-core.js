@@ -1062,8 +1062,9 @@ window.KolobAudio = (function () {
       if (!h || !ns.length) return;                // nothing of this layer is still to sound
       h.gain.setValueAtTime(1, te);
       h.gain.linearRampToValueAtTime(0, until);
-      d.spent.push(h);
-      if (d.pans[L]) { d.spent.push.apply(d.spent, d.pans[L]); delete d.pans[L]; }
+      var gone = [h].concat(d.pans[L] || []);          // the hands, and the layer's panners before them
+      d.spent.push.apply(d.spent, gone);
+      delete d.pans[L];
       delete d.hands[L];
       var written = te;
       ns.forEach(function (n) {
@@ -1072,14 +1073,14 @@ window.KolobAudio = (function () {
         written = Math.max(written, n.e);
         n.e = heard;
       });
-      // the spent hands leave the hall once the last note written through
-      // them has stopped (its oscillators stop up to half a second after
-      // their written end): a long session does not keep a pile of silent
-      // doors open (the panners stay wired to the hands, so what went
-      // through them can still be traced)
+      // the spent hands, and the panners that fed them, leave the hall once
+      // the last note written through them has stopped (its oscillators stop
+      // up to half a second after their written end), and leave the doors'
+      // list: a long session does not keep a pile of silent doors open, nor
+      // a list of them (three panners a release stayed, for hours)
       cueAt("conductor", written + 1, function () {
-        disconnectEach([h]);
-        var at = d.spent.indexOf(h); if (at >= 0) d.spent.splice(at, 1);
+        disconnectEach(gone);
+        gone.forEach(function (n) { var at = d.spent.indexOf(n); if (at >= 0) d.spent.splice(at, 1); });
       });
       layers.push(L);
     });
@@ -1182,8 +1183,11 @@ window.KolobAudio = (function () {
   }
   // a per-event destination on the FIELD bus: <event gain> -> ambient layer gain,
   // so every field sound keeps the ambient routing (reverb) but its own level.
-  // The event gains belong to the meeting's doors.
-  function fieldDest(key, pan) {
+  // The event gains belong to the meeting's doors. The panner is the event's:
+  // handed the source that sounds through it, it leaves the field's gain
+  // when that source ends (else every chirp, tick and gust of a long session
+  // stayed wired to the field for as long as the doors stood)
+  function fieldDest(key, pan, src) {
     var d = liveDoors();
     var fg = d.field[key];
     if (!fg) {
@@ -1195,6 +1199,7 @@ window.KolobAudio = (function () {
     var sp = ctx.createStereoPanner();
     sp.pan.setValueAtTime(pan < -1 ? -1 : pan > 1 ? 1 : pan, ctx.currentTime);
     sp.connect(fg);
+    if (src && src.addEventListener) src.addEventListener("ended", function () { disconnectEach([sp]); });
     return sp;
   }
   // (THE TAPE OF HISS, DRAWN AHEAD, above)
