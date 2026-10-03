@@ -153,6 +153,36 @@ jd2_ensure_column($db, 'jd2_prompts', 'intake_at', 'DATETIME NULL AFTER intake_c
 // byte-identical. Additive, nullable.
 jd2_ensure_column($db, 'jd2_generations', 'normalized', 'VARCHAR(64) NULL AFTER disobedience', 'TEXT NULL');
 
+// The sitting's required cells (taxonomy v35, 2026-10-02: the fifth axis,
+// Paintwork). jd2-rate stamps on every sitting the cells its rubric required
+// — the live axis ids and 'grade', as JSON — and every reader judges a
+// sitting against its own stamp (jd2_session_cells), so adding an axis asks
+// the next sitting for it without turning the filed ones incomplete and
+// emptying the drawer. Additive, nullable (NULL = judged on the live axes).
+jd2_ensure_column($db, 'jd2_sessions', 'required_cells', 'TEXT NULL AFTER instrument_version', 'TEXT NULL');
+
+// …and the ONE-OFF BACKFILL for the sittings filed before the stamp existed.
+// The rule: from the v2 baseline through taxonomy v34 the v2 rubric's
+// required cells were exactly understanding-assignment, structural-coherence,
+// layering, jnsq and the grade (JD2_CELLS_BEFORE_V35), so every session
+// stamped taxonomy_version < 35 whose required_cells is NULL gets that list.
+// Idempotent: a re-run finds no NULL row below v35 and updates nothing. It
+// never touches a session stamped v35 or later (jd2-rate stamps those), and
+// it changes no judgment, ranking or pair.
+try {
+    if (jd_has_column($db, 'jd2_sessions', 'required_cells')) {
+        $q = $db->prepare('UPDATE jd2_sessions SET required_cells = ?
+                            WHERE required_cells IS NULL AND taxonomy_version < ?');
+        $q->execute([json_encode(JD2_CELLS_BEFORE_V35), JD2_CELLS_STAMPED_SINCE]);
+        $n = $q->rowCount();
+        jd_setup_line('required_cells < v35', $n === 0 ? 'nothing to backfill'
+            : 'backfilled ' . $n . ' session(s) with ' . implode(', ', JD2_CELLS_BEFORE_V35));
+    }
+} catch (PDOException $e) {
+    $failed++;
+    jd_setup_line('required_cells < v35', 'FAILED: ' . $e->getMessage());
+}
+
 // The effort profiles split on 2026-10-02 (bench → bench-max, bench-medium,
 // bench-low). MySQL needs nothing (VARCHAR, no CHECK); a dev SQLite file made
 // before then carries the old profile CHECK and would refuse every new owner
@@ -325,6 +355,7 @@ CREATE TABLE IF NOT EXISTS jd2_sessions (
     client              VARCHAR(16) NOT NULL DEFAULT 'web', -- web|ios|android (JD_CLIENTS)
     taxonomy_version    INT         NOT NULL,             -- taxonomy.json version, stamped server-side
     instrument_version  VARCHAR(16) NOT NULL,             -- JD2_INSTRUMENT_VERSION, stamped server-side
+    required_cells      TEXT        NULL,                 -- JSON list: the axis ids + 'grade' this sitting had to carry (jd2_required_cells at filing, taxonomy v35+); readers judge completeness against it
     blind               TINYINT     NOT NULL DEFAULT 1,   -- 1 unless the rater could see model names
     seat_order          TEXT        NULL,                 -- JSON: the slot letters in the order dealt to this rater
     note                TEXT        NULL,                 -- the rater's free-text rationale for the sitting (owner's taxonomy notes; not necessarily shown)
@@ -518,6 +549,7 @@ CREATE TABLE IF NOT EXISTS jd2_sessions (
     client              TEXT     NOT NULL DEFAULT 'web',
     taxonomy_version    INTEGER  NOT NULL,
     instrument_version  TEXT     NOT NULL,
+    required_cells      TEXT     NULL,
     blind               INTEGER  NOT NULL DEFAULT 1 CHECK (blind IN (0, 1)),
     seat_order          TEXT     NULL,
     note                TEXT     NULL,

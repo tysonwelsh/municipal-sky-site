@@ -134,11 +134,15 @@ if (array_key_exists('blind', $body) && $body['blind'] !== null) {
 $taxonomy = jd_taxonomy_required('jd2-rate');
 $taxonomyVersion = jd_taxonomy_version($taxonomy);
 $liveAxes = jd_live_axes($taxonomy);
+// …and the cells this rubric requires of the sitting, stamped on it
+// (jd2_sessions.required_cells): every reader judges the sitting against
+// this list, not against whatever the taxonomy says later
+$requiredCells = jd2_required_cells($taxonomy);
 $gradeRanks = jd_grade_ranks($taxonomy);
 $axisRanks = jd_axis_ranks($taxonomy);
 
 // No sitting can hold more cells than every slot letter × every cell.
-if (count($ratings) > strlen(JD2_SLOT_LETTERS) * count(jd2_required_cells($taxonomy))) {
+if (count($ratings) > strlen(JD2_SLOT_LETTERS) * count($requiredCells)) {
     jd2_fail(400, 'rating_invalid', 'Too many ratings in one batch.', $ctx);
 }
 
@@ -310,11 +314,11 @@ try {
         $db->prepare(
             'INSERT INTO jd2_sessions
                 (id, run_id, rater_role, rater_hash, device_ref, client, taxonomy_version,
-                 instrument_version, blind, seat_order, note, started_at, filed_at, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                 instrument_version, required_cells, blind, seat_order, note, started_at, filed_at, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         )->execute([
             $sessionId, $runId, $rater['role'], $rater['hash'], $deviceRef, $client,
-            $taxonomyVersion, JD2_INSTRUMENT_VERSION, $blind,
+            $taxonomyVersion, JD2_INSTRUMENT_VERSION, json_encode($requiredCells), $blind,
             // the seats as dealt: slot => generation, in slot order (the run's deal)
             json_encode((object) $seat),
             $sessionNote,
@@ -354,7 +358,8 @@ try {
         $complete = jd2_is_complete(
             jd2_session_standing($db, $sessionId),
             array_map(static fn ($g) => (string) $g['id'], array_values($rateable)),
-            $taxonomy
+            $taxonomy,
+            $requiredCells
         );
 
         // The prompt's facts. visibility is read inside the lock: suppress

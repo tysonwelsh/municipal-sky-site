@@ -254,7 +254,7 @@ function jd2_prompt_standing(PDO $db, string $promptId, array $taxonomy): array
             }
         }
         $s = $db->prepare(
-            'SELECT id, rater_role, client, blind, taxonomy_version, instrument_version, filed_at, status
+            'SELECT id, rater_role, client, blind, taxonomy_version, instrument_version, required_cells, filed_at, status
                FROM jd2_sessions WHERE run_id = ? ORDER BY filed_at, id'
         );
         $s->execute([$run['id']]);

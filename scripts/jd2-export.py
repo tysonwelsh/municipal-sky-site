@@ -27,17 +27,28 @@ THE DISPLAY SESSION (the one rule this file applies, and the only one): per
 run, the owner's CURRENT session if it is COMPLETE, else the visitor's current
 session if it is complete, else none. "Current" = the role's latest `filed`
 session by (filed_at, id). "Complete" = every non-hidden ok drawing of the run
-has a grade and every live axis of taxonomy.json (`--taxonomy`), and, with
-more than one such drawing, a ranking places them all in distinct places and
-every unordered pair of them has a score. That is api/jd2-config.php's
-jd2_display_session / jd2_is_complete, stated here once; nothing else is
-folded, merged or re-derived.
+has a grade and every axis the session's own rubric required — its
+`required_cells` (a JSON list stamped at filing since taxonomy v35, and
+backfilled onto older v2 sittings by api/setup-jd2-tables.php), else the live
+axes of taxonomy.json (`--taxonomy`) — and, with more than one such drawing, a
+ranking places them all in distinct places and every unordered pair of them
+has a score. That is api/jd2-config.php's jd2_display_session /
+jd2_is_complete / jd2_session_cells, stated here once; nothing else is
+folded, merged or re-derived. Each session in the JSONL carries its
+`required_cells`.
 
     --standing out.csv   one row per generation (every run, every status):
-                         the run's display session's grade, live axes,
-                         rank_pos and gap_after for that drawing (empty when
-                         the run has no display session or the drawing is not
-                         ok / hidden)
+                         the run's display session's grade, one column per
+                         axis, rank_pos and gap_after for that drawing (empty
+                         when the run has no display session or the drawing
+                         is not ok / hidden). The axis columns are the live
+                         axes in taxonomy order, then every RETIRED axis a v2
+                         rubric required, so a retired axis's column stays
+                         instead of vanishing (structural-coherence, the
+                         3-point axis every v2 sitting before taxonomy v35
+                         carried; then any axis a session's required_cells
+                         names); a cell is empty where the display session
+                         did not rate that axis
     The prompt carries the intake facts too: `tags` ({facet: [heading id]}),
     `size_by` (model | owner | visitor), `intake_version`, `intake_model`,
     `intake_json` (the clerk's answer and usage, or the error of a failed
@@ -76,7 +87,8 @@ must never be one: the tables hold visitor prompt text.
 
 OPTIONS
 -------
-    --taxonomy PATH      the rubric for "complete" (default art/junk-drawer/taxonomy.json)
+    --taxonomy PATH      the live axes: the CSV's first axis columns, and "complete" for a
+                         session with no required_cells (default art/junk-drawer/taxonomy.json)
     --include-svg        include each drawing's sanitized SVG text
     --include-raw        include each drawing's raw provider response
     --out FILE           JSONL there instead of stdout
@@ -199,8 +211,34 @@ def live_axes(taxonomy):
     return [a["id"] for a in taxonomy.get("axes", []) if not a.get("defunct")]
 
 
+# api/jd2-config.php's JD2_CELLS_BEFORE_V35: the cells the v2 rubric required
+# from its baseline through taxonomy v34 (the setup runner backfills them onto
+# those sittings). Read here only to keep their axes' columns in the CSV.
+V2_CELLS_BEFORE_V35 = ["understanding-assignment", "structural-coherence", "layering", "jnsq", "grade"]
+
+
+def session_cells(raw, axes):
+    """jd2_session_cells: the session's own required_cells when readable, else the live axes and the grade."""
+    cells = as_json(raw)
+    if isinstance(cells, list) and "grade" in cells and all(isinstance(c, str) and c for c in cells):
+        return list(dict.fromkeys(cells))
+    return list(axes) + ["grade"]
+
+
+def axis_columns(taxonomy, live, sessions):
+    """The live axes in taxonomy order, then every retired axis a v2 rubric required, in taxonomy order."""
+    wanted = set(c for c in V2_CELLS_BEFORE_V35 if c != "grade")
+    for s in sessions:
+        wanted.update(c for c in session_cells(s.get("required_cells"), live) if c != "grade")
+    order = [a["id"] for a in taxonomy.get("axes", [])]
+    retired = [a for a in order if a in wanted and a not in live]
+    retired += sorted(a for a in wanted if a not in live and a not in order)
+    return list(live) + retired
+
+
 def is_complete(session, counting, axes):
-    """jd2_is_complete: cells for every counting drawing, then a strict ranking and every pair."""
+    """jd2_is_complete: cells for every counting drawing, then a strict ranking and every pair.
+    `axes` are the axis cells the session must carry (session_cells, less the grade)."""
     ids = list(counting)
     if not ids:
         return False
@@ -232,7 +270,7 @@ def facet_ids(taxonomy):
 
 
 def export(conn, args, taxonomy):
-    axes = live_axes(taxonomy)
+    live = live_axes(taxonomy)
     facets = facet_ids(taxonomy)
     prompts = rows(conn, "SELECT * FROM jd2_prompts ORDER BY created, id")
     runs = rows(conn, "SELECT * FROM jd2_runs ORDER BY created, id")
@@ -247,6 +285,7 @@ def export(conn, args, taxonomy):
         gen_cols += ", raw_response"
     gens = rows(conn, "SELECT %s FROM jd2_generations ORDER BY run_id, slot" % gen_cols)
     sessions = rows(conn, "SELECT * FROM jd2_sessions ORDER BY filed_at, id")
+    axes = axis_columns(taxonomy, live, sessions)
     judgments = rows(conn, "SELECT session_id, generation_id, kind, axis_id, value, note FROM jd2_judgments ORDER BY id")
     rankings = rows(conn, "SELECT session_id, generation_id, rank_pos, gap_after FROM jd2_rankings ORDER BY rank_pos")
     pairs = rows(conn, "SELECT session_id, gen_a, gen_b, score, source, method, shown_left FROM jd2_pairs ORDER BY id")
@@ -280,6 +319,7 @@ def export(conn, args, taxonomy):
                     "id": s["id"], "rater_role": s["rater_role"], "rater_hash": s["rater_hash"],
                     "device_ref": s["device_ref"], "client": s["client"],
                     "taxonomy_version": as_int(s["taxonomy_version"]), "instrument_version": s["instrument_version"],
+                    "required_cells": session_cells(s.get("required_cells"), live),
                     "blind": as_int(s["blind"]), "seat_order": as_json(s["seat_order"]),
                     "note": as_text(s.get("note")),
                     "started_at": as_stamp(s["started_at"]), "filed_at": as_stamp(s["filed_at"]), "status": s["status"],
@@ -301,14 +341,16 @@ def export(conn, args, taxonomy):
                     if prev is None or (as_stamp(s["filed_at"]), s["id"]) > (prev["filed_at"], prev["id"]):
                         current[s["rater_role"]] = sess
             display = None
+            def own(sess):
+                return [c for c in sess["required_cells"] if c != "grade"]
             for role in ("owner", "visitor"):
                 cand = current.get(role)
-                if cand is not None and is_complete(cand, set(counting), axes):
+                if cand is not None and is_complete(cand, set(counting), own(cand)):
                     display = cand
                     break
             for sess in out_sessions:
                 sess["current"] = current.get(sess["rater_role"]) is sess
-                sess["complete"] = is_complete(sess, set(counting), axes)
+                sess["complete"] = is_complete(sess, set(counting), own(sess))
 
             out_gens = []
             for g in rgens:

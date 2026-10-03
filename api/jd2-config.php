@@ -300,16 +300,60 @@ function jd2_small_int(mixed $v): ?int
 
 // ---------------------------------------------------------------------------
 // 5. Completeness. A session is complete when every non-hidden ok generation
-// of its run carries every cell this returns — the LIVE axes of the taxonomy
-// the session was stamped with, plus the overall grade. Computed from the
-// taxonomy handed in, never from a constant like v1's JD_QUEUE_RUBRIC_SINCE.
+// of its run carries every cell its rubric REQUIRED — the live axes of the
+// taxonomy it was rated under, plus the overall grade. jd2-rate stamps that
+// list on the sitting as it files it (jd2_sessions.required_cells, JSON, since
+// taxonomy v35), and every reader judges the sitting against its own stamp
+// (jd2_session_cells), so an axis added to the taxonomy mid-campaign asks the
+// NEXT sitting for it without turning every filed sitting incomplete and
+// emptying the drawer. A sitting with no stamp (NULL) is judged against the
+// live axes of the taxonomy handed in. Never a constant like v1's
+// JD_QUEUE_RUBRIC_SINCE — with the one exception below, which is history.
 // In jd2_judgments a 'grade' cell is kind = 'grade' with axis_id = ''; an
 // axis cell is kind = 'axis' with axis_id = the axis id.
 
-/** @return string[] the live axis ids in taxonomy order, then 'grade' */
+/**
+ * THE ONE-OFF RULE for sittings filed before required_cells existed: from
+ * the v2 baseline (taxonomy v26) through v34 the v2 rubric's required cells
+ * were exactly these four axes and the grade. api/setup-jd2-tables.php
+ * backfills them onto every session stamped taxonomy_version < 35 whose
+ * required_cells is NULL; nothing else reads this list.
+ */
+const JD2_CELLS_BEFORE_V35 = ['understanding-assignment', 'structural-coherence', 'layering', 'jnsq', 'grade'];
+/** The first taxonomy version whose sittings jd2-rate stamps with required_cells. */
+const JD2_CELLS_STAMPED_SINCE = 35;
+
+/** @return string[] the live axis ids in taxonomy order, then 'grade' — what a sitting filed NOW must carry */
 function jd2_required_cells(array $taxonomy): array
 {
     return array_merge(array_map('strval', array_keys(jd_live_axes($taxonomy))), ['grade']);
+}
+
+/**
+ * The cells $session must carry to be complete: its own required_cells stamp
+ * when it has a readable one (a JSON list of axis ids and 'grade'), else the
+ * live axes of $taxonomy (jd2_required_cells). A row read without the column
+ * (no required_cells key) is treated as unstamped.
+ *
+ * @param array<string,mixed>|null $session  a jd2_sessions row
+ * @return string[]
+ */
+function jd2_session_cells(?array $session, array $taxonomy): array
+{
+    $raw = $session['required_cells'] ?? null;
+    if (is_string($raw) && $raw !== '') {
+        $cells = json_decode($raw, true);
+        if (is_array($cells) && array_is_list($cells) && in_array('grade', $cells, true)) {
+            $ok = true;
+            foreach ($cells as $c) {
+                $ok = $ok && is_string($c) && $c !== '';
+            }
+            if ($ok) {
+                return array_values(array_unique($cells));
+            }
+        }
+    }
+    return jd2_required_cells($taxonomy);
 }
 
 // ===========================================================================
@@ -582,9 +626,11 @@ function jd2_rater(): array
 //   OWNER OVER VISITOR — where one session must stand for the run, the
 //              owner's current session outranks the visitor's.
 //   COMPLETE — a session is complete when every non-hidden ok drawing of the
-//              run carries a grade and every live axis, and — when there is
-//              more than one — a strict ranking places them all and every
-//              unordered pair of them has a score (direct or derived).
+//              run carries a grade and every axis the sitting's own rubric
+//              required (jd2_session_cells: its required_cells stamp, else
+//              the live axes), and — when there is more than one — a strict
+//              ranking places them all and every unordered pair of them has
+//              a score (direct or derived).
 //
 // For display (data.php, the curate standing) the three combine in
 // jd2_display_session(): the owner's current session if it is complete,
@@ -600,7 +646,7 @@ function jd2_rater(): array
 function jd2_current_session(PDO $db, string $runId, ?string $role = null): ?array
 {
     $sql = "SELECT id, run_id, rater_role, rater_hash, device_ref, client, taxonomy_version,
-                   instrument_version, blind, seat_order, started_at, filed_at, status
+                   instrument_version, required_cells, blind, seat_order, started_at, filed_at, status
               FROM jd2_sessions
              WHERE run_id = ? AND status = '" . JD2_SESSION_FILED . "'";
     $args = [$runId];
@@ -656,7 +702,7 @@ function jd2_current_sessions_for_runs(PDO $db, array $runIds): array
 {
     $rows = jd2_select_in($db,
         "SELECT id, run_id, rater_role, rater_hash, device_ref, client, taxonomy_version,
-                instrument_version, blind, seat_order, started_at, filed_at, status
+                instrument_version, required_cells, blind, seat_order, started_at, filed_at, status
            FROM jd2_sessions
           WHERE run_id IN ({ids}) AND status = '" . JD2_SESSION_FILED . "'
           ORDER BY run_id, rater_role, filed_at DESC, id DESC",
@@ -740,20 +786,24 @@ function jd2_standings_for_sessions(PDO $db, array $sessionIds): array
 
 /**
  * COMPLETE, from a session's standing and the drawings it must cover (the
- * run's non-hidden ok generations). The cells come from the taxonomy handed
- * in (jd2_required_cells: the live axes and the grade). A drawing the owner
- * hid after the sitting simply drops out of $generationIds: the ranking need
- * only place the ones left in distinct places, and only their pairs count.
+ * run's non-hidden ok generations). The cells are $cells — the sitting's own
+ * (jd2_session_cells) — or, when null, the live axes of the taxonomy handed
+ * in and the grade (jd2_required_cells). The grade is always required. A
+ * drawing the owner hid after the sitting simply drops out of
+ * $generationIds: the ranking need only place the ones left in distinct
+ * places, and only their pairs count.
  *
  * @param string[] $generationIds
+ * @param string[]|null $cells
  */
-function jd2_is_complete(array $standing, array $generationIds, array $taxonomy): bool
+function jd2_is_complete(array $standing, array $generationIds, array $taxonomy, ?array $cells = null): bool
 {
     $ids = array_values(array_unique(array_map('strval', $generationIds)));
     if ($ids === []) {
         return false;
     }
-    $axes = array_map('strval', array_keys(jd_live_axes($taxonomy)));
+    $axes = array_values(array_filter(array_map('strval', $cells ?? jd2_required_cells($taxonomy)),
+        static fn ($c) => $c !== 'grade'));
     foreach ($ids as $gid) {
         $j = $standing['judgments'][$gid] ?? null;
         if ($j === null || $j['grade'] === null) {
@@ -838,7 +888,7 @@ function jd2_display_pick(array $current, array $standings, array $generationIds
             continue;
         }
         $standing = $standings[(string) $s['id']] ?? $empty;
-        if (jd2_is_complete($standing, $generationIds, $taxonomy)) {
+        if (jd2_is_complete($standing, $generationIds, $taxonomy, jd2_session_cells($s, $taxonomy))) {
             return ['session' => $s, 'standing' => $standing, 'complete' => true];
         }
     }
@@ -851,7 +901,7 @@ function jd2_display_pick(array $current, array $standings, array $generationIds
     }
     $standing = $standings[(string) $s['id']] ?? $empty;
     return ['session' => $s, 'standing' => $standing,
-            'complete' => jd2_is_complete($standing, $generationIds, $taxonomy)];
+            'complete' => jd2_is_complete($standing, $generationIds, $taxonomy, jd2_session_cells($s, $taxonomy))];
 }
 
 /**
@@ -1090,7 +1140,10 @@ function jd2_run_settled(array $run): bool
 /**
  * @param array $prompt  the jd2_prompts row (needs shown_run_id)
  * @param list<array> $runs  jd2_prompt_runs()
- * @return array{run:?array,settled:bool,owner:?array,standing:?array,complete:bool,needs:list<string>}
+ * `cells` is what the owner's current sitting must carry (jd2_session_cells:
+ * its own stamp, else the live axes) — the live axes when there is none.
+ *
+ * @return array{run:?array,settled:bool,owner:?array,standing:?array,complete:bool,needs:list<string>,cells:list<string>}
  */
 function jd2_bench_view(PDO $db, array $prompt, array $runs, array $taxonomy): array
 {
@@ -1104,12 +1157,14 @@ function jd2_bench_view(PDO $db, array $prompt, array $runs, array $taxonomy): a
     $run ??= $runs[0] ?? null;
     if ($run === null) {
         return ['run' => null, 'settled' => false, 'owner' => null, 'standing' => null,
-                'complete' => false, 'needs' => ['no run on file']];
+                'complete' => false, 'needs' => ['no run on file'], 'cells' => jd2_required_cells($taxonomy)];
     }
     $settled = jd2_run_settled($run);
     $owner = jd2_current_session($db, (string) $run['id'], JD2_ROLE_OWNER);
     $standing = $owner === null ? null : jd2_session_standing($db, (string) $owner['id']);
-    $complete = $standing !== null && jd2_is_complete($standing, $run['counting'], $taxonomy);
+    // the owner's sitting is judged against the cells its own rubric asked for
+    $cells = jd2_session_cells($owner, $taxonomy);
+    $complete = $standing !== null && jd2_is_complete($standing, $run['counting'], $taxonomy, $cells);
     $needs = [];
     if (!$settled) {
         $dealt = count(jd2_deal_decode($run['deal'] ?? null));
@@ -1122,10 +1177,10 @@ function jd2_bench_view(PDO $db, array $prompt, array $runs, array $taxonomy): a
     if ($run['counting'] === []) {
         $needs[] = 'no drawing survived — nothing to rate (rerun it)';
     } elseif (!$complete) {
-        $needs = array_merge($needs, jd2_needs($standing, $run['gens'], $taxonomy));
+        $needs = array_merge($needs, jd2_needs($standing, $run['gens'], $taxonomy, $cells));
     }
     return ['run' => $run, 'settled' => $settled, 'owner' => $owner, 'standing' => $standing,
-            'complete' => $complete, 'needs' => $needs];
+            'complete' => $complete, 'needs' => $needs, 'cells' => $cells];
 }
 
 /**
@@ -1136,9 +1191,10 @@ function jd2_bench_view(PDO $db, array $prompt, array $runs, array $taxonomy): a
  *
  * @param array|null $standing  jd2_session_standing(), or null for no sitting
  * @param list<array> $gens     the run's generation rows (id, slot, status, hidden)
+ * @param string[]|null $cells  the sitting's own cells (jd2_session_cells); null = the live axes
  * @return list<string>
  */
-function jd2_needs(?array $standing, array $gens, array $taxonomy): array
+function jd2_needs(?array $standing, array $gens, array $taxonomy, ?array $cells = null): array
 {
     $counting = [];
     foreach ($gens as $g) {
@@ -1152,7 +1208,8 @@ function jd2_needs(?array $standing, array $gens, array $taxonomy): array
     if ($standing === null) {
         return ['no owner sitting yet'];
     }
-    $axes = jd_live_axes($taxonomy);
+    $axes = array_flip(array_values(array_filter(array_map('strval', $cells ?? jd2_required_cells($taxonomy)),
+        static fn ($c) => $c !== 'grade')));
     $out = [];
     $noGrade = [];
     $axisGaps = [];

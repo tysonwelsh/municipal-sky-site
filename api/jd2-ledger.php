@@ -21,7 +21,8 @@
 //   · every run, newest first, with every drawing (any status), EVERY
 //     session filed on it (history, not folded away; `current` marks each
 //     role's current one, `complete` is jd2_is_complete over the run's
-//     counting drawings today), and `display` — the standing the drawer reads
+//     counting drawings today against the cells the sitting's own rubric
+//     required — `required_cells`, jd2_session_cells), and `display` — the standing the drawer reads
 //     for that run (jd2_display_session with its owner-first fallback, so an
 //     incomplete run still shows what is on file; `complete` says which).
 //
@@ -80,7 +81,8 @@ try {
     }
 
     $sessQ = $db->prepare(
-        'SELECT id, rater_role, client, blind, taxonomy_version, instrument_version, note, started_at, filed_at, status
+        'SELECT id, rater_role, client, blind, taxonomy_version, instrument_version, required_cells, note,
+                started_at, filed_at, status
            FROM jd2_sessions WHERE run_id = ? ORDER BY filed_at, id'
     );
 
@@ -119,7 +121,10 @@ try {
                     'instrument_version' => (string) $s['instrument_version'],
                     'blind' => (int) $s['blind'] === 1,
                     'note' => $s['note'],
-                    'complete' => jd2_is_complete(jd2_session_standing($db, (string) $s['id']), $run['counting'], $taxonomy),
+                    // the cells this sitting had to carry, and complete against them
+                    'required_cells' => jd2_session_cells($s, $taxonomy),
+                    'complete' => jd2_is_complete(jd2_session_standing($db, (string) $s['id']), $run['counting'],
+                        $taxonomy, jd2_session_cells($s, $taxonomy)),
                     'current' => isset($current[(string) $s['id']]),
                 ];
             }
