@@ -930,7 +930,8 @@ if ($o['prompts']) {
 $j = $D['jd'];
 $out();
 $out(rule('THE JUNK DRAWER'));
-$out(' ' . padr($D['hours'] . 'h', 12) . num($j['v24']) . ' views' . $sep . num($j['u24']) . ' visitors' . $sep . num($j['io24']) . ' items opened' . ($FULL ? $sep . num($j['av24']) . ' about' : ''));
+// the about page counts every day, not only in the Monday edition (owner, 2026-10-03)
+$out(' ' . padr($D['hours'] . 'h', 12) . num($j['v24']) . ' views' . $sep . num($j['u24']) . ' visitors' . $sep . num($j['io24']) . ' items opened' . $sep . num($j['av24']) . ' about');
 if ($FULL) $out(' ' . padr('all-time', 12) . num($j['vall']) . ' views' . $sep . num($j['uall']) . ' visitors' . $sep . num($j['ioall']) . ' items opened');
 $out(' ' . padr('legacy ' . $D['hours'] . 'h', 12) . num($j['lv24']) . ' views' . $sep . num($j['lu24']) . ' visitors' . $sep . num($j['lio24']) . ' items opened' . ($FULL ? $sep . 'all ' . num($j['lvall']) : ''));
 $f = $j['funnel'];
