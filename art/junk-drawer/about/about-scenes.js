@@ -2001,7 +2001,7 @@
        horizontally and vertically … all of the ones that appear in the
        drawer"). One row per drawing on display — every prompt in the drawer,
        every model's drawing of it — with its overall grade, its rating in
-       each of the four categories, and what it cost. Read from the drawer's
+       each live category (five since taxonomy v35), and what it cost. Read from the drawer's
        full data.php, the same record the report cards read. A table is for
        looking things up: plain values, the scale in each head, nothing
        drawn; the head row and the prompt column hold still while it
@@ -2012,7 +2012,7 @@
     var items = (full && full.items) || [];
     /* ONE ROW PER PROMPT (owner, 2026-09-27): each prompt once, and each
        model's ratings across the row in a group of columns — Grade, then the
-       four categories. */
+       live categories. */
     var sheet = [];
     items.forEach(function (it) {
       var byM = {};
@@ -2215,18 +2215,22 @@
       }).join('') + '</div></div></figure>';
   }
 
-  /* the four categories (data-view axes) */
+  /* the categories, one panel per live axis (data-view axes) */
   function axesFig(cx) {
     if (cx.empty || !(cx.a.axes || []).some(function (ax) { return anyN(ax.models); })) {
       return emptyFig('axes', 'Issue rate in each category');
     }
     var a = cx.a, tax = cx.tax, esc = JD_esc, name = cx.name, order = cx.order,
         sheet = cx.sheet, byOrder = cx.byOrder;
-    /* 2 — THE FOUR CATEGORIES AS ISSUE RATES (owner, 2026-09-30, from
+    /* 2 — THE CATEGORIES AS ISSUE RATES (owner, 2026-09-30, from
        mockup-47; the analytics folder draws the same thing). Each panel is
        one 0–100% ruler: how often each model's drawings had a problem in
-       that category, the dark segment the big problems, the pale one the
-       small, and the value the whole bar. Je ne sais quoi measures what goes
+       that category, the pale segment the level just below the top, the
+       dark one every level under it, and the value the whole bar. On a
+       4-point axis the dark segment is two levels (Moderate + Major), so
+       each panel names its own segments from the taxonomy's value labels
+       (jd-furniture's JD_axisBuckets) and the legend says only "smallest
+       problem" / "bigger problems". Je ne sais quoi measures what goes
        right, so it is the hit rate in green: Has it (dark) plus Just a hint.
        The whisker is a 95% Wilson interval on the whole bar; overlapping
        whiskers are not a difference. The split and the interval come from
@@ -2258,10 +2262,11 @@
     }
     function pc(x) { return Math.round(x * 100) + '%'; }
     function sw(c, t) { return '<span class="jdc-key"><i style="background:' + c + '"></i>' + t + '</span>'; }
+    var buckets = window.JD_axisBuckets || function () { return null; };
     return !rates ? '' : '<figure class="jdc" data-chart="axes">' +
       '<figcaption><span class="jdc-title">Issue rate in each category</span>' +
       '<span class="jdc-sub">How often each model&rsquo;s drawings had a problem; for Je ne sais quoi, how often they had it</span></figcaption>' +
-      '<div class="jdc-legend">' + sw(ISSUE[0], 'big problem') + sw(ISSUE[1], 'small problem') +
+      '<div class="jdc-legend">' + sw(ISSUE[1], 'smallest problem') + sw(ISSUE[0], 'bigger problems') +
         sw(HIT[0], 'has it') + sw(HIT[1], 'just a hint') +
         '<span class="jdc-key"><i class="jdc-key-ci"></i>95% interval</span></div>' +
       '<div class="jdc-multiples jdc-rates">' +
@@ -2270,14 +2275,16 @@
         var pts = ax.points || (def.values ? def.values.length : 3);
         var src = axHasHist ? byOrder(ax.models || []) : sheetHist(ax.axis_id);
         var right = pi % 2 === 1;
+        var bk = buckets(ax.values || def.values, ax.axis_id);
         var rows = src.map(function (r) {
           var q = rates(r.hist, pts, ax.axis_id);
           if (!q.n) return '';
           var ink = q.hit ? HIT : ISSUE;
           var ps = q.strong / q.n * 100, pt = q.total / q.n * 100;
           var tip = (name[r.model_id] || r.model_id) + ': ' + pc(q.rate) + ' (95% ' + pc(q.lo) + '–' + pc(q.hi) + '); ' +
-            (q.hit ? 'has it ' + q.strong + ', a hint ' + q.light + ', missed '
-                   : 'big ' + q.strong + ', small ' + q.light + ', clean ') + (q.n - q.total) + ', n ' + q.n;
+            (bk ? bk.strong : (q.hit ? 'has it' : 'big')) + ' ' + q.strong + ', ' +
+            (bk ? bk.light : (q.hit ? 'a hint' : 'small')) + ' ' + q.light +
+            (q.hit ? ', missed ' : ', clean ') + (q.n - q.total) + ', n ' + q.n;
           return '<div class="jdc-row" title="' + esc(tip) + '">' +
             '<span class="jdc-name">' + esc(name[r.model_id] || r.model_id) + '</span>' +
             '<span class="jdc-track"><i class="jdc-rtrack"></i><i class="jdc-mid"></i>' +
@@ -2287,8 +2294,11 @@
             '<i class="jdc-ci" style="left:' + (q.lo * 100).toFixed(2) + '%;width:' + ((q.hi - q.lo) * 100).toFixed(2) + '%"></i></span>' +
             '<span class="jdc-val">' + pc(q.rate) + '</span></div>';
         }).join('');
+        var ink2 = bk && bk.hit ? HIT : ISSUE;
+        var pkey = bk ? '<div class="jdc-pkey" aria-hidden="true">' +
+          sw(ink2[1], esc(bk.lightShort)) + sw(ink2[0], esc(bk.strongShort)) + '</div>' : '';
         return '<div class="jdc-panel' + (right ? ' is-right' : '') + '"><div class="jdc-ptitle">' + esc(ax.label) + '</div>' +
-          rows + '</div>';
+          pkey + rows + '</div>';
       }).join('') + '</div></figure>';
   }
 

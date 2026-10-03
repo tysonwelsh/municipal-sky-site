@@ -11,7 +11,10 @@
 //   cost    [{model_id, avg_usd, n}]              per surviving drawing, by value
 //   firsts  [{model_id, firsts, judged, rate}]    rank-1 share, by rate
 //   grades  [{model_id, avg, n, hist{"1".."5"}}]  by avg
-//   axes    [{axis_id, label, points, models:[{model_id, avg, n, hist}]}]
+//   axes    [{axis_id, label, points, values:[{rank, label}] best first,
+//            models:[{model_id, avg, n, hist}]}]   live axes, taxonomy order;
+//            `values` names each rank so a chart can say which levels it
+//            groups (the folder's issue rates, JD_axisBuckets)
 //   spend   [{date, usd, cum_usd, by_model{}}]
 //   turns   [{date, prompt, grades{model_id: grade}, prompt_id, run_id, origin}]
 //
@@ -129,7 +132,13 @@ foreach (jd_model_registry($taxonomy) as $id => $model) {
 }
 $axisDefs = [];
 foreach (jd_live_axes($taxonomy) as $id => $axis) {
-    $axisDefs[(string) $id] = ['label' => (string) ($axis['label'] ?? $id), 'points' => count($axis['values'] ?? [])];
+    $values = [];
+    foreach ($axis['values'] ?? [] as $v) {
+        $values[] = ['rank' => (int) ($v['rank'] ?? 0), 'label' => (string) ($v['label'] ?? '')];
+    }
+    usort($values, static fn ($a, $b) => $b['rank'] <=> $a['rank']);
+    $axisDefs[(string) $id] = ['label' => (string) ($axis['label'] ?? $id), 'points' => count($axis['values'] ?? []),
+                               'values' => $values];
 }
 
 $totals = ['turns' => 0, 'drawings' => 0, 'survived' => 0, 'rated_responses' => 0];
@@ -380,7 +389,8 @@ foreach ($axisDefs as $axisId => $def) {
         $rows[] = ['model_id' => $id, 'avg' => round($cell['sum'] / $cell['n'], 3), 'n' => $cell['n'],
                    'hist' => (object) $cell['hist']];
     }
-    $axes[] = ['axis_id' => $axisId, 'label' => $def['label'], 'points' => $def['points'], 'models' => $rows];
+    $axes[] = ['axis_id' => $axisId, 'label' => $def['label'], 'points' => $def['points'], 'values' => $def['values'],
+               'models' => $rows];
 }
 
 ksort($spendByDate);

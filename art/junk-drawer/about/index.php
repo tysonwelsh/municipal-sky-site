@@ -240,7 +240,7 @@ include __DIR__ . '/../../../includes/header.php';
         <div class="jd-step-body">
         <h2>The instrument</h2>
         <p>This is the interface I use to grade the drawings.</p>
-        <p>Each one is rated in four categories and given an overall grade, on
+        <p>Each one is rated in five categories and given an overall grade, on
         the same five-point scale the USDA uses for beef: Prime, Choice, Select,
         Standard, and Utility. After that, all four are ranked from best to
         worst, then compared head to head, two at a time, on a seven-point
@@ -257,9 +257,9 @@ include __DIR__ . '/../../../includes/header.php';
       <div class="jd-step" data-scene="instrument" data-step="taxonomy">
         <div class="jd-step-body">
         <h2>The taxonomy</h2>
-        <p>Images are rated in four categories, each designed to isolate a
+        <p>Images are rated in five categories, each designed to isolate a
         single type of failure. They are:</p>
-        <?php /* the four live categories only, from taxonomy.json (jd-core's
+        <?php /* the live categories only, from taxonomy.json (jd-core's
                  renderLegend fills #jd-axes, one-line summaries). The grade tiers are left off this
                  page (owner, 2026-09-27): the categories are the design worth
                  reading; the tiers are just a scale. */ ?>
@@ -401,10 +401,10 @@ include __DIR__ . '/../../../includes/header.php';
       <div class="jd-step" data-scene="analytics" data-step="multiples" data-view="axes">
         <div class="jd-step-body">
         <h2>Where the grades come from</h2>
-        <p>The four categories show what sits behind an overall grade: how
+        <p>The five categories show what sits behind an overall grade: how
         often each model&rsquo;s drawings missed the assignment, came apart
-        structurally, or stacked their layers wrong, and how often they had
-        that je ne sais quoi.</p>
+        structurally, stacked their layers wrong, or slipped on the
+        paintwork, and how often they had that je ne sais quoi.</p>
         <p>Each bar carries a 95% interval. Where two of them overlap, the
         difference isn&rsquo;t one I&rsquo;d bet on.</p>
         </div>

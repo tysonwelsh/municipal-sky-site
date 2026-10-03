@@ -52,7 +52,7 @@ When the four drawings come back, whoever wrote the prompt grades each one witho
 
 This is the interface I use to grade the drawings. 
 
-Each one is rated in four categories and given an overall grade, on the same five-point scale the USDA uses for beef: Prime, Choice, Select, Standard, and Utility. After that, all four are ranked from best to worst, then compared head to head, two at a time, on a seven-point scale.
+Each one is rated in five categories and given an overall grade, on the same five-point scale the USDA uses for beef: Prime, Choice, Select, Standard, and Utility. After that, all four are ranked from best to worst, then compared head to head, two at a time, on a seven-point scale.
 
 Feel free to try it out!
 
@@ -61,15 +61,16 @@ For demonstration purposes only. Nothing entered here is saved or recorded.
 _(small print, written by about-scenes.js once it has chosen the card's drawings: "The drawings on this card are the newest prompt in the drawer." — or, while dataset v2 has no live prompt, "…are a v1 specimen: they come from the first dataset, now on view in the legacy drawer.")_
 
 
-`step: taxonomy` · _Pane: the rating card, blank; the four categories render under this text from taxonomy.json (each axis's one-line `summary` — edit the wording there; mirrored below)_
+`step: taxonomy` · _Pane: the rating card, blank; the five categories render under this text from taxonomy.json (each axis's one-line `summary` — edit the wording there; mirrored below)_
 
 ### The taxonomy
 
-Images are rated in four categories, each designed to isolate a single type of failure. They are:
+Images are rated in five categories, each designed to isolate a single type of failure. They are:
 
 - **Understanding Assignment** — Did the model attempt to draw what the prompt asked for?
 - **Structural Coherence** — Do the individual parts connect, with correct proportions, anatomy, and perspective?
 - **Layering** — Are the parts stacked in the right order, with correct use of opacity?
+- **Paintwork** — Is the paint well done — light, colour, line and texture?
 - **Je ne sais quoi** — Does the image have that special spark? You know it when you see it.
 
 
@@ -161,11 +162,11 @@ Two models can share an average and get there very differently: one reliably goo
 
 Grades judge each drawing on its own. The ranking and the head-to-head scores judge them against each other, which is how “which one won” becomes “by how much.”
 
-`step: multiples` · _Pane: the four category panels, two by two, each on its own scale_
+`step: multiples` · _Pane: the five category panels, two to a row, each naming the levels its two segments count_
 
 ### Where the grades come from
 
-The four categories show what sits behind an overall grade: how often each model’s drawings missed the assignment, came apart structurally, or stacked their layers wrong, and how often they had that je ne sais quoi.
+The five categories show what sits behind an overall grade: how often each model’s drawings missed the assignment, came apart structurally, stacked their layers wrong, or slipped on the paintwork, and how often they had that je ne sais quoi.
 
 Each bar carries a 95% interval. Where two of them overlap, the difference isn’t one I’d bet on.
 

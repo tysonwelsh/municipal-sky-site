@@ -466,12 +466,15 @@ check('grades[]: exactly {model_id, avg, n, hist}, hist sums to n, 3 runs × 4 =
     $gradeKeysOk && $gradeN === 12, json_encode($A['grades']));
 $axesOk = count($A['axes']) === count($liveAxisIds);
 foreach ($A['axes'] as $ax) {
-    $axesOk = $axesOk && array_keys($ax) === ['axis_id', 'label', 'points', 'models'] && in_array($ax['axis_id'], $liveAxisIds, true);
+    $axesOk = $axesOk && array_keys($ax) === ['axis_id', 'label', 'points', 'values', 'models'] && in_array($ax['axis_id'], $liveAxisIds, true)
+        && count($ax['values']) === $ax['points'] && $ax['values'][0]['rank'] === $ax['points']
+        && array_keys($ax['values'][0]) === ['rank', 'label'];
     foreach ($ax['models'] as $m) {
         $axesOk = $axesOk && array_keys($m) === ['model_id', 'avg', 'n', 'hist'] && array_sum((array) $m['hist']) === $m['n'];
     }
 }
-check('axes[]: exactly {axis_id, label, points, models[{model_id, avg, n, hist}]}, live axes only', $axesOk, json_encode($A['axes'][0]));
+check('axes[]: exactly {axis_id, label, points, values[{rank, label}] best first, models[{model_id, avg, n, hist}]}, live axes only, in taxonomy order',
+    $axesOk && array_column($A['axes'], 'axis_id') === $liveAxisIds, json_encode($A['axes'][0]));
 $costOk = count($A['cost']) === 4;
 foreach ($A['cost'] as $c) {
     $costOk = $costOk && array_keys($c) === ['model_id', 'avg_usd', 'n'] && $c['n'] === 3 && $c['avg_usd'] > 0;
@@ -599,6 +602,21 @@ check('the export carries the intake facts on the prompt: tags, size_by, intake_
 check('standing CSV: one row per generation (20), grade + every live axis + rank columns',
     count($sc) === (int) one($db, 'SELECT COUNT(*) FROM jd2_generations') && in_array('grade', $head, true)
     && array_diff($liveAxisIds, $head) === [] && in_array('rank_pos', $head, true), json_encode($head));
+// the axis columns: the live axes in taxonomy order, then every retired axis a
+// v2 rubric required — the 3-point structural-coherence stays a column
+$ixG = array_search('grade', $head, true);
+$axisHead = array_slice($head, $ixG + 1, count($liveAxisIds) + 1);
+check('standing CSV: the axis columns are the live axes in taxonomy order, then the retired structural-coherence (kept, not vanished)',
+    $axisHead === array_merge($liveAxisIds, ['structural-coherence']), json_encode($axisHead));
+$cellsOk = true;
+foreach ($recs as $rec) {
+    foreach ($rec['runs'] as $run) {
+        foreach ($run['sessions'] as $sess) {
+            $cellsOk = $cellsOk && ($sess['required_cells'] ?? null) === array_merge($liveAxisIds, ['grade']);
+        }
+    }
+}
+check("the export carries each session's required_cells (every fixture sitting: today's cells)", $cellsOk);
 $ixT = array_search('tags_probe', $head, true);
 $ixP = array_search('prompt_id', $head, true);
 $p2rows = array_values(array_filter($sc, fn ($r) => ($r[$ixP] ?? '') === $p2));

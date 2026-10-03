@@ -961,6 +961,16 @@ html.jd-about-page body > .jd-folder-scrim { visibility: hidden !important; }
   font-size: 1.05rem; color: #1f2530; white-space: nowrap;
 }
 .jd-about .jdc-panel.is-right .jdc-ptitle { margin-left: 0; }
+/* each issue-rate panel's own key (taxonomy v35): which levels its pale and
+   dark segments count, from the axis's value labels — under the panel's
+   title, on the same left edge */
+.jd-about .jdc-pkey {
+  display: flex; flex-wrap: wrap; gap: 2px 12px;
+  margin: -4px 0 8px calc(var(--jdc-name) + 10px);
+  font-size: 0.74rem; color: #5b6472;
+}
+.jd-about .jdc-panel.is-right .jdc-pkey { margin-left: 0; }
+.jd-about .jdc-pkey .jdc-key i { width: 12px; height: 6px; }
 /* the bar: a length from zero, thin, the data end rounded */
 .jd-about .jdc-bar {
   position: absolute; left: 0; top: 50%;

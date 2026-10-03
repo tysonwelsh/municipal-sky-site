@@ -981,6 +981,47 @@
     }
     window.JD_axisRates = axisRates;
 
+    /* WHAT THE TWO SEGMENTS ARE CALLED, per axis (taxonomy v35, 2026-10-02).
+       axisRates keeps its rule — on a problem axis the rank below the top is
+       the pale segment and every rank under that the dark one; on a hit axis
+       the top is dark and the next pale — but "small" and "big" stopped
+       being honest names once two 4-point issue axes arrived: there the dark
+       segment is Moderate AND Major. So each panel names its own segments
+       from the axis's value labels (best first, as the taxonomy has them):
+       `light` the pale segment's level, `strong` the dark segment's levels
+       joined with " + " ("Moderate + Major problems"); `lightShort` /
+       `strongShort` drop a last word every level below the top shares
+       ("problems", "Understands") for the panel's own key. Exported for
+       /about/, which draws the same panels. */
+    function axisBuckets(values, axisId) {
+      var vals = (values || []).slice().sort(function (a, b) { return (+b.rank || 0) - (+a.rank || 0); });
+      var lab = function (v) { return window.JD_labelText ? JD_labelText(v.label || '') : String(v.label || ''); };
+      if (!vals.length) return null;
+      var hit = !!HIT_AXES[axisId];
+      var strongVals = hit ? vals.slice(0, 1) : vals.slice(2);
+      var lightVal = vals[1];
+      if (!lightVal || !strongVals.length) return null;
+      /* the shared last word of every level under the top, if there is one */
+      var under = vals.slice(1).map(lab);
+      var tail = '';
+      if (!hit && under.length > 1) {
+        var last = function (t) { var w = t.split(' '); return w.length > 1 ? w[w.length - 1] : ''; };
+        tail = last(under[0]);
+        under.forEach(function (t) { if (last(t) !== tail) tail = ''; });
+      }
+      var cut = function (t) { return tail ? t.slice(0, t.length - tail.length).replace(/\s+$/, '') : t; };
+      var strongShort = strongVals.map(function (v) { return cut(lab(v)); }).join(' + ');
+      return {
+        hit: hit,
+        light: lab(lightVal), strong: strongShort + (tail ? ' ' + tail : ''),
+        lightShort: cut(lab(lightVal)), strongShort: strongShort
+      };
+    }
+    window.JD_axisBuckets = axisBuckets;
+    /* a count in words for the card's title, the taxonomy deciding how many */
+    var COUNT_WORDS = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+    function countWord(n) { return COUNT_WORDS[n] || String(n); }
+
     function num(n) {
       return String(Math.round(+n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
@@ -1219,7 +1260,8 @@
         ' and up' + notPlotted(dropped), svg);
     }
 
-    /* THE FOUR AXES — issue rates, as small multiples (owner, 2026-09-30,
+    /* THE AXES — issue rates, as small multiples, one panel per live axis
+       (owner, 2026-09-30, five panels since taxonomy v35,
        from mockup-47). The folder used to plot each category's AVERAGE rank;
        it now counts how often each model had a problem, which is what the
        categories were built to find ("each designed to isolate a single type
@@ -1229,11 +1271,13 @@
 
        - Every panel is one 0–100% ruler, so for the first time the four
          categories compare with each other, not only within themselves.
-       - The bar is split by severity: the dark segment at the base is the big
-         problems, the light one the small. The printed figure is the whole
-         bar (any problem). Understanding Assignment has four levels, so its
-         "Mostly Understands" is the small problem and Somewhat or Barely the
-         big one (JD_axisRates below).
+       - The bar is split by severity: the pale segment is the level just
+         below the top, the dark one at the base every level under that. The
+         printed figure is the whole bar (any problem). On a 4-point axis the
+         dark segment is two levels (Moderate + Major problems; Somewhat +
+         Barely Understands), so each panel prints its own key naming its
+         segments from the taxonomy (JD_axisBuckets), and the card's legend
+         says only "smallest problem" / "bigger problems" (JD_axisRates).
        - Je ne sais quoi measures what goes RIGHT, so it is counted the other
          way, in green: the hit rate, Has it (dark) plus Just a hint (light).
        - One colour pair per meaning, the same for every model (owner call):
@@ -1262,7 +1306,7 @@
       function plottable(r) {
         return (+r.n || 0) >= MIN_N && axisRates(r.hist, 3).n > 0;
       }
-      /* worst case per model across the four axes — if even its largest n is
+      /* worst case per model across the axes — if even its largest n is
          under the floor, the model is nowhere on this card and is named */
       var thin = {}, dropped = [];
       axes.forEach(function (ax) {
@@ -1285,7 +1329,7 @@
         /* stays up with the shortfall stated (2026-09-10, the folder's
            return) — four bare rulers would read as a failure, no card at all
            reads as a missing chart; a sentence reads as the truth */
-        return cardHTML('fx-axes', 'The four categories',
+        return cardHTML('fx-axes', 'The ' + countWord(axes.length) + ' categories',
           'no model has ' + MIN_N + ' category ratings on four-model turns ' +
           'under the current rubric yet' + notPlotted(dropped), '');
       }
@@ -1298,15 +1342,29 @@
       var panels = axes.map(function (ax, pi) {
         var cropped = pi > 0 && !keysEverywhere;
         return '<div class="fx-panel' + (cropped ? ' fx-panel--cropped' : '') + '"><h4>' + esc(ax.label) + '</h4>' +
-          panelSVG(ax, rowsOf[pi], cropped) +
+          panelKeyHTML(ax) + panelSVG(ax, rowsOf[pi], cropped) +
           '<p class="fx-readout" aria-live="polite"></p></div>';
       }).join('');
-      return cardHTML('fx-axes', 'The four categories',
+      /* one panel per live axis in ONE ROW on a wide folder: the lead panel
+         carries the row key, every other one is cropped to its ruler (the
+         stylesheet's --fx-rest, below 900px its own columns) */
+      return cardHTML('fx-axes', 'The ' + countWord(axes.length) + ' categories',
         'issue rate per category on four-model turns — how often a small or ' +
         'big problem was filed — and for je ne sais quoi the hit rate; every ' +
         'rating under the current rubric, live axes only, n ' + MIN_N +
         ' and up' + notPlotted(dropped),
-        legendHTML() + '<div class="fx-axgrid">' + panels + '</div>');
+        legendHTML() + '<div class="fx-axgrid" style="--fx-rest:' + Math.max(1, axes.length - 1) + '">' +
+        panels + '</div>');
+    }
+    /* the panel's own key: which levels its pale and dark segments count
+       (JD_axisBuckets, from the axis's value labels on the endpoint) */
+    function panelKeyHTML(ax) {
+      var b = axisBuckets(ax.values, ax.axis_id);
+      if (!b) return '';
+      var ink = b.hit ? [HIT_HAS, HIT_HINT] : [ISSUE_BIG, ISSUE_SMALL];
+      return '<p class="fx-pkey" aria-hidden="true">' +
+        '<span><i class="fx-sw" style="background:' + ink[1] + '"></i>' + esc(b.lightShort) + '</span>' +
+        '<span><i class="fx-sw" style="background:' + ink[0] + '"></i>' + esc(b.strongShort) + '</span></p>';
     }
     /* one category's panel drawing: its plottable rows on the 0–100% ruler,
        the key gutter cropped out of the viewBox when `cropped` */
@@ -1314,6 +1372,9 @@
       var BARH = 7;
       var pts = +ax.points || 3;
       var hit = !!HIT_AXES[ax.axis_id];
+      var bk = axisBuckets(ax.values, ax.axis_id);
+      var hasW = bk ? bk.strong : (hit ? 'has it' : 'big'),
+          hintW = bk ? bk.light : (hit ? 'a hint' : 'small');
       var h = 2 + rows.length * PROWH + 4, s = '', alt = [];
       /* the 50% hairline, behind every row */
       s += '<line x1="' + (PX0 + PXW / 2) + '" y1="2" x2="' + (PX0 + PXW / 2) +
@@ -1324,8 +1385,7 @@
         var ws = PXW * q.strong / q.n, wt = PXW * q.total / q.n;
         var read = mLabel(r.model_id) + ' — ' + (hit ? 'hit rate ' : 'issue rate ') +
           pct(q.rate) + ' (95% ' + pct(q.lo) + '–' + pct(q.hi) + ') · ' +
-          (hit ? 'has it ' + q.strong + ', a hint ' + q.light + ', missed '
-               : 'big ' + q.strong + ', small ' + q.light + ', clean ') +
+          hasW + ' ' + q.strong + ', ' + hintW + ' ' + q.light + (hit ? ', missed ' : ', clean ') +
           (q.n - q.total) + ' · n ' + num(q.n);
         s += '<g class="fx-row" tabindex="0" role="button" data-read="' + esc(read) +
              '" aria-label="' + esc(read) + '">' +
@@ -1369,7 +1429,7 @@
         return '<li><i class="fx-sw" style="background:' + c + '"></i>' + esc(label) + '</li>';
       }
       return '<ul class="fx-legend">' +
-        sw(ISSUE_BIG, 'big problem') + sw(ISSUE_SMALL, 'small problem') +
+        sw(ISSUE_SMALL, 'smallest problem') + sw(ISSUE_BIG, 'bigger problems') +
         sw(HIT_HAS, 'has it') + sw(HIT_HINT, 'just a hint') +
         '<li><svg class="fx-sw-ci" viewBox="0 0 16 8" aria-hidden="true">' +
         '<path d="M1 1v6M1 4h14M15 1v6" class="fx-ci"/></svg>95% interval</li>' +
@@ -1566,8 +1626,8 @@
       }
       /* THREE CARDS (owner, 2026-09-10, settled the same evening the folder
          returned): what a drawing costs and how the drawings graded side by
-         side, then the four axes running the full width, its panels in one
-         row. Who takes first was on for an hour and taken off again; it, the
+         side, then the axes running the full width, their panels in one
+         row (five since taxonomy v35). Who takes first was on for an hour and taken off again; it, the
          ledger figures and the spend line stay built (firstsHTML, ledgerHTML,
          spendHTML) for the day they are wanted. */
       bodyEl.innerHTML = costHTML() + gradesHTML() + axesHTML() + turnsHTML();
