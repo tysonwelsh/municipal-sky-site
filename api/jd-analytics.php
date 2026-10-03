@@ -47,7 +47,21 @@ if (!headers_sent()) {
     header('Cache-Control: no-cache');
 }
 
-$taxonomy = jd_taxonomy_required('jd-analytics');
+// THE FROZEN RUBRIC (2026-10-03). This endpoint serves only the legacy
+// exhibit's analytics folder (art/junk-drawer/legacy/, dataset v1, frozen
+// 2026-10-01), and v1's ratings were filed under v1's axes. It used to read
+// the LIVE taxonomy.json, so every v2 rubric change bent the exhibit: v35
+// retired structural-coherence and v36 retired layering, and their panels
+// vanished from a folder whose data knows nothing else. It now reads the
+// exhibit's own frozen copy, legacy/taxonomy.json — the file legacy/data.php
+// already reads — so nothing done to the live rubric can reach it again.
+$legacyTaxonomyPath = __DIR__ . '/../art/junk-drawer/legacy/taxonomy.json';
+$legacyRaw = @file_get_contents($legacyTaxonomyPath);
+$taxonomy = is_string($legacyRaw) ? json_decode($legacyRaw, true) : null;
+if (!is_array($taxonomy) || jd_taxonomy_version($taxonomy) < 1) {
+    error_log('jd-analytics: the legacy taxonomy.json could not be read at ' . $legacyTaxonomyPath);
+    jd_fail(500, 'server_error', 'The rubric could not be read.');
+}
 
 // --- the rubric, live only -------------------------------------------------
 // Model identity resolves through taxonomy.json's registry; a model_id with no
