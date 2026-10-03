@@ -32,7 +32,10 @@
 // taxonomy's live `facets` (jd2_facets: id, label, question, min, max,
 // headings with their scope notes) for the bench's catalogue entry card. Each response carries the owner's latest sitting as `prefill` (grade, axes,
 // rank_pos, gap_after) and the visitor's current sitting as `visitor`; the
-// owner's pairs ride on the item as `pairs_prefill` by slot. `needs` says in
+// owner's pairs ride on the item as `pairs_prefill` by slot; `filed_at` is
+// when the owner's current sitting on that run was filed (null when none —
+// the bench's RATED sheet lists ?all=1's complete rows newest sitting first
+// by it). `needs` says in
 // plain words what the owner's sitting still lacks (jd2_needs). `progress`
 // counts the whole campaign — every prompt not hidden whose bench run has
 // settled — whatever the view, so the bench can say "12 of 40 done"; a
@@ -255,6 +258,10 @@ function jd2q_item(PDO $db, array $p, array $runs, array $view, bool $reveal, ar
         // and was carried onto it through the taxonomy's map (jd2q_carry)
         'prefill_mapped' => $mapped,
         'complete' => $view['complete'],
+        // when the owner's CURRENT sitting on the bench run was filed (null
+        // when there is none) — the bench's RATED sheet sorts by it. Read off
+        // the session row jd2_bench_view already holds: no query of its own
+        'filed_at' => $view['owner']['filed_at'] ?? null,
         'needs' => $view['needs'],
     ];
 }

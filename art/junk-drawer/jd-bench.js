@@ -41,7 +41,9 @@
               rerun, NEW PROMPT, HIDDEN ITEMS and the ledger link.
               ?bench&prompt=<id> seats that one prompt in any state (a
               closed one comes back with its prefill); ?bench&item=<id> is
-              the same, kept as an alias for one release.
+              the same, kept as an alias for one release. RATED (0.17.0)
+              lists every prompt with a complete owner sitting and seats
+              one the same way — see RE-RATING, below.
      ?admin — the key and the hidden list: with it verified, every REPORT
               CARD renders its grades as scales the owner can change and
               save in place (jd-record.js owns that editor). The strip here
@@ -398,6 +400,10 @@
         },
         /* the closing card carries "notes for the record" for the bench */
         withNote: true,
+        /* A RE-RATING (0.17.0): the owner's current sitting on this run is
+           complete, so its answers are the prefill — the preview says so,
+           and that filing adds a new sitting (append-only) */
+        rerating: !!it.complete,
         /* ?pairs=1: the six side-by-side cards instead of the pedestal card */
         pairsAudit: PAIRS_AUDIT,
         /* the queue left an earlier answer out of the prefill (a retired or
@@ -538,6 +544,7 @@
     }
     if (why === 'scrap' || why === 'skip') { openItem(firstWorkable(curId)); return; }
     if (why === 'prev') return;          /* act() reopens the earlier prompt */
+    if (why === 'rerate') return;        /* rerate() seats the chosen prompt */
     var cur = itemById(curId);
     if (curId && filedNow[curId] && (!cur || !workable(cur))) {
       openItem(firstWorkable(curId));    /* filed and dismissed — next */
@@ -583,6 +590,8 @@
       toggleSheet();
     } else if (kind === 'hidden') {
       hiddenList();
+    } else if (kind === 'rated') {
+      ratedList();
     } else if (kind === 'new') {
       newPromptForm();
     }
@@ -599,6 +608,8 @@
     sheet.addEventListener('click', function (e) {
       var b = e.target.closest ? e.target.closest('[data-show]') : null;
       if (b) { showAgain(b.getAttribute('data-show'), b.getAttribute('data-to'), b); return; }
+      var rr = e.target.closest ? e.target.closest('[data-rerate]') : null;
+      if (rr) { rerate(rr.getAttribute('data-rerate'), rr); return; }
       var c = e.target.closest ? e.target.closest('[data-np]') : null;
       if (c && c.getAttribute('data-np') === 'cancel') hideSheet();
     });
@@ -751,6 +762,94 @@
     });
   }
 
+  /* ---------- RE-RATING (0.17.0, owner 2026-10-03) ----------------------
+     "it's not clear to me how to re-rate an object on the bench." The
+     mechanism was always direct addressing (?bench&prompt=<id>: the prompt
+     seated in any state, the owner's last sitting as the prefill — grades,
+     axes, places, the pedestal's gaps — and filing appends a NEW sitting,
+     which the drawer then shows). What was missing was a way in. There are
+     three, all through rerate() below, which is direct addressing done
+     from inside the page: the RATED sheet on this strip, the report card's
+     "re-rate on the bench →" (jd-record.js, the bench page only), and the
+     ledger's RE-RATE link (a plain ?bench&prompt= URL). */
+
+  /* RATED: every prompt whose bench run has a COMPLETE owner sitting
+     (jd2-queue ?all=1: `complete`, not hidden), newest sitting first by the
+     item's `filed_at`; each row's RE-RATE seats it. Closing the sheet
+     (the tool again, or any other sheet) changes nothing. */
+  function filedWhen(at) {
+    if (!at) return '';
+    var d = new Date(String(at).replace(' ', 'T') + 'Z');   /* filed in UTC */
+    if (isNaN(d.getTime())) return String(at).slice(0, 16);
+    try {
+      return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit' });
+    } catch (e) { return String(at).slice(0, 16); }
+  }
+  function ratedList() {
+    if (!sheet) return;
+    if (closeSheetIfOpen('rated')) return;
+    showSheet('rated', '<b>rated</b> · loading…');
+    getJSON(API_Q + '?all=1' + (REVEAL ? '&reveal=1' : '')).then(function (j) {
+      if (sheet.getAttribute('data-sheet') !== 'rated') return;
+      var rows = (j.items || []).filter(function (it) {
+        return it.complete === true && it.visibility !== 'hidden';
+      }).sort(function (a, b) {
+        var x = a.filed_at || '', y = b.filed_at || '';
+        return x < y ? 1 : x > y ? -1 : 0;
+      });
+      var h = '<b>rated</b> · ' + rows.length +
+        ' · re-rate one: your last sitting comes back on the card, and filing adds a new one';
+      rows.forEach(function (it) {
+        var when = filedWhen(it.filed_at);
+        h += '<div class="jd-bench-hidden-row jd-bench-rated-row" data-rated="' + esc(it.prompt_id) + '">' +
+          '<b title="' + esc(it.prompt) + '">' + esc(it.title || it.prompt) + '</b>' +
+          (when ? '<span>filed ' + esc(when) + '</span>' : '') +
+          '<button type="button" class="jd-bench-show" data-rerate="' + esc(it.prompt_id) + '" ' +
+          'title="seat it on the bench with your last sitting’s answers">re-rate</button></div>';
+      });
+      if (!rows.length) h += '<p>nothing rated yet</p>';
+      sheet.innerHTML = h;
+    }, function (code) {
+      sheet.innerHTML = '<b>rated</b> · ⚠ ' + esc(code || 'network');
+    });
+  }
+  /* the address bar names the seated prompt, so a reload comes back to it
+     (direct addressing reads ?prompt= at load); the rest of the query —
+     ?bench, ?pairs=1, ?reveal=1 — is kept */
+  function addressPrompt(promptId) {
+    try {
+      var qs = location.search.replace(/^\?/, '').split('&').filter(function (kv) {
+        return kv && !/^(?:prompt|item)=/.test(kv);
+      });
+      qs.push('prompt=' + encodeURIComponent(promptId));
+      history.replaceState(history.state, '', location.pathname + '?' + qs.join('&') + location.hash);
+    } catch (e) {}
+  }
+  /* seat one prompt exactly as ?bench&prompt=<id> does: fetchOne (the queue's
+     ?prompt= read, merged into the backlog copy), then openItem. A card on
+     the stage comes down first (the way prev does it); an owner's run
+     holding the stage refuses. `btn` is the sheet's button, when there. */
+  function rerate(promptId, btn) {
+    if (ADMIN || !promptId) return false;
+    if (running) { setSync('failed', 'a run is drawing — re-rate when it lands'); return false; }
+    if (btn) { btn.disabled = true; btn.textContent = 'seating…'; }
+    fetchOne(promptId).then(function (it) {
+      if (!seatableItem(it)) {
+        if (btn) { btn.disabled = false; btn.textContent = 're-rate'; }
+        setSync('failed', 'that prompt can’t be seated: ' + ((it.needs || []).join('; ') || 'no drawings'));
+        return;
+      }
+      addressPrompt(it.prompt_id);
+      if (window.JD_turn.isOpen()) { intent = 'rerate'; window.JD_turn.close(); }
+      openItem(it);   /* hides the sheet */
+    }, function (code) {
+      if (btn) { btn.disabled = false; btn.textContent = '⚠ ' + (code || 'network'); }
+      setSync('failed', 'prompt ' + (code || 'network'));
+    });
+    return true;
+  }
+
   function syncHTML() {
     if (sync.state === 'saving') return '<span class="jd-bench-sync is-saving">saving…</span>';
     if (sync.state === 'saved') {
@@ -785,6 +884,9 @@
   function toolsHTML() {
     return (ADMIN ? '' : '<button type="button" class="jd-bench-new-btn" data-bench="new" ' +
         'title="draw a new prompt under the bench profile and rate it here">new prompt +</button>') +
+      /* RATED (0.17.0): the bench's way back to a prompt already rated */
+      (ADMIN ? '' : '<button type="button" data-bench="rated" ' +
+        'title="every prompt with a complete sitting of yours — re-rate one">rated</button>') +
       '<button type="button" data-bench="hidden" title="prompts hidden from the drawer">hidden items</button>' +
       /* THE LEDGER (owner, 2026-09-10): the whole collection as a table —
          what is in the drawer and why not, every run and every sitting */
@@ -961,7 +1063,12 @@
     bar.innerHTML = tag() + '<span class="jd-bench-note">checking the key…</span>';
     JD_admin.verify().then(function (res) {
       if (!res.ok) { gate(gateMsg(res.code, res.retry_after)); return; }
-      if (!ADMIN) { loadQueue(false); return; }
+      if (!ADMIN) {
+        loadQueue(false);
+        /* a card painted before the key verified gains its re-rate button */
+        if (window.JD_record && window.JD_record.refresh) window.JD_record.refresh();
+        return;
+      }
       paintBar();
       /* a deep-linked card may have painted before the key verified: repaint
          so its grades come up as the editor */
@@ -981,7 +1088,9 @@
   window.JD_bench = {
     queue: function () { return Q; },
     current: function () { return curId; },
-    done: itemDone
+    done: itemDone,
+    /* RE-RATING: the report card's "re-rate on the bench →" calls this */
+    rerate: function (promptId) { return rerate(promptId, null); }
   };
 
   buildBar();
