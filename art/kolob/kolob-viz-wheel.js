@@ -211,8 +211,20 @@ window.KOLOB = window.KOLOB || {};
       ang += (widths[j] + track) / r;
     }
   }
-  function inkA(a) { return "rgba(30, 77, 59, " + a.toFixed(3) + ")"; }
-  function giltA(a) { return "rgba(138, 122, 69, " + a.toFixed(3) + ")"; }
+  // (the wheel's ink and gilt at an alpha: each string built once for each
+  // alpha asked, not toFixed every frame — the turn's fades ask a few
+  // hundred; past TINT_KEEP they are built as asked, and not kept)
+  var TINT_KEEP = 1024, inkOf = new Map(), giltOf = new Map();
+  function tint(kept, rgb, a) {
+    var str = kept.get(a);
+    if (str === undefined) {
+      str = "rgba(" + rgb + ", " + a.toFixed(3) + ")";
+      if (kept.size < TINT_KEEP) kept.set(a, str);
+    }
+    return str;
+  }
+  function inkA(a) { return tint(inkOf, "30, 77, 59", a); }
+  function giltA(a) { return tint(giltOf, "138, 122, 69", a); }
   function radial(c, cx, cy, a, r0, r1) {
     c.beginPath();
     c.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);

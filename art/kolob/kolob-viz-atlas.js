@@ -28,7 +28,22 @@ window.KOLOB = window.KOLOB || {};
   // One ink (the owner): hymnbook green, from the moment a note sounds.
   // No gilt strike, no cooling, no glow; only the drying fades it.
   var C_INK = [30, 77, 59];
-  function rgba(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + (a == null ? 1 : +(+a).toFixed(3)) + ")"; }
+  // (a colour's string is built once for each alpha it is asked at — the
+  // same string as ever, not toFixed for every group every frame; a colour
+  // is an array never written, known by itself; past RGBA_KEEP alphas a
+  // colour's strings are built as they are asked, and not kept)
+  var RGBA_KEEP = 1024, rgbaOf = new Map();
+  function rgba(c, a) {
+    var e = rgbaOf.get(c), str;
+    if (!e) rgbaOf.set(c, e = { whole: null, by: new Map() });
+    if (a == null) return e.whole || (e.whole = "rgba(" + c[0] + "," + c[1] + "," + c[2] + ",1)");
+    str = e.by.get(a);
+    if (str === undefined) {
+      str = "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + +(+a).toFixed(3) + ")";
+      if (e.by.size < RGBA_KEEP) e.by.set(a, str);
+    }
+    return str;
+  }
   function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
 
   // The two clefs, baked as self-contained outlines (traced from a serif music
